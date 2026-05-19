@@ -1,6 +1,8 @@
 //
 //  DeleteAccountResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/02/17.
 //
 
 import Foundation
@@ -9,8 +11,4 @@ import Foundation
 
 public struct DeleteAccountResponse: Codable {
     public var deleted: Bool = false
-
-    public init(deleted: Bool = false) {
-        self.deleted = deleted
-    }
 }

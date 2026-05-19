@@ -13,14 +13,14 @@ final class PromoCodeRepositoryImpl: PromoCodeRepositoryType {
         self.client = client
     }
 
-    func fetchPromoCode() async throws -> PromoCodeResponse {
+    func fetchPromocode() async throws -> PromoCodeResponse {
         try await client.fetch(
             endpoint: .promoCode,
             method: .GET
         )
     }
 
-    func applyPromoCode(code: String) async throws -> PromoCodeResponse {
+    func applyPromocode(code: String) async throws -> PromoCodeResponse {
         try await client.fetch(
             endpoint: .promoCode,
             method: .POST,
@@ -28,7 +28,7 @@ final class PromoCodeRepositoryImpl: PromoCodeRepositoryType {
         )
     }
 
-    func deletePromoCode(code: String) async throws -> PromoCodeResponse {
+    func deletePromocode(code: String) async throws -> PromoCodeResponse {
         try await client.fetch(
             endpoint: .promoCode,
             method: .DELETE

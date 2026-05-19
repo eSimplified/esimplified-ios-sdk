@@ -1,6 +1,8 @@
 //
 //  KredsResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/02/25.
 //
 
 import Foundation
@@ -11,7 +13,7 @@ public struct KredsLoyaltyBalanceResponse: Codable {
     public let totalLoyaltyPoints: Int
     public let totalLoyaltyPointsDetail: LoyaltyPointsDetail
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case totalLoyaltyPoints = "total_loyalty_points"
         case totalLoyaltyPointsDetail = "total_loyalty_points_detail"
     }
@@ -26,7 +28,7 @@ public struct LoyaltyPointsDetail: Codable {
     public let currency: Currency
     public let original: LoyaltyPointsOriginal?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case amount, currency, original
         case amountLocalCurrency = "amount_local_currency"
         case amountLocalCurrencyCents = "amount_local_currency_cents"
@@ -49,29 +51,14 @@ public struct LoyaltyPointsDetail: Codable {
             amount = "0.00"
         }
     }
-
-    public init(amount: String, amountLocalCurrency: String? = nil,
-                amountLocalCurrencyCents: Int? = nil, currency: Currency,
-                original: LoyaltyPointsOriginal? = nil) {
-        self.amount = amount
-        self.amountLocalCurrency = amountLocalCurrency
-        self.amountLocalCurrencyCents = amountLocalCurrencyCents
-        self.currency = currency
-        self.original = original
-    }
 }
 
 public struct LoyaltyPointsOriginal: Codable {
     public let amountUSD: String
     public let currency: Currency
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case amountUSD = "amount_usd"
         case currency
-    }
-
-    public init(amountUSD: String, currency: Currency) {
-        self.amountUSD = amountUSD
-        self.currency = currency
     }
 }

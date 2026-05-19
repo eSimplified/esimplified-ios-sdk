@@ -1,6 +1,8 @@
 //
 //  VoucherRedeemResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2026/01/17.
 //
 
 import Foundation
@@ -10,7 +12,7 @@ import Foundation
 public struct VoucherRedeemRequest: Codable {
     public let voucherCode: String
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case voucherCode = "voucher_code"
     }
 
@@ -31,13 +33,8 @@ public struct VoucherRedeemResponse: Codable {
         return components.count > 1 ? String(components[1]) : nil
     }
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case redeemed
         case redirectUrl = "redirect_url"
-    }
-
-    public init(redeemed: Bool, redirectUrl: String? = nil) {
-        self.redeemed = redeemed
-        self.redirectUrl = redirectUrl
     }
 }

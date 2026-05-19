@@ -13,11 +13,15 @@ final class NotificationRepositoryImpl: NotificationRepositoryType {
         self.client = client
     }
 
-    func fetchNotificationSettings() async throws -> [NotificationSettings] {
-        try await client.fetch(
-            endpoint: .notificationSettings,
-            method: .GET
-        )
+    func fetchNotificationSettings() async -> [NotificationSettings] {
+        do {
+            return try await client.fetch(
+                endpoint: .notificationSettings,
+                method: .GET
+            )
+        } catch {
+            return []
+        }
     }
 
     func updateNotificationSettings(settings: [NotificationSettings]) async throws {

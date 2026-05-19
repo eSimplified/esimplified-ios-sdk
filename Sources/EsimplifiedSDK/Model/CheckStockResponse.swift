@@ -1,6 +1,8 @@
 //
 //  CheckStockResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/04/05.
 //
 
 import Foundation
@@ -12,7 +14,7 @@ public struct CheckStockResponse: Codable {
     public let package: Package
     public var promoCode: PromoCodeResponse?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case stock, package
         case promoCode = "promo_code"
     }

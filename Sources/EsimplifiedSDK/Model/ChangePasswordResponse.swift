@@ -1,20 +1,16 @@
 //
 //  ChangePasswordResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
 //
-
-import Foundation
+//  Created by Kieran on 2025/03/30.
+//
 
 // MARK: Change Password Response
 
 public struct ChangePasswordResponse: Codable {
-    public var passwordReset: Bool = false
+    public var password_reset: Bool = false
 
-    public enum CodingKeys: String, CodingKey {
+    enum codingKeys: String {
         case passwordReset = "password_reset"
-    }
-
-    public init(passwordReset: Bool = false) {
-        self.passwordReset = passwordReset
     }
 }

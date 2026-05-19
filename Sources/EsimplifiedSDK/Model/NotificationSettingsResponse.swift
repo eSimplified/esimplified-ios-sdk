@@ -1,6 +1,8 @@
 //
 //  NotificationSettingsResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/08/14.
 //
 
 import Foundation
@@ -10,9 +12,4 @@ import Foundation
 public struct NotificationSettings: Codable {
     public let type: String
     public let enabled: Bool
-
-    public init(type: String, enabled: Bool) {
-        self.type = type
-        self.enabled = enabled
-    }
 }

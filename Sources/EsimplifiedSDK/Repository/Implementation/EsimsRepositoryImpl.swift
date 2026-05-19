@@ -15,7 +15,7 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
         self.cache = cache
     }
 
-    func fetchEsims(archivedEsims: Bool, forceRefresh: Bool = false) async throws -> [Esim] {
+    func fetchEsims(archivedEsims: Bool, forceRefresh: Bool = false) async -> [Esim] {
         let cacheKey = "esims_\(archivedEsims)"
         if !forceRefresh, let cached: [Esim] = cache.get(cacheKey) {
             return cached
@@ -27,63 +27,86 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
             "order_by": "-assigned_date",
             "show_archived_esims": archivedEsims ? "true" : "false"
         ]
-        let response: EsimsResponse = try await client.fetch(
-            endpoint: .esims,
-            method: .GET,
-            parameters: parameters
-        )
-        let esims = response.esims
-        cache.set(cacheKey, value: esims, ttl: 300)
-        return esims
+        do {
+            let response: EsimsResponse = try await client.fetch(
+                endpoint: .esims,
+                method: .GET,
+                parameters: parameters
+            )
+            let esims = response.esims
+            cache.set(cacheKey, value: esims, ttl: 300)
+            return esims
+        } catch {
+            return []
+        }
     }
 
-    func fetchEsimDetails(iccid: String, forceRefresh: Bool = false) async throws -> Esim? {
+    func fetchEsimDetails(iccid: String, forceRefresh: Bool = false) async -> Esim? {
         let cacheKey = "esim_details_\(iccid)"
         if !forceRefresh, let cached: Esim = cache.get(cacheKey) {
             return cached
         }
-        let esim: Esim = try await client.fetch(
-            endpoint: .esimDetails,
-            method: .GET,
-            id: iccid
-        )
-        cache.set(cacheKey, value: esim, ttl: 300)
-        return esim
+        do {
+            let esim: Esim = try await client.fetch(
+                endpoint: .esimDetails,
+                method: .GET,
+                id: iccid
+            )
+            cache.set(cacheKey, value: esim, ttl: 300)
+            return esim
+        } catch {
+            return nil
+        }
     }
 
-    func updateEsimName(customName: String, iccid: String) async throws -> UpdateEsimResponse {
+    func updateEsimName(customName: String, iccid: String) async -> Bool {
         cache.remove("esim_details_\(iccid)")
         cache.remove("esims_true")
         cache.remove("esims_false")
-        return try await client.fetch(
-            endpoint: .updateEsim,
-            method: .PUT,
-            body: ["esim_name": customName],
-            id: iccid
-        )
+        do {
+            let response: UpdateEsimResponse = try await client.fetch(
+                endpoint: .updateEsim,
+                method: .PUT,
+                body: ["esim_name": customName],
+                id: iccid
+            )
+            return response.message == "eSIM updated successfully"
+        } catch {
+            return false
+        }
     }
 
-    func updateEsimAutoTopUpStatus(status: Bool, iccid: String) async throws -> UpdateEsimResponse {
+    func updateEsimAutoTopUpStatus(status: Bool, iccid: String) async -> Bool {
         cache.remove("esim_details_\(iccid)")
         cache.remove("esims_true")
         cache.remove("esims_false")
-        return try await client.fetch(
-            endpoint: .updateEsim,
-            method: .PUT,
-            body: ["auto_top_up": status],
-            id: iccid
-        )
+        do {
+            let response: UpdateEsimResponse = try await client.fetch(
+                endpoint: .updateEsim,
+                method: .PUT,
+                body: ["auto_top_up": status],
+                id: iccid
+            )
+            return response.message == "eSIM updated successfully"
+        } catch {
+            return false
+        }
     }
 
-    func updateEsimArchivedStatus(status: Bool, iccid: String) async throws -> UpdateEsimResponse {
+    func updateEsimArchivedStatus(status: Bool, iccid: String) async -> Bool {
         cache.remove("esim_details_\(iccid)")
         cache.remove("esims_true")
         cache.remove("esims_false")
-        return try await client.fetch(
-            endpoint: .updateEsim,
-            method: .PUT,
-            body: ["archived": status],
-            id: iccid
-        )
+        do {
+            let response: UpdateEsimResponse = try await client.fetch(
+                endpoint: .updateEsim,
+                method: .PUT,
+                body: ["archived": status],
+                id: iccid
+            )
+            return response.message == "eSIM updated successfully"
+        } catch {
+            return false
+        }
     }
 }

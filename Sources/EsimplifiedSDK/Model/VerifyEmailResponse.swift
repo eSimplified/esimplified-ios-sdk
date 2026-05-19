@@ -1,6 +1,8 @@
 //
 //  VerifyEmailResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/02/17.
 //
 
 import Foundation
@@ -9,15 +11,5 @@ import Foundation
 
 public struct VerifyEmailResponse: Codable {
     public var email: String = ""
-    public var emailVerified: Bool = false
-
-    public enum CodingKeys: String, CodingKey {
-        case email
-        case emailVerified = "email_verified"
-    }
-
-    public init(email: String = "", emailVerified: Bool = false) {
-        self.email = email
-        self.emailVerified = emailVerified
-    }
+    public var email_verified: Bool = false
 }

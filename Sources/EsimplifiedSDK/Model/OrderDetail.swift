@@ -1,6 +1,8 @@
 //
-//  OrderDetailResponse.swift
-//  EsimplifiedSDK
+//  EsimOrderResponse.swift
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/03/23.
 //
 
 import Foundation
@@ -40,7 +42,7 @@ public struct OrderDetail: Codable {
     public let loyaltyPointsEarned: LoyaltyPointsDetail?
     public let loyaltyPointsSpent: LoyaltyPointsDetail?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case iccid, package, country, profile
         case qrCode = "qr_code"
         case smDpAddress = "sm_dp_address"
@@ -105,23 +107,31 @@ public struct OrderDetail: Codable {
         loyaltyPointsEarned = try container.decodeIfPresent(LoyaltyPointsDetail.self, forKey: .loyaltyPointsEarned)
         loyaltyPointsSpent = try container.decodeIfPresent(LoyaltyPointsDetail.self, forKey: .loyaltyPointsSpent)
     }
-}
 
-// MARK: - Computed Properties
+    public var orderTypeEnum: EsimOrderState {
+        EsimOrderState(rawValue: orderType) ?? .buy
+    }
 
-public extension OrderDetail {
-    var packagePurchaseDate: Date? {
+    public var packagePurchaseDate: Date? {
+        guard !orderDate.isEmpty else { return nil }
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
         formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
         return formatter.date(from: orderDate)
     }
 
-    var packageExpiryDate: Date? {
+    public var packageExpiryDate: Date? {
         guard let packagePurchaseDate else { return nil }
-        return Calendar.current.date(byAdding: .day, value: packageValidity, to: packagePurchaseDate)
+        return Calendar.current.date(byAdding: .day, value: self.packageValidity, to: packagePurchaseDate)
     }
+}
 
-    var orderTypeEnum: String {
-        orderType
-    }
+// MARK: Esim Order State Enum
+
+public enum EsimOrderState: String {
+    case buy = "BUY"
+    case topUP = "TOP UP"
+    case autoTopUp = "AUTO TOP UP"
+    case complimentary = "Complimentary"
 }

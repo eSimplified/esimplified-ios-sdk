@@ -1,6 +1,8 @@
 //
 //  ForgotPasswordResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/02/17.
 //
 
 import Foundation
@@ -12,14 +14,8 @@ public struct ForgotPasswordResponse: Codable {
     public var detail: String = ""
     public var customerID: String? = ""
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case detail, email
         case customerID = "customer_id"
-    }
-
-    public init(email: String = "", detail: String = "", customerID: String? = "") {
-        self.email = email
-        self.detail = detail
-        self.customerID = customerID
     }
 }

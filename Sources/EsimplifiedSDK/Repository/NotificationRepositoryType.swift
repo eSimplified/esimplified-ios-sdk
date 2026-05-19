@@ -6,6 +6,6 @@
 import Foundation
 
 public protocol NotificationRepositoryType {
-    func fetchNotificationSettings() async throws -> [NotificationSettings]
+    func fetchNotificationSettings() async -> [NotificationSettings]
     func updateNotificationSettings(settings: [NotificationSettings]) async throws
 }

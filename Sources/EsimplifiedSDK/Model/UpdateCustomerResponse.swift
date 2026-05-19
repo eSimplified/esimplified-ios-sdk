@@ -1,6 +1,8 @@
 //
 //  UpdateCustomerResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/02/17.
 //
 
 import Foundation
@@ -10,11 +12,6 @@ import Foundation
 public struct UpdateCustomerResponse: Codable {
     public var updated: Bool = false
     public var customer: User? = User()
-
-    public init(updated: Bool = false, customer: User? = User()) {
-        self.updated = updated
-        self.customer = customer
-    }
 }
 
 // MARK: Update Customer Request
@@ -26,7 +23,7 @@ public struct UpdateCustomerRequest: Encodable {
     public var phoneNumber: String?
     public var password: String?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case password
         case firstName = "first_name"
         case lastName = "last_name"
@@ -43,8 +40,7 @@ public struct UpdateCustomerRequest: Encodable {
         try container.encodeIfPresent(phoneNumber, forKey: .phoneNumber)
     }
 
-    public init(firstName: String? = nil, lastName: String? = nil, email: String? = nil,
-                phoneNumber: String? = nil, password: String? = nil) {
+    public init(firstName: String? = nil, lastName: String? = nil, email: String? = nil, phoneNumber: String? = nil, password: String? = nil) {
         self.firstName = firstName
         self.lastName = lastName
         self.email = email

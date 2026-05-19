@@ -15,31 +15,39 @@ final class CountriesRepositoryImpl: CountriesRepositoryType {
         self.cache = cache
     }
 
-    func fetchAllCountries(forceRefresh: Bool = false) async throws -> [Country] {
+    func fetchAllCountries(forceRefresh: Bool = false) async -> [Country] {
         let cacheKey = "countries_all"
         if !forceRefresh, let cached: [Country] = cache.get(cacheKey) {
             return cached
         }
         let parameters = ["limit": "1000"]
-        let response: CountryResponse = try await client.fetch(
-            endpoint: .countries,
-            method: .GET,
-            parameters: parameters,
-            requiresAuth: false
-        )
-        let countries = response.countries
-        cache.set(cacheKey, value: countries, ttl: 86400)
-        return countries
+        do {
+            let response: CountryResponse = try await client.fetch(
+                endpoint: .countries,
+                method: .GET,
+                parameters: parameters,
+                requiresAuth: false
+            )
+            let countries = response.countries
+            cache.set(cacheKey, value: countries, ttl: 86400)
+            return countries
+        } catch {
+            return []
+        }
     }
 
-    func searchCountries(searchTerm: String) async throws -> [Country] {
+    func searchCountries(searchTerm: String) async -> [Country] {
         let parameters = ["search_term": searchTerm]
-        let response: CountryResponse = try await client.fetch(
-            endpoint: .search,
-            method: .GET,
-            parameters: parameters,
-            requiresAuth: false
-        )
-        return response.countries
+        do {
+            let response: CountryResponse = try await client.fetch(
+                endpoint: .search,
+                method: .GET,
+                parameters: parameters,
+                requiresAuth: false
+            )
+            return response.countries
+        } catch {
+            return []
+        }
     }
 }

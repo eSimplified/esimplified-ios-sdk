@@ -1,6 +1,8 @@
 //
 //  VisaValidateResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/02/17.
 //
 
 import Foundation
@@ -18,7 +20,7 @@ public struct VisaValidateResponse: Codable, Hashable {
     public var validityDays: Int?
     public var dataGB: Int?
 
-    public enum RewardType: String, Codable, Hashable {
+    public enum RewardType: String, Codable {
         case unknown
         case discount = "DISCOUNT"
         case global = "GLOBAL_ESIM"
@@ -30,7 +32,7 @@ public struct VisaValidateResponse: Codable, Hashable {
         }
     }
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case eligible, redeemed, detail
         case usedCount = "used_count"
         case rewardType = "reward_type"
@@ -38,19 +40,5 @@ public struct VisaValidateResponse: Codable, Hashable {
         case remainingCount = "remaining_count"
         case validityDays = "validity_days"
         case dataGB = "data_GB"
-    }
-
-    public init(eligible: Bool = false, usedCount: Int? = 0, rewardType: RewardType? = .unknown,
-                allowedCount: Int? = 0, remainingCount: Int? = 0, redeemed: Bool? = false,
-                detail: String? = "", validityDays: Int? = nil, dataGB: Int? = nil) {
-        self.eligible = eligible
-        self.usedCount = usedCount
-        self.rewardType = rewardType
-        self.allowedCount = allowedCount
-        self.remainingCount = remainingCount
-        self.redeemed = redeemed
-        self.detail = detail
-        self.validityDays = validityDays
-        self.dataGB = dataGB
     }
 }

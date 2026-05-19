@@ -1,6 +1,8 @@
 //
 //  EsimsResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/03/06.
 //
 
 import Foundation
@@ -13,16 +15,9 @@ public struct EsimsResponse: Codable {
     public let previous: String?
     public let esims: [Esim]
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case count, next, previous
         case esims = "results"
-    }
-
-    public init(count: Int, next: String?, previous: String?, esims: [Esim]) {
-        self.count = count
-        self.next = next
-        self.previous = previous
-        self.esims = esims
     }
 }
 
@@ -51,7 +46,7 @@ public struct Esim: Codable, Identifiable, Hashable {
         dataUsageRemainingGigabytes == -1
     }
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case iccid, country, archived, profile
         case orderUUID = "order_uuid"
         case androidSha = "android_sha"
@@ -97,7 +92,7 @@ public struct PackageDetail: Codable, Identifiable, Hashable {
 
     public var dataUsedGigabytes: Int {
         guard let dataUsedBytes else { return 0 }
-        return dataUsedBytes / 1073741824
+            return dataUsedBytes / 1073741824
     }
 
     public var hasUnlimitedPackage: Bool {
@@ -141,7 +136,7 @@ public struct PackageDetail: Codable, Identifiable, Hashable {
         status == "NOT_ACTIVE"
     }
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case status
         case dateCreatedEpoch = "date_created_epoch"
         case windowActivationStartEpoch = "window_activation_start_epoch"
@@ -160,6 +155,7 @@ public struct PackageDetail: Codable, Identifiable, Hashable {
         case dataAllowanceGigabytes = "data_allowance_gigabytes"
         case dataUsedBytes = "data_usage_bytes"
         case statusMessage = "status_message"
+
     }
 }
 
@@ -176,12 +172,11 @@ public struct EsimProfile: Codable, Hashable {
     public let stateMessage: String
     public let lastOperationDateUTC: String
     public let releaseDateUTC: String
-
     public var esimStatus: EsimStatus {
         EsimStatus(rawValue: state) ?? .enabled
     }
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case state
         case lastOperationDate = "last_operation_date"
         case activationCode = "activation_code"

@@ -1,6 +1,8 @@
 //
 //  UserResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/02/17.
 //
 
 import Foundation
@@ -23,7 +25,7 @@ public struct User: Codable, Equatable {
     public var preferredCurrency: String?
     public var signedInWithProvider: Bool?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case email
         case phoneNumber = "phone_number"
         case firstName = "first_name"
@@ -40,12 +42,22 @@ public struct User: Codable, Equatable {
         case signedInWithProvider = "signed_in_with_provider"
     }
 
-    public init(email: String? = "", phoneNumber: String? = "", firstName: String? = "",
-                lastName: String? = "", fullName: String? = "", referralCode: String? = "",
-                externalReference: String? = "", customerId: String? = "",
-                receiveEmails: Bool? = true, receivePushNotifications: Bool? = true,
-                receiveSms: Bool? = true, preferredLanguage: String? = nil,
-                preferredCurrency: String? = nil, signedInWithProvider: Bool? = nil) {
+    public init(
+        email: String? = "",
+        phoneNumber: String? = "",
+        firstName: String? = "",
+        lastName: String? = "",
+        fullName: String? = "",
+        referralCode: String? = "",
+        externalReference: String? = "",
+        customerId: String? = "",
+        receiveEmails: Bool? = true,
+        receivePushNotifications: Bool? = true,
+        receiveSms: Bool? = true,
+        preferredLanguage: String? = nil,
+        preferredCurrency: String? = nil,
+        signedInWithProvider: Bool? = nil
+    ) {
         self.email = email
         self.phoneNumber = phoneNumber
         self.firstName = firstName

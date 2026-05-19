@@ -1,6 +1,8 @@
 //
 //  PaymentResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/03/06.
 //
 
 import Foundation
@@ -11,14 +13,9 @@ public struct PaymentResponse: Codable {
     public let detail: String
     public let paymentData: PaymentData
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case detail
         case paymentData = "data"
-    }
-
-    public init(detail: String, paymentData: PaymentData) {
-        self.detail = detail
-        self.paymentData = paymentData
     }
 }
 
@@ -33,7 +30,7 @@ public struct PaymentData: Codable {
     public let publishableKey: String?
     public let zeroCharge: Bool?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case uri
         case orderID = "order_id"
         case isIntent = "is_intent"
@@ -42,75 +39,43 @@ public struct PaymentData: Codable {
         case publishableKey = "publishable_key"
         case zeroCharge = "zero_charge"
     }
-
-    public init(uri: String? = nil, orderID: String? = nil, isIntent: Bool? = nil,
-                customerRef: String? = nil, ephemeralKey: String? = nil,
-                publishableKey: String? = nil, zeroCharge: Bool? = nil) {
-        self.uri = uri
-        self.orderID = orderID
-        self.isIntent = isIntent
-        self.customerRef = customerRef
-        self.ephemeralKey = ephemeralKey
-        self.publishableKey = publishableKey
-        self.zeroCharge = zeroCharge
-    }
 }
 
 // MARK: Payment Request
 
 public struct PaymentRequest: Encodable {
     public var type: TransactionType
-    public var paymentMethod: PaymentMethod = .stripeIntent
-    public var packageTypeId: String
+    public var payment_method: PaymentMethod = .stripeIntent
+    public var package_type_id: String
     public var iccid: String?
-    public var couponId: String?
+    public var coupon_id: String?
     public var customer: CustomerEmail
-    public var autoTopUp: Bool?
-    public var savePaymentMethod: Bool?
-    public var loyaltyPointsAmount: Double?
+    public var auto_top_up: Bool?
+    public var save_payment_method: Bool?
+    public var loyalty_points_amount: Double?
 
-    public enum CodingKeys: String, CodingKey {
-        case type
-        case paymentMethod = "payment_method"
-        case packageTypeId = "package_type_id"
-        case iccid
-        case couponId = "coupon_id"
-        case customer
-        case autoTopUp = "auto_top_up"
-        case savePaymentMethod = "save_payment_method"
-        case loyaltyPointsAmount = "loyalty_points_amount"
-    }
-
-    public init(type: TransactionType, paymentMethod: PaymentMethod = .stripeIntent,
-                packageTypeId: String, iccid: String? = nil, couponId: String? = nil,
-                customer: CustomerEmail, autoTopUp: Bool? = nil,
-                savePaymentMethod: Bool? = nil, loyaltyPointsAmount: Double? = nil) {
+    public init(type: TransactionType, payment_method: PaymentMethod = .stripeIntent, package_type_id: String, iccid: String? = nil, coupon_id: String? = nil, customer: CustomerEmail, auto_top_up: Bool? = nil, save_payment_method: Bool? = nil, loyalty_points_amount: Double? = nil) {
         self.type = type
-        self.paymentMethod = paymentMethod
-        self.packageTypeId = packageTypeId
+        self.payment_method = payment_method
+        self.package_type_id = package_type_id
         self.iccid = iccid
-        self.couponId = couponId
+        self.coupon_id = coupon_id
         self.customer = customer
-        self.autoTopUp = autoTopUp
-        self.savePaymentMethod = savePaymentMethod
-        self.loyaltyPointsAmount = loyaltyPointsAmount
+        self.auto_top_up = auto_top_up
+        self.save_payment_method = save_payment_method
+        self.loyalty_points_amount = loyalty_points_amount
     }
 }
 
 // MARK: Kreds Quote Request
 
 public struct KredsQuoteRequest: Encodable {
-    public let packageTypeId: Int
-    public let loyaltyPointsAmount: Double
+    public let package_type_id: Int
+    public let loyalty_points_amount: Double
 
-    public enum CodingKeys: String, CodingKey {
-        case packageTypeId = "package_type_id"
-        case loyaltyPointsAmount = "loyalty_points_amount"
-    }
-
-    public init(packageTypeId: Int, loyaltyPointsAmount: Double) {
-        self.packageTypeId = packageTypeId
-        self.loyaltyPointsAmount = loyaltyPointsAmount
+    public init(package_type_id: Int, loyalty_points_amount: Double) {
+        self.package_type_id = package_type_id
+        self.loyalty_points_amount = loyalty_points_amount
     }
 }
 
@@ -124,7 +89,7 @@ public struct KredsQuoteResponse: Codable {
     public let points: KredsQuotePoints
     public let notices: [KredsQuoteNotice]?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case currency, pricing, points, notices
         case packageTypeID = "package_type_id"
         case preferredCurrency = "preferred_currency"
@@ -134,11 +99,6 @@ public struct KredsQuoteResponse: Codable {
 public struct KredsQuoteNotice: Codable {
     public let code: String
     public let message: String
-
-    public init(code: String, message: String) {
-        self.code = code
-        self.message = message
-    }
 }
 
 public struct KredsQuotePricing: Codable {
@@ -146,7 +106,7 @@ public struct KredsQuotePricing: Codable {
     public let usd: KredsQuoteUsdPricing
     public let preferredCurrency: KredsQuotePreferredPricing
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case usd
         case orderCurrency = "order_currency"
         case preferredCurrency = "preferred_currency"
@@ -162,14 +122,14 @@ public struct KredsQuoteOrderCurrency: Codable {
     public let total: String
     public let currency: Currency?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case currency
         case exchangeRateToUsd = "exchange_rate_to_usd"
-        case subtotal
+        case subtotal = "subtotal"
         case packageDiscount = "package_discount"
         case promoDiscount = "promo_discount"
         case pointsApplied = "points_applied"
-        case total
+        case total = "total"
     }
 }
 
@@ -181,24 +141,19 @@ public struct KredsQuoteUsdPricing: Codable {
     public let total: String
     public let currency: Currency
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case currency
-        case subtotal
+        case subtotal = "subtotal"
         case packageDiscount = "package_discount"
         case promoDiscount = "promo_discount"
         case pointsApplied = "points_applied"
-        case total
+        case total = "total"
     }
 }
 
 public struct KredsQuotePreferredPricing: Codable {
     public let total: String
     public let currency: Currency
-
-    public init(total: String, currency: Currency) {
-        self.total = total
-        self.currency = currency
-    }
 }
 
 public struct KredsQuotePoints: Codable {
@@ -208,7 +163,7 @@ public struct KredsQuotePoints: Codable {
     public let appliedValueUsd: KredsQuoteValue?
     public let appliedValuePreferred: KredsQuoteValue?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case requestedCents = "requested_cents"
         case appliedCents = "applied_cents"
         case appliedValue = "applied_value"
@@ -220,9 +175,4 @@ public struct KredsQuotePoints: Codable {
 public struct KredsQuoteValue: Codable {
     public let amount: String
     public let currency: Currency
-
-    public init(amount: String, currency: Currency) {
-        self.amount = amount
-        self.currency = currency
-    }
 }

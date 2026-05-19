@@ -1,6 +1,8 @@
 //
 //  RegisterCustomerResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/02/17.
 //
 
 import Foundation
@@ -13,15 +15,8 @@ public struct RegisterCustomerResponse: Codable {
     public var email: String = ""
     public var referralCode: String?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case message, success, email
         case referralCode = "referral_code"
-    }
-
-    public init(message: String? = nil, success: Bool = false, email: String = "", referralCode: String? = nil) {
-        self.message = message
-        self.success = success
-        self.email = email
-        self.referralCode = referralCode
     }
 }

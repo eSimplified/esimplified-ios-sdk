@@ -1,6 +1,8 @@
 //
 //  UpdateEsimResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/05/29.
 //
 
 import Foundation
@@ -9,8 +11,4 @@ import Foundation
 
 public struct UpdateEsimResponse: Codable {
     public var message: String?
-
-    public init(message: String? = nil) {
-        self.message = message
-    }
 }

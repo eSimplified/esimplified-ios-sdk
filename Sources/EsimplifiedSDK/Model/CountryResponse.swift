@@ -1,6 +1,8 @@
 //
-//  CountryResponse.swift
-//  EsimplifiedSDK
+//  CountriesResponse.swift
+//  KnowRoaming
+//
+//  Created by Kieran on 2024/09/26.
 //
 
 import Foundation
@@ -13,16 +15,9 @@ public struct CountryResponse: Codable {
     public let previous: String?
     public let countries: [Country]
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case count, next, previous
         case countries = "results"
-    }
-
-    public init(count: Int, next: String?, previous: String?, countries: [Country]) {
-        self.count = count
-        self.next = next
-        self.previous = previous
-        self.countries = countries
     }
 }
 
@@ -40,7 +35,7 @@ public struct Country: Codable, Hashable, Identifiable {
     public let currency: String?
     public let currencyObject: Currency?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case countryName = "country_name"
         case countryNameSlug = "country_name_slug"
         case countryCode = "country_code"
@@ -51,18 +46,33 @@ public struct Country: Codable, Hashable, Identifiable {
         case currencyObject = "currency_obj"
         case currency
     }
+}
 
-    public init(countryName: String, countryNameSlug: String = "", countryCode: String = "",
-                countryFlag: String = "", countryFlagCss: String = "", isRegion: Bool = false,
-                fromPrice: String? = nil, currency: String? = nil, currencyObject: Currency? = nil) {
+extension Country {
+    public init(countryName: String) {
+        self.countryName = countryName
+        self.countryNameSlug = ""
+        self.countryCode = ""
+        self.countryFlag = ""
+        self.countryFlagCss = ""
+        self.isRegion = false
+        self.fromPrice = nil
+        self.currency = nil
+        self.currencyObject = nil
+    }
+}
+
+// USED for deeplinks
+extension Country {
+    public init(countryName: String, countryNameSlug: String, countryCode: String) {
         self.countryName = countryName
         self.countryNameSlug = countryNameSlug
         self.countryCode = countryCode
-        self.countryFlag = countryFlag
-        self.countryFlagCss = countryFlagCss
-        self.isRegion = isRegion
-        self.fromPrice = fromPrice
-        self.currency = currency
-        self.currencyObject = currencyObject
+        self.countryFlag = ""
+        self.countryFlagCss = ""
+        self.isRegion = false
+        self.fromPrice = nil
+        self.currency = nil
+        self.currencyObject = nil
     }
 }

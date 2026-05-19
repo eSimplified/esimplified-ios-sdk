@@ -1,6 +1,8 @@
 //
 //  OrderResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/03/06.
 //
 
 import Foundation
@@ -13,16 +15,9 @@ public struct OrdersResponse: Codable {
     public let previous: String?
     public let orders: [Order]
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case count, next, previous
         case orders = "results"
-    }
-
-    public init(count: Int, next: String?, previous: String?, orders: [Order]) {
-        self.count = count
-        self.next = next
-        self.previous = previous
-        self.orders = orders
     }
 }
 
@@ -57,7 +52,7 @@ public struct Order: Codable, Identifiable {
         orderType == "TOP UP" ? .topUp : .buy
     }
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case user, country, esim
         case orderNumber = "order_number"
         case orderUUID = "order_uuid"
@@ -118,23 +113,12 @@ public struct EsimInfo: Codable {
     public let assignedDate: String
     public let premium: Bool
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case iccid, country, premium
         case matchingID = "matching_id"
         case androidSha = "android_sha"
         case smDpAddress = "sm_dp_address"
         case assignedDate = "assigned_date"
-    }
-
-    public init(iccid: String, country: String, matchingID: String, androidSha: Bool,
-                smDpAddress: String, assignedDate: String, premium: Bool) {
-        self.iccid = iccid
-        self.country = country
-        self.matchingID = matchingID
-        self.androidSha = androidSha
-        self.smDpAddress = smDpAddress
-        self.assignedDate = assignedDate
-        self.premium = premium
     }
 }
 
@@ -147,17 +131,9 @@ public struct PurchaseCountry: Codable {
     public let flag: String
     public let isRegion: Bool
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case iso, name, iso3, flag
         case isRegion = "is_region"
-    }
-
-    public init(iso: String, name: String, iso3: String, flag: String, isRegion: Bool) {
-        self.iso = iso
-        self.name = name
-        self.iso3 = iso3
-        self.flag = flag
-        self.isRegion = isRegion
     }
 }
 

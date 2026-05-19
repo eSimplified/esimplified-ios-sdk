@@ -1,6 +1,8 @@
 //
 //  PackageResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2024/09/26.
 //
 
 import Foundation
@@ -14,18 +16,10 @@ public struct PackageResponse: Codable {
     public let promoCode: PromoCodeResponse?
     public let packages: [Package]
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case count, next, previous
         case promoCode = "promo_code"
         case packages = "results"
-    }
-
-    public init(count: Int, next: String?, previous: String?, promoCode: PromoCodeResponse?, packages: [Package]) {
-        self.count = count
-        self.next = next
-        self.previous = previous
-        self.promoCode = promoCode
-        self.packages = packages
     }
 }
 
@@ -62,11 +56,19 @@ public struct Package: Codable, Hashable {
         discountedPrice != nil
     }
 
+    public var formattedDataAndValidity: String {
+        name.formattedPackageName
+    }
+
+    public var formattedData: String {
+        hasUnlimitedPackage ? "Unlimited" : "\((dataGB.dropLast(3))) GB"
+    }
+
     public var hasUnlimitedPackage: Bool {
         dataGB == "-1.00"
     }
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case name, price, country, network, currency
         case dataGB = "data_GB"
         case currencyObject = "currency_obj"
@@ -146,11 +148,6 @@ public struct Package: Codable, Hashable {
 public struct Currency: Codable, Hashable {
     public let symbol: String
     public let iso: String
-
-    public init(symbol: String, iso: String) {
-        self.symbol = symbol
-        self.iso = iso
-    }
 }
 
 // MARK: Supported Country Model
@@ -159,23 +156,17 @@ public struct SupportedCountry: Codable, Hashable {
     public let countryName: String
     public let countryCode: String
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case countryName = "country_name"
         case countryCode = "country_code"
     }
-
-    public init(countryName: String, countryCode: String) {
-        self.countryName = countryName
-        self.countryCode = countryCode
-    }
 }
 
-// MARK: AnyCodable Helper
+// Helper to decode Any type
+private struct AnyCodable: Decodable {
+    let value: Any
 
-public struct AnyCodable: Decodable {
-    public let value: Any
-
-    public init(from decoder: Decoder) throws {
+    init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         if let string = try? container.decode(String.self) {
             value = string
@@ -183,12 +174,10 @@ public struct AnyCodable: Decodable {
             value = double
         } else if let int = try? container.decode(Int.self) {
             value = int
-        } else if let bool = try? container.decode(Bool.self) {
-            value = bool
         } else {
             throw DecodingError.dataCorruptedError(
                 in: container,
-                debugDescription: "Cannot decode value"
+                debugDescription: "Cannot decode value as String, Double, or Int"
             )
         }
     }

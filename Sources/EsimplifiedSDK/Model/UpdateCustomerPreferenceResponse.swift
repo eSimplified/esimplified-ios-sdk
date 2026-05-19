@@ -1,17 +1,19 @@
 //
 //  UpdateCustomerPreferenceResponse.swift
-//  EsimplifiedSDK
+//  KnowRoaming
+//
+//  Created by Kieran on 2025/11/19.
 //
 
 import Foundation
 
-// MARK: Update Customer Preferences Request
+// MARK: Update Customer Request
 
 public struct UpdateCustomerPreferencesRequest: Encodable {
     public var preferredLanguage: String?
     public var preferredCurrency: String?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case preferredLanguage = "preferred_language"
         case preferredCurrency = "preferred_currency"
     }

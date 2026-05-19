@@ -16,7 +16,6 @@ final class PaymentsRepositoryImpl: PaymentsRepositoryType {
     func fetchPayment(
         transactionType: TransactionType,
         packageTypeId: Int,
-        email: String,
         iccid: String?,
         autoTopUp: Bool,
         savePaymentDetail: Bool,
@@ -24,12 +23,12 @@ final class PaymentsRepositoryImpl: PaymentsRepositoryType {
     ) async throws -> PaymentData {
         let paymentBody = PaymentRequest(
             type: transactionType,
-            packageTypeId: String(packageTypeId),
+            package_type_id: String(packageTypeId),
             iccid: iccid,
-            customer: CustomerEmail(email: email),
-            autoTopUp: autoTopUp,
-            savePaymentMethod: savePaymentDetail,
-            loyaltyPointsAmount: loyaltyPointsAmount
+            customer: CustomerEmail(email: ""),
+            auto_top_up: autoTopUp,
+            save_payment_method: savePaymentDetail,
+            loyalty_points_amount: loyaltyPointsAmount
         )
         let response: PaymentResponse = try await client.fetch(
             endpoint: .payments,
@@ -41,8 +40,8 @@ final class PaymentsRepositoryImpl: PaymentsRepositoryType {
 
     func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse {
         let quoteRequest = KredsQuoteRequest(
-            packageTypeId: packageTypeId,
-            loyaltyPointsAmount: loyaltyPointsAmount
+            package_type_id: packageTypeId,
+            loyalty_points_amount: loyaltyPointsAmount
         )
         return try await client.fetch(
             endpoint: .paymentsQuote,
