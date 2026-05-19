@@ -82,6 +82,54 @@ public struct Order: Codable, Identifiable {
         case loyaltyPointsSpent = "points_spent"
     }
 
+    public init(
+        user: String,
+        esim: EsimInfo,
+        orderNumber: Int,
+        orderUUID: String,
+        orderType: String,
+        packageID: String,
+        finalPrice: String,
+        conversionTracked: Bool,
+        packageName: String,
+        purchaseDate: String,
+        purchasePrice: String,
+        discountCode: String,
+        discountAmount: String,
+        purchaseCurrency: String,
+        purchaseCurrencyObject: Currency,
+        paymentMethod: PaymentMethod,
+        purchaseCountry: PurchaseCountry? = nil,
+        packageTypeID: Int,
+        paymentStatus: String,
+        country: Country,
+        loyaltyPointsEarned: LoyaltyPointsDetail? = nil,
+        loyaltyPointsSpent: LoyaltyPointsDetail? = nil
+    ) {
+        self.user = user
+        self.esim = esim
+        self.orderNumber = orderNumber
+        self.orderUUID = orderUUID
+        self.orderType = orderType
+        self.packageID = packageID
+        self.finalPrice = finalPrice
+        self.conversionTracked = conversionTracked
+        self.packageName = packageName
+        self.purchaseDate = purchaseDate
+        self.purchasePrice = purchasePrice
+        self.discountCode = discountCode
+        self.discountAmount = discountAmount
+        self.purchaseCurrency = purchaseCurrency
+        self.purchaseCurrencyObject = purchaseCurrencyObject
+        self.paymentMethod = paymentMethod
+        self.purchaseCountry = purchaseCountry
+        self.packageTypeID = packageTypeID
+        self.paymentStatus = paymentStatus
+        self.country = country
+        self.loyaltyPointsEarned = loyaltyPointsEarned
+        self.loyaltyPointsSpent = loyaltyPointsSpent
+    }
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         user = try container.decode(String.self, forKey: .user)

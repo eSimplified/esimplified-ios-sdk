@@ -100,6 +100,60 @@ public struct Package: Codable, Hashable {
         case earnPercentage = "earn_percentage"
     }
 
+    public init(
+        name: String,
+        price: String,
+        convertedPrice: Double? = nil,
+        dataGB: String,
+        country: Country,
+        network: [String]? = nil,
+        currency: String,
+        currencyObject: Currency,
+        planType: String,
+        kycDisplay: String,
+        packageSlug: String,
+        validityDays: Int,
+        validityDaysDisplay: String,
+        packageTypeID: Int,
+        bestConnectivity: String,
+        activationPolicy: String,
+        supportedCountries: [SupportedCountry]? = nil,
+        nameAdditionalText: String = "",
+        discountLabel: String = "",
+        discountedPrice: String? = nil,
+        discountPercentage: String? = nil,
+        earnPercentage: Double? = nil,
+        promoCode: PromoCodeResponse? = nil,
+        dataCap: String? = nil,
+        throttleSpeed: String? = nil
+    ) {
+        self.name = name
+        self.price = price
+        self.convertedPrice = convertedPrice
+        self.dataGB = dataGB
+        self.country = country
+        self.network = network
+        self.currency = currency
+        self.currencyObject = currencyObject
+        self.planType = planType
+        self.kycDisplay = kycDisplay
+        self.packageSlug = packageSlug
+        self.validityDays = validityDays
+        self.validityDaysDisplay = validityDaysDisplay
+        self.packageTypeID = packageTypeID
+        self.bestConnectivity = bestConnectivity
+        self.activationPolicy = activationPolicy
+        self.supportedCountries = supportedCountries
+        self.nameAdditionalText = nameAdditionalText
+        self.discountLabel = discountLabel
+        self.discountedPrice = discountedPrice
+        self.discountPercentage = discountPercentage
+        self.earnPercentage = earnPercentage
+        self.promoCode = promoCode
+        self.dataCap = dataCap
+        self.throttleSpeed = throttleSpeed
+    }
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         name = try container.decode(String.self, forKey: .name)

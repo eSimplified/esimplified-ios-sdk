@@ -42,6 +42,28 @@ public struct Country: Codable, Hashable, Identifiable {
     public let currency: String?
     public let currencyObject: Currency?
 
+    public init(
+        countryName: String,
+        countryNameSlug: String,
+        countryCode: String,
+        countryFlag: String,
+        countryFlagCss: String,
+        isRegion: Bool,
+        fromPrice: String? = nil,
+        currency: String? = nil,
+        currencyObject: Currency? = nil
+    ) {
+        self.countryName = countryName
+        self.countryNameSlug = countryNameSlug
+        self.countryCode = countryCode
+        self.countryFlag = countryFlag
+        self.countryFlagCss = countryFlagCss
+        self.isRegion = isRegion
+        self.fromPrice = fromPrice
+        self.currency = currency
+        self.currencyObject = currencyObject
+    }
+
     enum CodingKeys: String, CodingKey {
         case countryName = "country_name"
         case countryNameSlug = "country_name_slug"

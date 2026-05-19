@@ -39,6 +39,20 @@ public struct LoyaltyPointsDetail: Codable {
         case amountLocalCurrencyCents = "amount_local_currency_cents"
     }
 
+    public init(
+        amount: String,
+        amountLocalCurrency: String? = nil,
+        amountLocalCurrencyCents: Int? = nil,
+        currency: Currency,
+        original: LoyaltyPointsOriginal? = nil
+    ) {
+        self.amount = amount
+        self.amountLocalCurrency = amountLocalCurrency
+        self.amountLocalCurrencyCents = amountLocalCurrencyCents
+        self.currency = currency
+        self.original = original
+    }
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         amountLocalCurrency = try container.decodeIfPresent(String.self, forKey: .amountLocalCurrency)

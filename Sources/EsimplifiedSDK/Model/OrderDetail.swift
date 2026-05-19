@@ -73,6 +73,72 @@ public struct OrderDetail: Codable {
         case loyaltyPointsSpent = "points_spent"
     }
 
+    public init(
+        iccid: String? = nil,
+        qrCode: String,
+        smDpAddress: String,
+        activationCode: String,
+        countryName: String,
+        countryCode: String,
+        country: Country,
+        orderNumber: Int,
+        orderType: String,
+        orderDate: String,
+        orderStatus: String,
+        purchasePrice: String,
+        transactionId: String? = nil,
+        purchaseCurrency: String,
+        purchaseCurrencyObject: Currency,
+        packageName: String,
+        packageTypeId: Int,
+        packageDataSize: Double,
+        packageValidity: Int,
+        discountAmount: String,
+        finalPrice: String,
+        discountCode: String,
+        customerId: String,
+        conversionTracked: Bool,
+        passwordResetEncoded: String? = nil,
+        paymentMethod: PaymentMethod,
+        package: Package,
+        qrCodeImageBase64: String? = nil,
+        profile: EsimProfile,
+        loyaltyPointsEarned: LoyaltyPointsDetail? = nil,
+        loyaltyPointsSpent: LoyaltyPointsDetail? = nil
+    ) {
+        self.iccid = iccid
+        self.qrCode = qrCode
+        self.smDpAddress = smDpAddress
+        self.activationCode = activationCode
+        self.countryName = countryName
+        self.countryCode = countryCode
+        self.country = country
+        self.orderNumber = orderNumber
+        self.orderType = orderType
+        self.orderDate = orderDate
+        self.orderStatus = orderStatus
+        self.purchasePrice = purchasePrice
+        self.transactionId = transactionId
+        self.purchaseCurrency = purchaseCurrency
+        self.purchaseCurrencyObject = purchaseCurrencyObject
+        self.packageName = packageName
+        self.packageTypeId = packageTypeId
+        self.packageDataSize = packageDataSize
+        self.packageValidity = packageValidity
+        self.discountAmount = discountAmount
+        self.finalPrice = finalPrice
+        self.discountCode = discountCode
+        self.customerId = customerId
+        self.conversionTracked = conversionTracked
+        self.passwordResetEncoded = passwordResetEncoded
+        self.paymentMethod = paymentMethod
+        self.package = package
+        self.qrCodeImageBase64 = qrCodeImageBase64
+        self.profile = profile
+        self.loyaltyPointsEarned = loyaltyPointsEarned
+        self.loyaltyPointsSpent = loyaltyPointsSpent
+    }
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         iccid = try container.decodeIfPresent(String.self, forKey: .iccid)
