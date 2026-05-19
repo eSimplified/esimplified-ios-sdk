@@ -106,3 +106,22 @@ public struct OrderDetail: Codable {
         loyaltyPointsSpent = try container.decodeIfPresent(LoyaltyPointsDetail.self, forKey: .loyaltyPointsSpent)
     }
 }
+
+// MARK: - Computed Properties
+
+public extension OrderDetail {
+    var packagePurchaseDate: Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
+        return formatter.date(from: orderDate)
+    }
+
+    var packageExpiryDate: Date? {
+        guard let packagePurchaseDate else { return nil }
+        return Calendar.current.date(byAdding: .day, value: packageValidity, to: packagePurchaseDate)
+    }
+
+    var orderTypeEnum: String {
+        orderType
+    }
+}
