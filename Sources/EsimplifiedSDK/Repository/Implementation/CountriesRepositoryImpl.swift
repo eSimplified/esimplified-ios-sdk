@@ -8,12 +8,18 @@ import Foundation
 final class CountriesRepositoryImpl: CountriesRepositoryType {
 
     private let client: HTTPClient
+    private let cache: SdkCache
 
-    init(client: HTTPClient) {
+    init(client: HTTPClient, cache: SdkCache) {
         self.client = client
+        self.cache = cache
     }
 
-    func fetchAllCountries() async throws -> [Country] {
+    func fetchAllCountries(forceRefresh: Bool = false) async throws -> [Country] {
+        let cacheKey = "countries_all"
+        if !forceRefresh, let cached: [Country] = cache.get(cacheKey) {
+            return cached
+        }
         let parameters = ["limit": "1000"]
         let response: CountryResponse = try await client.fetch(
             endpoint: .countries,
@@ -21,7 +27,9 @@ final class CountriesRepositoryImpl: CountriesRepositoryType {
             parameters: parameters,
             requiresAuth: false
         )
-        return response.countries
+        let countries = response.countries
+        cache.set(cacheKey, value: countries, ttl: 86400)
+        return countries
     }
 
     func searchCountries(searchTerm: String) async throws -> [Country] {

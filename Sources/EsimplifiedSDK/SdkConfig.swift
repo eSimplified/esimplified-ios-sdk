@@ -13,6 +13,8 @@ public struct SdkConfig {
     public let clientSecret: String
     public let awsWafToken: String
     public let enableLogging: Bool
+    public let enableCaching: Bool
+    public let defaultCacheTTL: TimeInterval
     public let customHeadersProvider: (() async -> [String: String])?
 
     public init(
@@ -23,6 +25,8 @@ public struct SdkConfig {
         clientSecret: String,
         awsWafToken: String = "",
         enableLogging: Bool = false,
+        enableCaching: Bool = true,
+        defaultCacheTTL: TimeInterval = 3600,
         customHeadersProvider: (() async -> [String: String])? = nil
     ) {
         self.environment = environment
@@ -32,6 +36,8 @@ public struct SdkConfig {
         self.clientSecret = clientSecret
         self.awsWafToken = awsWafToken
         self.enableLogging = enableLogging
+        self.enableCaching = enableCaching
+        self.defaultCacheTTL = defaultCacheTTL
         self.customHeadersProvider = customHeadersProvider
     }
 

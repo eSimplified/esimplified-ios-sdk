@@ -1,5 +1,5 @@
 public enum EsimplifiedSDKVersion {
-    public static let version = "1.0.0"
+    public static let version = "1.1.0"
 }
 
 public final class EsimplifiedSdk {
@@ -36,6 +36,8 @@ public final class EsimplifiedSdk {
             clientSecret: config.clientSecret,
             awsWafToken: config.awsWafToken,
             enableLogging: config.enableLogging,
+            enableCaching: config.enableCaching,
+            defaultCacheTTL: config.defaultCacheTTL,
             customHeadersProvider: customHeadersProvider ?? config.customHeadersProvider
         )
 
@@ -50,14 +52,16 @@ public final class EsimplifiedSdk {
         self.config = config
         self.sessionProvider = sessionProvider
 
+        let cache = config.enableCaching ? SdkCache(defaultTTL: config.defaultCacheTTL) : SdkCache(defaultTTL: 0)
+
         self.authRepository = AuthRepositoryImpl(client: client, sessionProvider: sessionProvider, config: config)
-        self.countriesRepository = CountriesRepositoryImpl(client: client)
-        self.packagesRepository = PackagesRepositoryImpl(client: client)
-        self.esimsRepository = EsimsRepositoryImpl(client: client)
-        self.ordersRepository = OrdersRepositoryImpl(client: client)
+        self.countriesRepository = CountriesRepositoryImpl(client: client, cache: cache)
+        self.packagesRepository = PackagesRepositoryImpl(client: client, cache: cache)
+        self.esimsRepository = EsimsRepositoryImpl(client: client, cache: cache)
+        self.ordersRepository = OrdersRepositoryImpl(client: client, cache: cache)
         self.paymentsRepository = PaymentsRepositoryImpl(client: client)
         self.promoCodeRepository = PromoCodeRepositoryImpl(client: client)
-        self.loyaltyRepository = LoyaltyRepositoryImpl(client: client)
+        self.loyaltyRepository = LoyaltyRepositoryImpl(client: client, cache: cache)
         self.userRepository = UserRepositoryImpl(client: client)
         self.notificationRepository = NotificationRepositoryImpl(client: client)
         self.visaRewardsRepository = VisaRewardsRepositoryImpl(client: client)

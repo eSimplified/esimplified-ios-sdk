@@ -35,6 +35,19 @@ struct EsimplifiedSdkInitTests {
         #expect(sdk.config.environment == .production)
     }
 
+    @Test("Caching is enabled by default")
+    func cachingEnabled() {
+        let config = SdkConfig(environment: .staging, clientName: "test", clientId: "id", clientSecret: "secret")
+        #expect(config.enableCaching)
+        #expect(config.defaultCacheTTL == 3600)
+    }
+
+    @Test("Caching can be disabled")
+    func cachingDisabled() {
+        let config = SdkConfig(environment: .staging, clientName: "test", clientId: "id", clientSecret: "secret", enableCaching: false)
+        #expect(!config.enableCaching)
+    }
+
     @Test("All 13 repositories are accessible")
     func allRepositories() {
         let sdk = EsimplifiedSdk.initialize(

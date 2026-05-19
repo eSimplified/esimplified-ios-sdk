@@ -3,8 +3,8 @@ import Testing
 
 @Suite("SDK Version")
 struct EsimplifiedSDKTests {
-    @Test("Version is 1.0.0")
+    @Test("Version is 1.1.0")
     func version() {
-        #expect(EsimplifiedSDKVersion.version == "1.0.0")
+        #expect(EsimplifiedSDKVersion.version == "1.1.0")
     }
 }

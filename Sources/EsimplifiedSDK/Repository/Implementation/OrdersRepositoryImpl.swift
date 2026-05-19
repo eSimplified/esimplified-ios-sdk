@@ -8,36 +8,50 @@ import Foundation
 final class OrdersRepositoryImpl: OrdersRepositoryType {
 
     private let client: HTTPClient
+    private let cache: SdkCache
 
-    init(client: HTTPClient) {
+    init(client: HTTPClient, cache: SdkCache) {
         self.client = client
+        self.cache = cache
     }
 
-    func fetchOrders(withLoyaltyPoints: Bool) async throws -> [Order] {
+    func fetchOrders(forceRefresh: Bool = false, withLoyaltyPoints: Bool) async throws -> [Order] {
+        let cacheKey = "orders_\(withLoyaltyPoints)"
+        if !forceRefresh, let cached: [Order] = cache.get(cacheKey) {
+            return cached
+        }
         let parameters: [String: String] = withLoyaltyPoints ? ["used_points": "true"] : [:]
         let response: OrdersResponse = try await client.fetch(
             endpoint: .customerOrders,
             method: .GET,
             parameters: parameters
         )
-        return response.orders
+        let orders = response.orders
+        cache.set(cacheKey, value: orders, ttl: 300)
+        return orders
     }
 
-    func fetchOrder(orderUUID: String) async throws -> OrderDetail {
+    func fetchOrder(orderUUID: String, forceRefresh: Bool = false) async throws -> OrderDetail {
+        let cacheKey = "order_\(orderUUID)"
+        if !forceRefresh, let cached: OrderDetail = cache.get(cacheKey) {
+            return cached
+        }
         let parameters = [
             "include_base64_qr_code": "true",
             "show_esim_details": "true"
         ]
-        return try await client.fetch(
+        let order: OrderDetail = try await client.fetch(
             endpoint: .customerOrders,
             method: .GET,
             parameters: parameters,
             id: orderUUID
         )
+        cache.set(cacheKey, value: order)
+        return order
     }
 
-    func trackOrder(orderUUID: String) async throws -> TrackedOrderResponse {
-        try await client.fetch(
+    func trackOrder(orderUUID: String) async throws {
+        let _: TrackedOrderResponse = try await client.fetch(
             endpoint: .customerOrders,
             method: .POST,
             id: orderUUID
