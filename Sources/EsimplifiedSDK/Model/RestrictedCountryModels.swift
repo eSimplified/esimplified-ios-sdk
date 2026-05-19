@@ -20,6 +20,11 @@ public struct RestrictedFor: Codable {
     public let countryCode: String
     public let countryName: String
 
+    public init(countryCode: String, countryName: String) {
+        self.countryCode = countryCode
+        self.countryName = countryName
+    }
+
     enum CodingKeys: String, CodingKey {
         case countryCode = "country_code"
         case countryName = "country_name"
@@ -32,6 +37,12 @@ public struct RestrictedCountry: Codable {
     public let countryCode: String
     public let restrictionType: RestrictionType
     public let restrictedFor: [RestrictedFor]?
+
+    public init(countryCode: String, restrictionType: RestrictionType, restrictedFor: [RestrictedFor]? = nil) {
+        self.countryCode = countryCode
+        self.restrictionType = restrictionType
+        self.restrictedFor = restrictedFor
+    }
 
     enum CodingKeys: String, CodingKey {
         case countryCode = "country_code"

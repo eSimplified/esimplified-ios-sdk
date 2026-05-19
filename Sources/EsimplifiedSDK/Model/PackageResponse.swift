@@ -16,6 +16,14 @@ public struct PackageResponse: Codable {
     public let promoCode: PromoCodeResponse?
     public let packages: [Package]
 
+    public init(count: Int, next: String? = nil, previous: String? = nil, promoCode: PromoCodeResponse? = nil, packages: [Package]) {
+        self.count = count
+        self.next = next
+        self.previous = previous
+        self.promoCode = promoCode
+        self.packages = packages
+    }
+
     enum CodingKeys: String, CodingKey {
         case count, next, previous
         case promoCode = "promo_code"
@@ -148,6 +156,11 @@ public struct Package: Codable, Hashable {
 public struct Currency: Codable, Hashable {
     public let symbol: String
     public let iso: String
+
+    public init(symbol: String, iso: String) {
+        self.symbol = symbol
+        self.iso = iso
+    }
 }
 
 // MARK: Supported Country Model
@@ -155,6 +168,11 @@ public struct Currency: Codable, Hashable {
 public struct SupportedCountry: Codable, Hashable {
     public let countryName: String
     public let countryCode: String
+
+    public init(countryName: String, countryCode: String) {
+        self.countryName = countryName
+        self.countryCode = countryCode
+    }
 
     enum CodingKeys: String, CodingKey {
         case countryName = "country_name"

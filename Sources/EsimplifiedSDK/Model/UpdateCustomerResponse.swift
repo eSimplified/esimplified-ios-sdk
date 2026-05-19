@@ -12,6 +12,11 @@ import Foundation
 public struct UpdateCustomerResponse: Codable {
     public var updated: Bool = false
     public var customer: User? = User()
+
+    public init(updated: Bool = false, customer: User? = User()) {
+        self.updated = updated
+        self.customer = customer
+    }
 }
 
 // MARK: Update Customer Request

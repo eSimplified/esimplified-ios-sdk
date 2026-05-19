@@ -15,6 +15,13 @@ public struct RegisterCustomerResponse: Codable {
     public var email: String = ""
     public var referralCode: String?
 
+    public init(message: String? = nil, success: Bool = false, email: String = "", referralCode: String? = nil) {
+        self.message = message
+        self.success = success
+        self.email = email
+        self.referralCode = referralCode
+    }
+
     enum CodingKeys: String, CodingKey {
         case message, success, email
         case referralCode = "referral_code"

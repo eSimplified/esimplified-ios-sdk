@@ -17,6 +17,15 @@ public struct SignInCustomerResponse: Codable {
     public var refreshToken: String? = ""
     public var user: User? = User()
 
+    public init(accessToken: String = "", tokenExpiresIn: Int = 0, tokenType: String = "", scope: String = "", refreshToken: String? = "", user: User? = User()) {
+        self.accessToken = accessToken
+        self.tokenExpiresIn = tokenExpiresIn
+        self.tokenType = tokenType
+        self.scope = scope
+        self.refreshToken = refreshToken
+        self.user = user
+    }
+
     enum CodingKeys: String, CodingKey {
         case user, scope
         case accessToken = "access_token"

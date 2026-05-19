@@ -16,4 +16,13 @@ public struct RegisterUserRequest: Codable {
     public let mobileNumber: String
     public let password: String
     public let marketingOptIn: String
+
+    public init(firstName: String, lastName: String, email: String, mobileNumber: String, password: String, marketingOptIn: String) {
+        self.firstName = firstName
+        self.lastName = lastName
+        self.email = email
+        self.mobileNumber = mobileNumber
+        self.password = password
+        self.marketingOptIn = marketingOptIn
+    }
 }

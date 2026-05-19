@@ -15,6 +15,13 @@ public struct CountryResponse: Codable {
     public let previous: String?
     public let countries: [Country]
 
+    public init(count: Int, next: String? = nil, previous: String? = nil, countries: [Country]) {
+        self.count = count
+        self.next = next
+        self.previous = previous
+        self.countries = countries
+    }
+
     enum CodingKeys: String, CodingKey {
         case count, next, previous
         case countries = "results"

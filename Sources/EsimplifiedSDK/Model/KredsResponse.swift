@@ -13,6 +13,11 @@ public struct KredsLoyaltyBalanceResponse: Codable {
     public let totalLoyaltyPoints: Int
     public let totalLoyaltyPointsDetail: LoyaltyPointsDetail
 
+    public init(totalLoyaltyPoints: Int, totalLoyaltyPointsDetail: LoyaltyPointsDetail) {
+        self.totalLoyaltyPoints = totalLoyaltyPoints
+        self.totalLoyaltyPointsDetail = totalLoyaltyPointsDetail
+    }
+
     enum CodingKeys: String, CodingKey {
         case totalLoyaltyPoints = "total_loyalty_points"
         case totalLoyaltyPointsDetail = "total_loyalty_points_detail"
@@ -56,6 +61,11 @@ public struct LoyaltyPointsDetail: Codable {
 public struct LoyaltyPointsOriginal: Codable {
     public let amountUSD: String
     public let currency: Currency
+
+    public init(amountUSD: String, currency: Currency) {
+        self.amountUSD = amountUSD
+        self.currency = currency
+    }
 
     enum CodingKeys: String, CodingKey {
         case amountUSD = "amount_usd"

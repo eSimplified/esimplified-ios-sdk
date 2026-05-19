@@ -13,6 +13,11 @@ public struct TrackedOrderResponse: Codable {
     public var detail: String
     public var conversionTracked: Bool
 
+    public init(detail: String, conversionTracked: Bool) {
+        self.detail = detail
+        self.conversionTracked = conversionTracked
+    }
+
     enum CodingKeys: String, CodingKey {
         case detail
         case conversionTracked = "conversion_tracked"

@@ -20,6 +20,18 @@ public struct VisaValidateResponse: Codable, Hashable {
     public var validityDays: Int?
     public var dataGB: Int?
 
+    public init(eligible: Bool = false, usedCount: Int? = 0, rewardType: RewardType? = .unknown, allowedCount: Int? = 0, remainingCount: Int? = 0, redeemed: Bool? = false, detail: String? = "", validityDays: Int? = nil, dataGB: Int? = nil) {
+        self.eligible = eligible
+        self.usedCount = usedCount
+        self.rewardType = rewardType
+        self.allowedCount = allowedCount
+        self.remainingCount = remainingCount
+        self.redeemed = redeemed
+        self.detail = detail
+        self.validityDays = validityDays
+        self.dataGB = dataGB
+    }
+
     public enum RewardType: String, Codable {
         case unknown
         case discount = "DISCOUNT"

@@ -18,6 +18,16 @@ public struct VisaRewardResponse: Codable, Hashable {
     public var eligible: Bool? = false
     public var status: Int? = 0
 
+    public init(created: Bool? = false, token: String = "", iframeURL: String? = "", correlationId: String? = "", aliasId: String? = "", eligible: Bool? = false, status: Int? = 0) {
+        self.created = created
+        self.token = token
+        self.iframeURL = iframeURL
+        self.correlationId = correlationId
+        self.aliasId = aliasId
+        self.eligible = eligible
+        self.status = status
+    }
+
     enum CodingKeys: String, CodingKey {
         case eligible, status, token
         case created = "created"

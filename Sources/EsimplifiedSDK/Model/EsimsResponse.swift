@@ -15,6 +15,13 @@ public struct EsimsResponse: Codable {
     public let previous: String?
     public let esims: [Esim]
 
+    public init(count: Int, next: String? = nil, previous: String? = nil, esims: [Esim]) {
+        self.count = count
+        self.next = next
+        self.previous = previous
+        self.esims = esims
+    }
+
     enum CodingKeys: String, CodingKey {
         case count, next, previous
         case esims = "results"
@@ -41,6 +48,25 @@ public struct Esim: Codable, Identifiable, Hashable {
     public var profile: EsimProfile?
     public let esimName: String?
     public let autoTopUp: Bool
+
+    public init(iccid: String, country: Country? = nil, orderUUID: String? = nil, androidSha: Bool, archived: Bool, orderNumber: String? = nil, assignedDate: String, packageDetails: [PackageDetail]? = nil, dataUsageRemainingBytes: Int, dataUsageRemainingGigabytes: Double, dateActivatedEpoch: Int? = nil, dateExpiryEpoch: Int? = nil, daysLeftToExpiry: Int? = nil, profile: EsimProfile? = nil, esimName: String? = nil, autoTopUp: Bool) {
+        self.iccid = iccid
+        self.country = country
+        self.orderUUID = orderUUID
+        self.androidSha = androidSha
+        self.archived = archived
+        self.orderNumber = orderNumber
+        self.assignedDate = assignedDate
+        self.packageDetails = packageDetails
+        self.dataUsageRemainingBytes = dataUsageRemainingBytes
+        self.dataUsageRemainingGigabytes = dataUsageRemainingGigabytes
+        self.dateActivatedEpoch = dateActivatedEpoch
+        self.dateExpiryEpoch = dateExpiryEpoch
+        self.daysLeftToExpiry = daysLeftToExpiry
+        self.profile = profile
+        self.esimName = esimName
+        self.autoTopUp = autoTopUp
+    }
 
     public var hasUnlimitedPackage: Bool {
         dataUsageRemainingGigabytes == -1
@@ -85,6 +111,27 @@ public struct PackageDetail: Codable, Identifiable, Hashable {
     public let dataAllowanceGigabytes: Int
     public var dataUsedBytes: Int?
     public let statusMessage: String
+
+    public init(status: String, dateCreatedEpoch: Int, windowActivationStartEpoch: Int, windowActivationEndEpoch: Int, voiceUsageRemainingSeconds: Int, smsUsageRemainingNums: Int, timeAllowanceSeconds: Int, timeAllowanceDays: Int, packageCountryName: String? = nil, packageTypeID: Int, dateExpiryEpoch: Int? = nil, dateTerminatedEpoch: Int? = nil, dateActivatedEpoch: Int? = nil, dataAllowanceBytes: Int, dataUsageRemainingBytes: Int, dataAllowanceGigabytes: Int, dataUsedBytes: Int? = nil, statusMessage: String) {
+        self.status = status
+        self.dateCreatedEpoch = dateCreatedEpoch
+        self.windowActivationStartEpoch = windowActivationStartEpoch
+        self.windowActivationEndEpoch = windowActivationEndEpoch
+        self.voiceUsageRemainingSeconds = voiceUsageRemainingSeconds
+        self.smsUsageRemainingNums = smsUsageRemainingNums
+        self.timeAllowanceSeconds = timeAllowanceSeconds
+        self.timeAllowanceDays = timeAllowanceDays
+        self.packageCountryName = packageCountryName
+        self.packageTypeID = packageTypeID
+        self.dateExpiryEpoch = dateExpiryEpoch
+        self.dateTerminatedEpoch = dateTerminatedEpoch
+        self.dateActivatedEpoch = dateActivatedEpoch
+        self.dataAllowanceBytes = dataAllowanceBytes
+        self.dataUsageRemainingBytes = dataUsageRemainingBytes
+        self.dataAllowanceGigabytes = dataAllowanceGigabytes
+        self.dataUsedBytes = dataUsedBytes
+        self.statusMessage = statusMessage
+    }
 
     public var dataUsageRemainingGigabytes: Int {
         dataUsageRemainingBytes / 1073741824
@@ -172,6 +219,20 @@ public struct EsimProfile: Codable, Hashable {
     public let stateMessage: String
     public let lastOperationDateUTC: String
     public let releaseDateUTC: String
+
+    public init(state: String, lastOperationDate: Int, activationCode: String? = nil, reuseRemainingCount: Int, reuseEnabled: Bool, ccRequired: Bool, releaseDate: Int, stateMessage: String, lastOperationDateUTC: String, releaseDateUTC: String) {
+        self.state = state
+        self.lastOperationDate = lastOperationDate
+        self.activationCode = activationCode
+        self.reuseRemainingCount = reuseRemainingCount
+        self.reuseEnabled = reuseEnabled
+        self.ccRequired = ccRequired
+        self.releaseDate = releaseDate
+        self.stateMessage = stateMessage
+        self.lastOperationDateUTC = lastOperationDateUTC
+        self.releaseDateUTC = releaseDateUTC
+    }
+
     public var esimStatus: EsimStatus {
         EsimStatus(rawValue: state) ?? .enabled
     }

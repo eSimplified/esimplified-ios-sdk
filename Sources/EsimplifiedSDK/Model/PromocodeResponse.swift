@@ -16,6 +16,14 @@ public struct PromoCodeResponse: Codable, Hashable {
     public let detail: String
     public let productType: String?
 
+    public init(isValid: Bool, discountCode: String, discountPercentage: Double, detail: String, productType: String? = nil) {
+        self.isValid = isValid
+        self.discountCode = discountCode
+        self.discountPercentage = discountPercentage
+        self.detail = detail
+        self.productType = productType
+    }
+
     enum CodingKeys: String, CodingKey {
         case detail
         case isValid = "valid"

@@ -15,6 +15,13 @@ public struct OrdersResponse: Codable {
     public let previous: String?
     public let orders: [Order]
 
+    public init(count: Int, next: String? = nil, previous: String? = nil, orders: [Order]) {
+        self.count = count
+        self.next = next
+        self.previous = previous
+        self.orders = orders
+    }
+
     enum CodingKeys: String, CodingKey {
         case count, next, previous
         case orders = "results"
@@ -113,6 +120,16 @@ public struct EsimInfo: Codable {
     public let assignedDate: String
     public let premium: Bool
 
+    public init(iccid: String, country: String, matchingID: String, androidSha: Bool, smDpAddress: String, assignedDate: String, premium: Bool) {
+        self.iccid = iccid
+        self.country = country
+        self.matchingID = matchingID
+        self.androidSha = androidSha
+        self.smDpAddress = smDpAddress
+        self.assignedDate = assignedDate
+        self.premium = premium
+    }
+
     enum CodingKeys: String, CodingKey {
         case iccid, country, premium
         case matchingID = "matching_id"
@@ -130,6 +147,14 @@ public struct PurchaseCountry: Codable {
     public let iso3: String
     public let flag: String
     public let isRegion: Bool
+
+    public init(iso: String, name: String, iso3: String, flag: String, isRegion: Bool) {
+        self.iso = iso
+        self.name = name
+        self.iso3 = iso3
+        self.flag = flag
+        self.isRegion = isRegion
+    }
 
     enum CodingKeys: String, CodingKey {
         case iso, name, iso3, flag

@@ -11,4 +11,8 @@ import Foundation
 
 public struct UpdateEsimResponse: Codable {
     public var message: String?
+
+    public init(message: String? = nil) {
+        self.message = message
+    }
 }

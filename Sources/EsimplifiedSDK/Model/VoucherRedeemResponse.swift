@@ -27,6 +27,11 @@ public struct VoucherRedeemResponse: Codable {
     public let redeemed: Bool
     public let redirectUrl: String?
 
+    public init(redeemed: Bool, redirectUrl: String? = nil) {
+        self.redeemed = redeemed
+        self.redirectUrl = redirectUrl
+    }
+
     public var orderUUID: String? {
         guard let url = redirectUrl else { return nil }
         let components = url.split(separator: "=")

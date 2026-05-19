@@ -14,6 +14,12 @@ public struct ForgotPasswordResponse: Codable {
     public var detail: String = ""
     public var customerID: String? = ""
 
+    public init(email: String = "", detail: String = "", customerID: String? = "") {
+        self.email = email
+        self.detail = detail
+        self.customerID = customerID
+    }
+
     enum CodingKeys: String, CodingKey {
         case detail, email
         case customerID = "customer_id"

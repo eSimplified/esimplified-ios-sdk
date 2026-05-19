@@ -13,6 +13,11 @@ public struct PaymentResponse: Codable {
     public let detail: String
     public let paymentData: PaymentData
 
+    public init(detail: String, paymentData: PaymentData) {
+        self.detail = detail
+        self.paymentData = paymentData
+    }
+
     enum CodingKeys: String, CodingKey {
         case detail
         case paymentData = "data"
@@ -29,6 +34,16 @@ public struct PaymentData: Codable {
     public let ephemeralKey: String?
     public let publishableKey: String?
     public let zeroCharge: Bool?
+
+    public init(uri: String? = nil, orderID: String? = nil, isIntent: Bool? = nil, customerRef: String? = nil, ephemeralKey: String? = nil, publishableKey: String? = nil, zeroCharge: Bool? = nil) {
+        self.uri = uri
+        self.orderID = orderID
+        self.isIntent = isIntent
+        self.customerRef = customerRef
+        self.ephemeralKey = ephemeralKey
+        self.publishableKey = publishableKey
+        self.zeroCharge = zeroCharge
+    }
 
     enum CodingKeys: String, CodingKey {
         case uri
@@ -89,6 +104,15 @@ public struct KredsQuoteResponse: Codable {
     public let points: KredsQuotePoints
     public let notices: [KredsQuoteNotice]?
 
+    public init(packageTypeID: Int? = nil, currency: Currency? = nil, preferredCurrency: Currency? = nil, pricing: KredsQuotePricing, points: KredsQuotePoints, notices: [KredsQuoteNotice]? = nil) {
+        self.packageTypeID = packageTypeID
+        self.currency = currency
+        self.preferredCurrency = preferredCurrency
+        self.pricing = pricing
+        self.points = points
+        self.notices = notices
+    }
+
     enum CodingKeys: String, CodingKey {
         case currency, pricing, points, notices
         case packageTypeID = "package_type_id"
@@ -99,12 +123,23 @@ public struct KredsQuoteResponse: Codable {
 public struct KredsQuoteNotice: Codable {
     public let code: String
     public let message: String
+
+    public init(code: String, message: String) {
+        self.code = code
+        self.message = message
+    }
 }
 
 public struct KredsQuotePricing: Codable {
     public let orderCurrency: KredsQuoteOrderCurrency
     public let usd: KredsQuoteUsdPricing
     public let preferredCurrency: KredsQuotePreferredPricing
+
+    public init(orderCurrency: KredsQuoteOrderCurrency, usd: KredsQuoteUsdPricing, preferredCurrency: KredsQuotePreferredPricing) {
+        self.orderCurrency = orderCurrency
+        self.usd = usd
+        self.preferredCurrency = preferredCurrency
+    }
 
     enum CodingKeys: String, CodingKey {
         case usd
@@ -121,6 +156,16 @@ public struct KredsQuoteOrderCurrency: Codable {
     public let pointsApplied: String?
     public let total: String
     public let currency: Currency?
+
+    public init(exchangeRateToUsd: String? = nil, subtotal: String? = nil, packageDiscount: String? = nil, promoDiscount: String? = nil, pointsApplied: String? = nil, total: String, currency: Currency? = nil) {
+        self.exchangeRateToUsd = exchangeRateToUsd
+        self.subtotal = subtotal
+        self.packageDiscount = packageDiscount
+        self.promoDiscount = promoDiscount
+        self.pointsApplied = pointsApplied
+        self.total = total
+        self.currency = currency
+    }
 
     enum CodingKeys: String, CodingKey {
         case currency
@@ -141,6 +186,15 @@ public struct KredsQuoteUsdPricing: Codable {
     public let total: String
     public let currency: Currency
 
+    public init(subtotal: String? = nil, packageDiscount: String? = nil, promoDiscount: String? = nil, pointsApplied: String? = nil, total: String, currency: Currency) {
+        self.subtotal = subtotal
+        self.packageDiscount = packageDiscount
+        self.promoDiscount = promoDiscount
+        self.pointsApplied = pointsApplied
+        self.total = total
+        self.currency = currency
+    }
+
     enum CodingKeys: String, CodingKey {
         case currency
         case subtotal = "subtotal"
@@ -154,6 +208,11 @@ public struct KredsQuoteUsdPricing: Codable {
 public struct KredsQuotePreferredPricing: Codable {
     public let total: String
     public let currency: Currency
+
+    public init(total: String, currency: Currency) {
+        self.total = total
+        self.currency = currency
+    }
 }
 
 public struct KredsQuotePoints: Codable {
@@ -162,6 +221,14 @@ public struct KredsQuotePoints: Codable {
     public let appliedValue: KredsQuoteValue?
     public let appliedValueUsd: KredsQuoteValue?
     public let appliedValuePreferred: KredsQuoteValue?
+
+    public init(requestedCents: Int? = nil, appliedCents: Int? = nil, appliedValue: KredsQuoteValue? = nil, appliedValueUsd: KredsQuoteValue? = nil, appliedValuePreferred: KredsQuoteValue? = nil) {
+        self.requestedCents = requestedCents
+        self.appliedCents = appliedCents
+        self.appliedValue = appliedValue
+        self.appliedValueUsd = appliedValueUsd
+        self.appliedValuePreferred = appliedValuePreferred
+    }
 
     enum CodingKeys: String, CodingKey {
         case requestedCents = "requested_cents"
@@ -175,4 +242,9 @@ public struct KredsQuotePoints: Codable {
 public struct KredsQuoteValue: Codable {
     public let amount: String
     public let currency: Currency
+
+    public init(amount: String, currency: Currency) {
+        self.amount = amount
+        self.currency = currency
+    }
 }
