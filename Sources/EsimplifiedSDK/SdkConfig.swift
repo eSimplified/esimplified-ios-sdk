@@ -1,0 +1,46 @@
+import Foundation
+
+public enum SdkEnvironment: Equatable {
+    case staging
+    case production
+}
+
+public struct SdkConfig {
+    public let environment: SdkEnvironment
+    public let clientName: String
+    public let apiVersion: String
+    public let clientId: String
+    public let clientSecret: String
+    public let awsWafToken: String
+    public let enableLogging: Bool
+    public let customHeadersProvider: (() async -> [String: String])?
+
+    public init(
+        environment: SdkEnvironment,
+        clientName: String,
+        apiVersion: String = "v2",
+        clientId: String,
+        clientSecret: String,
+        awsWafToken: String = "",
+        enableLogging: Bool = false,
+        customHeadersProvider: (() async -> [String: String])? = nil
+    ) {
+        self.environment = environment
+        self.clientName = clientName
+        self.apiVersion = apiVersion
+        self.clientId = clientId
+        self.clientSecret = clientSecret
+        self.awsWafToken = awsWafToken
+        self.enableLogging = enableLogging
+        self.customHeadersProvider = customHeadersProvider
+    }
+
+    var baseURL: String {
+        switch environment {
+        case .staging:
+            return "https://\(clientName).stage.esimplified.io"
+        case .production:
+            return "https://api.\(clientName).com"
+        }
+    }
+}
