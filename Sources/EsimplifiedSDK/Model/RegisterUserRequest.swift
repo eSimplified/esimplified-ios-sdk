@@ -7,17 +7,17 @@
 
 import Foundation
 
-// MARK: Register User Request
+// MARK: User Registration Request
 
-public struct RegisterUserRequest: Codable {
+public struct UserRegistrationRequest {
     public let firstName: String
     public let lastName: String
     public let email: String
     public let mobileNumber: String
     public let password: String
-    public let marketingOptIn: String
+    public let marketingOptIn: Bool
 
-    public init(firstName: String, lastName: String, email: String, mobileNumber: String, password: String, marketingOptIn: String) {
+    public init(firstName: String, lastName: String, email: String, mobileNumber: String, password: String, marketingOptIn: Bool) {
         self.firstName = firstName
         self.lastName = lastName
         self.email = email
