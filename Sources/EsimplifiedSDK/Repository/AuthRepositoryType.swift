@@ -5,6 +5,11 @@
 
 import Foundation
 
+public enum AuthProvider: String, Codable {
+    case apple
+    case google
+}
+
 public protocol AuthRepositoryType {
     func login(email: String, password: String) async throws -> SignInCustomerResponse
     func loginWithProvider(
@@ -12,7 +17,7 @@ public protocol AuthRepositoryType {
         lastName: String,
         fullName: String,
         email: String,
-        provider: String,
+        provider: AuthProvider,
         providerAccountId: String,
         idToken: String
     ) async throws -> SignInCustomerResponse

@@ -43,7 +43,7 @@ final class AuthRepositoryImpl: AuthRepositoryType {
         lastName: String,
         fullName: String,
         email: String,
-        provider: String,
+        provider: AuthProvider,
         providerAccountId: String,
         idToken: String
     ) async throws -> SignInCustomerResponse {
@@ -53,7 +53,7 @@ final class AuthRepositoryImpl: AuthRepositoryType {
             "last_name": lastName,
             "full_name": fullName,
             "email": email,
-            "provider": provider,
+            "provider": provider.rawValue,
             "provider_account_id": providerAccountId,
             "id_token": idToken,
             "sender": "ios"
