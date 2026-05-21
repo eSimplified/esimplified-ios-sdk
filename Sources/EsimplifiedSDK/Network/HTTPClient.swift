@@ -46,7 +46,7 @@ final class HTTPClient {
 
         try await addHeaders(to: &request, requiresAuth: requiresAuth)
 
-        logger.logRequest(method: method.rawValue, url: url.absoluteString)
+        logger.logRequest(method: method.rawValue, url: url.absoluteString, headers: request.allHTTPHeaderFields, body: request.httpBody)
         let start = Date()
 
         do {
@@ -59,7 +59,8 @@ final class HTTPClient {
                 method: method.rawValue,
                 url: url.absoluteString,
                 statusCode: httpResponse.statusCode,
-                duration: Date().timeIntervalSince(start)
+                duration: Date().timeIntervalSince(start),
+                body: data
             )
 
             if (httpResponse.statusCode == 401 || httpResponse.statusCode == 403),
