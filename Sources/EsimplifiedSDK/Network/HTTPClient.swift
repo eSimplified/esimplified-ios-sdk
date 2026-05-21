@@ -111,6 +111,8 @@ final class HTTPClient {
 
         if let id, !endpoint.rawValue.contains("placeholder") {
             urlString += "/\(id)/"
+        } else if !urlString.hasSuffix("/") {
+            urlString += "/"
         }
 
         guard var components = URLComponents(string: urlString) else {
