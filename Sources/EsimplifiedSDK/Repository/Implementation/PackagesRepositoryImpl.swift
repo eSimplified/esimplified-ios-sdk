@@ -15,6 +15,13 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
         self.cache = cache
     }
 
+    private func nextDayISO8601() -> String {
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.string(from: tomorrow)
+    }
+
     func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, forceRefresh: Bool = false) async -> PackageResponse? {
         let cacheKey = "packages_\(countryCode ?? "")_\(countryNameSlug)"
         if !forceRefresh, let cached: PackageResponse = cache.get(cacheKey) {
@@ -23,7 +30,8 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
         let parameters = [
             "country_code": countryCode ?? "",
             "country_name_slug": countryNameSlug,
-            "reverse_order": "true"
+            "reverse_order": "true",
+            "exp": nextDayISO8601()
         ]
         do {
             let response: PackageResponse = try await client.fetch(
@@ -44,7 +52,7 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
         if !forceRefresh, let cached: [Package] = cache.get(cacheKey) {
             return cached
         }
-        let parameters = ["reverse_order": "true"]
+        let parameters = ["reverse_order": "true", "exp": nextDayISO8601()]
         do {
             let response: PackageResponse = try await client.fetch(
                 endpoint: .topUpEsim,
@@ -65,7 +73,7 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
         if !forceRefresh, let cached: CheckStockResponse = cache.get(cacheKey) {
             return cached
         }
-        let parameters = ["package_type_id": String(packageTypeId)]
+        let parameters = ["package_type_id": String(packageTypeId), "exp": nextDayISO8601()]
         do {
             let response: CheckStockResponse = try await client.fetch(
                 endpoint: .checkStock,

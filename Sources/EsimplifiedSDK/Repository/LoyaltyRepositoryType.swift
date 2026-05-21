@@ -6,5 +6,5 @@
 import Foundation
 
 public protocol LoyaltyRepositoryType {
-    func fetchKredsBalance(forceRefresh: Bool) async throws -> KredsLoyaltyBalanceResponse
+    func fetchKredsBalance(forceRefresh: Bool = true) async throws -> KredsLoyaltyBalanceResponse
 }

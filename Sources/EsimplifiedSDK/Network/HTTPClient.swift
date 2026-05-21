@@ -12,7 +12,13 @@ final class HTTPClient {
         self.config = config
         self.sessionProvider = sessionProvider
         self.logger = NetworkLogger(isEnabled: config.enableLogging)
-        self.session = URLSession(configuration: .default)
+        let sessionConfig = URLSessionConfiguration.default
+        sessionConfig.timeoutIntervalForRequest = 60.0
+        sessionConfig.timeoutIntervalForResource = 60.0
+        sessionConfig.waitsForConnectivity = true
+        sessionConfig.httpMaximumConnectionsPerHost = 5
+        sessionConfig.requestCachePolicy = .useProtocolCachePolicy
+        self.session = URLSession(configuration: sessionConfig)
     }
 
     func fetch<T: Decodable>(
@@ -37,7 +43,7 @@ final class HTTPClient {
                     request.httpBody = encoded.data(using: .utf8)
                 }
             } else {
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
                 let encoder = JSONEncoder()
                 request.httpBody = try encoder.encode(AnyEncodable(body))
             }

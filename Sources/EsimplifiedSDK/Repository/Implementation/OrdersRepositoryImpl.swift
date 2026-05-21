@@ -44,6 +44,21 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
             "include_base64_qr_code": "true",
             "show_esim_details": "true"
         ]
+        let maxRetries = 5
+        for attempt in 1...maxRetries {
+            let order: OrderDetail = try await client.fetch(
+                endpoint: .customerOrders,
+                method: .GET,
+                parameters: parameters,
+                id: orderUUID
+            )
+            if order.orderStatus != "pending" || attempt == maxRetries {
+                cache.set(cacheKey, value: order)
+                return order
+            }
+            try? await Task.sleep(for: .seconds(1))
+        }
+        // Fallback (shouldn't reach here due to maxRetries return)
         let order: OrderDetail = try await client.fetch(
             endpoint: .customerOrders,
             method: .GET,

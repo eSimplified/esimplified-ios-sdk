@@ -15,7 +15,7 @@ final class LoyaltyRepositoryImpl: LoyaltyRepositoryType {
         self.cache = cache
     }
 
-    func fetchKredsBalance(forceRefresh: Bool = false) async throws -> KredsLoyaltyBalanceResponse {
+    func fetchKredsBalance(forceRefresh: Bool = true) async throws -> KredsLoyaltyBalanceResponse {
         let cacheKey = "kreds_balance"
         if !forceRefresh, let cached: KredsLoyaltyBalanceResponse = cache.get(cacheKey) {
             return cached
