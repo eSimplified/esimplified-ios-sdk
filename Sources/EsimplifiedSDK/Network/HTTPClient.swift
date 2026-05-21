@@ -39,7 +39,6 @@ final class HTTPClient {
             } else {
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
                 let encoder = JSONEncoder()
-                encoder.keyEncodingStrategy = .convertToSnakeCase
                 request.httpBody = try encoder.encode(AnyEncodable(body))
             }
         }
@@ -79,7 +78,6 @@ final class HTTPClient {
 
             do {
                 let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
                 return try decoder.decode(T.self, from: data)
             } catch {
                 throw SdkError.decodingError(error)
