@@ -59,7 +59,7 @@ public final class EsimplifiedSdk {
         self.packagesRepository = PackagesRepositoryImpl(client: client, cache: cache)
         self.esimsRepository = EsimsRepositoryImpl(client: client, cache: cache)
         self.ordersRepository = OrdersRepositoryImpl(client: client, cache: cache)
-        self.paymentsRepository = PaymentsRepositoryImpl(client: client, sessionProvider: session)
+        self.paymentsRepository = PaymentsRepositoryImpl(client: client, sessionProvider: sessionProvider)
         self.promoCodeRepository = PromoCodeRepositoryImpl(client: client)
         self.loyaltyRepository = LoyaltyRepositoryImpl(client: client, cache: cache)
         self.userRepository = UserRepositoryImpl(client: client)
