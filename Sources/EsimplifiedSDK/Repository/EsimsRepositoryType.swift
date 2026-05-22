@@ -12,3 +12,12 @@ public protocol EsimsRepositoryType {
     func updateEsimAutoTopUpStatus(status: Bool, iccid: String) async -> Bool
     func updateEsimArchivedStatus(status: Bool, iccid: String) async -> Bool
 }
+
+public extension EsimsRepositoryType {
+    func fetchEsims(archivedEsims: Bool, forceRefresh: Bool = false) async -> [Esim] {
+        await fetchEsims(archivedEsims: archivedEsims, forceRefresh: forceRefresh, cacheTTL: 86400)
+    }
+    func fetchEsimDetails(iccid: String, forceRefresh: Bool = false) async -> Esim? {
+        await fetchEsimDetails(iccid: iccid, forceRefresh: forceRefresh, cacheTTL: 300)
+    }
+}
