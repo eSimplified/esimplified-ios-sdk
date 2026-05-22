@@ -8,13 +8,14 @@ import Foundation
 final class PaymentsRepositoryImpl: PaymentsRepositoryType {
 
     private let client: HTTPClient
+    private let sessionProvider: SessionProvider
 
-    init(client: HTTPClient) {
+    init(client: HTTPClient, sessionProvider: SessionProvider) {
         self.client = client
+        self.sessionProvider = sessionProvider
     }
 
     func fetchPayment(
-        email: String,
         transactionType: TransactionType,
         packageTypeId: Int,
         iccid: String?,
@@ -26,7 +27,7 @@ final class PaymentsRepositoryImpl: PaymentsRepositoryType {
             type: transactionType,
             package_type_id: String(packageTypeId),
             iccid: iccid,
-            customer: CustomerEmail(email: email),
+            customer: CustomerEmail(email: sessionProvider.getUserEmail() ?? ""),
             auto_top_up: autoTopUp,
             save_payment_method: savePaymentDetail,
             loyalty_points_amount: loyaltyPointsAmount
