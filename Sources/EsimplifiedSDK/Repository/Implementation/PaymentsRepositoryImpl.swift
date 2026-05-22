@@ -14,6 +14,7 @@ final class PaymentsRepositoryImpl: PaymentsRepositoryType {
     }
 
     func fetchPayment(
+        email: String,
         transactionType: TransactionType,
         packageTypeId: Int,
         iccid: String?,
@@ -25,7 +26,7 @@ final class PaymentsRepositoryImpl: PaymentsRepositoryType {
             type: transactionType,
             package_type_id: String(packageTypeId),
             iccid: iccid,
-            customer: CustomerEmail(email: ""),
+            customer: CustomerEmail(email: email),
             auto_top_up: autoTopUp,
             save_payment_method: savePaymentDetail,
             loyalty_points_amount: loyaltyPointsAmount

@@ -15,9 +15,9 @@ final class CountriesRepositoryImpl: CountriesRepositoryType {
         self.cache = cache
     }
 
-    func fetchAllCountries(forceRefresh: Bool = false) async -> [Country] {
+    func fetchAllCountries(forceRefresh: Bool = false, cacheTTL: TimeInterval = 86400) async -> [Country] {
         let cacheKey = "countries_all"
-        if !forceRefresh, let cached: [Country] = cache.get(cacheKey) {
+        if !forceRefresh, let cached: [Country] = await cache.get(cacheKey) {
             return cached
         }
         let parameters = ["limit": "1000"]
@@ -29,10 +29,10 @@ final class CountriesRepositoryImpl: CountriesRepositoryType {
                 requiresAuth: false
             )
             let countries = response.countries
-            cache.set(cacheKey, value: countries, ttl: 86400)
+            await cache.set(cacheKey, value: countries, ttl: cacheTTL)
             return countries
         } catch {
-            return []
+            return await cache.getExpired(cacheKey) ?? []
         }
     }
 

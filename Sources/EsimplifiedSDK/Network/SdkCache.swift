@@ -5,7 +5,7 @@
 
 import Foundation
 
-final class SdkCache {
+actor SdkCache {
     private var store: [String: CacheEntry] = [:]
     private let defaultTTL: TimeInterval
 
@@ -21,9 +21,13 @@ final class SdkCache {
 
     func get<T>(_ key: String) -> T? {
         guard let entry = store[key], !entry.isExpired else {
-            store.removeValue(forKey: key)
             return nil
         }
+        return entry.data as? T
+    }
+
+    func getExpired<T>(_ key: String) -> T? {
+        guard let entry = store[key] else { return nil }
         return entry.data as? T
     }
 

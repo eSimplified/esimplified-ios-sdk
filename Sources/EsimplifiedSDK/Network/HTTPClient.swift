@@ -1,6 +1,6 @@
 import Foundation
 
-final class HTTPClient {
+actor HTTPClient {
 
     private let config: SdkConfig
     private let sessionProvider: SessionProvider
@@ -37,8 +37,9 @@ final class HTTPClient {
             if endpoint == .auth {
                 request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
                 if let dict = body as? [String: String] {
+                    let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "~-_."))
                     let encoded = dict.map {
-                        "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? $0.value)"
+                        "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: allowed) ?? $0.value)"
                     }.joined(separator: "&")
                     request.httpBody = encoded.data(using: .utf8)
                 }
@@ -78,6 +79,12 @@ final class HTTPClient {
             }
 
             guard (200..<300).contains(httpResponse.statusCode) else {
+                if let apiError = try? JSONDecoder().decode(ApiErrorResponse.self, from: data) {
+                    throw SdkError.networkError(
+                        statusCode: httpResponse.statusCode,
+                        message: apiError.detail ?? apiError.error ?? "Unknown error"
+                    )
+                }
                 let message = String(data: data, encoding: .utf8) ?? "Unknown error"
                 throw SdkError.networkError(statusCode: httpResponse.statusCode, message: message)
             }
@@ -114,7 +121,7 @@ final class HTTPClient {
         var urlString = base + pathPrefix + path
 
         if let id, !endpoint.rawValue.contains("placeholder") {
-            urlString += "/\(id)/"
+            urlString += "/\(id)"
         } else if !urlString.hasSuffix("/") {
             urlString += "/"
         }
@@ -135,6 +142,16 @@ final class HTTPClient {
     }
 
     private func addHeaders(to request: inout URLRequest, requiresAuth: Bool) async throws {
+        // Proactive token refresh — check if token is near expiry (5 min buffer)
+        if requiresAuth {
+            let state = sessionProvider.getAuthState()
+            if state.isExpired, !isRefreshing {
+                if let refreshToken = sessionProvider.getRefreshToken() {
+                    try await performTokenRefresh(refreshToken: refreshToken)
+                }
+            }
+        }
+
         if requiresAuth, let token = sessionProvider.getAccessToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         } else if !requiresAuth {
@@ -155,6 +172,36 @@ final class HTTPClient {
         }
     }
 
+    private func performTokenRefresh(refreshToken: String) async throws {
+        isRefreshing = true
+        defer { isRefreshing = false }
+
+        let tokenBody: [String: String] = [
+            "grant_type": "refresh_token",
+            "refresh_token": refreshToken
+        ]
+
+        do {
+            let response: SignInCustomerResponse = try await fetch(
+                endpoint: .auth,
+                method: .POST,
+                body: tokenBody,
+                requiresAuth: false
+            )
+
+            let expiresAt = Date().addingTimeInterval(TimeInterval(response.tokenExpiresIn))
+            try sessionProvider.saveAuthState(.authenticated(
+                accessToken: response.accessToken,
+                refreshToken: response.refreshToken ?? refreshToken,
+                expiresAt: expiresAt
+            ))
+            sessionProvider.onTokenRefreshed(response: response)
+        } catch {
+            sessionProvider.onAuthenticationFailed()
+            throw SdkError.authenticationRequired
+        }
+    }
+
     private func handleTokenRefreshAndRetry<T: Decodable>(
         endpoint: Endpoints,
         method: HTTPMethod,
@@ -162,31 +209,12 @@ final class HTTPClient {
         body: Encodable?,
         id: String?
     ) async throws -> T {
-        isRefreshing = true
-        defer { isRefreshing = false }
-
         guard let refreshToken = sessionProvider.getRefreshToken() else {
+            sessionProvider.onAuthenticationFailed()
             throw SdkError.authenticationRequired
         }
 
-        let tokenBody: [String: String] = [
-            "grant_type": "refresh_token",
-            "refresh_token": refreshToken
-        ]
-
-        let tokenResponse: TokenResponse = try await fetch(
-            endpoint: .auth,
-            method: .POST,
-            body: tokenBody,
-            requiresAuth: false
-        )
-
-        let expiresAt = Date().addingTimeInterval(TimeInterval(tokenResponse.expiresIn))
-        try sessionProvider.saveAuthState(.authenticated(
-            accessToken: tokenResponse.accessToken,
-            refreshToken: tokenResponse.refreshToken ?? refreshToken,
-            expiresAt: expiresAt
-        ))
+        try await performTokenRefresh(refreshToken: refreshToken)
 
         return try await fetch(
             endpoint: endpoint,
@@ -196,22 +224,6 @@ final class HTTPClient {
             id: id,
             requiresAuth: true
         )
-    }
-}
-
-// MARK: - Internal token response model
-
-struct TokenResponse: Decodable {
-    let accessToken: String
-    let refreshToken: String?
-    let expiresIn: Int
-    let tokenType: String?
-
-    enum CodingKeys: String, CodingKey {
-        case accessToken = "access_token"
-        case refreshToken = "refresh_token"
-        case expiresIn = "expires_in"
-        case tokenType = "token_type"
     }
 }
 

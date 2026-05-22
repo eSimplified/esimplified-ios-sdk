@@ -15,9 +15,9 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
         self.cache = cache
     }
 
-    func fetchOrders(forceRefresh: Bool = false, withLoyaltyPoints: Bool) async -> [Order] {
+    func fetchOrders(forceRefresh: Bool = false, withLoyaltyPoints: Bool, cacheTTL: TimeInterval = 600) async -> [Order] {
         let cacheKey = "orders_\(withLoyaltyPoints)"
-        if !forceRefresh, let cached: [Order] = cache.get(cacheKey) {
+        if !forceRefresh, let cached: [Order] = await cache.get(cacheKey) {
             return cached
         }
         let parameters: [String: String] = withLoyaltyPoints ? ["used_points": "true"] : [:]
@@ -28,16 +28,16 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
                 parameters: parameters
             )
             let orders = response.orders
-            cache.set(cacheKey, value: orders, ttl: 300)
+            await cache.set(cacheKey, value: orders, ttl: cacheTTL)
             return orders
         } catch {
-            return []
+            return await cache.getExpired(cacheKey) ?? []
         }
     }
 
-    func fetchOrder(orderUUID: String, forceRefresh: Bool = false) async throws -> OrderDetail {
+    func fetchOrder(orderUUID: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 300) async throws -> OrderDetail {
         let cacheKey = "order_\(orderUUID)"
-        if !forceRefresh, let cached: OrderDetail = cache.get(cacheKey) {
+        if !forceRefresh, let cached: OrderDetail = await cache.get(cacheKey) {
             return cached
         }
         let parameters = [
@@ -45,28 +45,30 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
             "show_esim_details": "true"
         ]
         let maxRetries = 5
+        var lastError: Error?
         for attempt in 1...maxRetries {
-            let order: OrderDetail = try await client.fetch(
-                endpoint: .customerOrders,
-                method: .GET,
-                parameters: parameters,
-                id: orderUUID
-            )
-            if order.orderStatus != "pending" || attempt == maxRetries {
-                cache.set(cacheKey, value: order)
-                return order
+            do {
+                let order: OrderDetail = try await client.fetch(
+                    endpoint: .customerOrders,
+                    method: .GET,
+                    parameters: parameters,
+                    id: orderUUID
+                )
+                if order.orderStatus != "pending" || attempt == maxRetries {
+                    await cache.set(cacheKey, value: order, ttl: cacheTTL)
+                    return order
+                }
+                try? await Task.sleep(for: .seconds(1))
+            } catch let error where error is SdkError && "\(error)".contains("decoding") {
+                lastError = error
+                if attempt == maxRetries { break }
+                try? await Task.sleep(for: .milliseconds(1500))
+            } catch {
+                throw error
             }
-            try? await Task.sleep(for: .seconds(1))
         }
-        // Fallback (shouldn't reach here due to maxRetries return)
-        let order: OrderDetail = try await client.fetch(
-            endpoint: .customerOrders,
-            method: .GET,
-            parameters: parameters,
-            id: orderUUID
-        )
-        cache.set(cacheKey, value: order)
-        return order
+        if let lastError { throw lastError }
+        throw SdkError.unknown(NSError(domain: "OrdersRepository", code: -1))
     }
 
     func trackedOrder(orderUUID: String) async {
@@ -77,7 +79,7 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
                 id: orderUUID
             )
         } catch {
-            // silently fail like the app does
+            // silently fail
         }
     }
 }

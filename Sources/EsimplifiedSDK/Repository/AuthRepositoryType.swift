@@ -26,6 +26,7 @@ public protocol AuthRepositoryType {
     func resetPassword(email: String, token: String, newPassword: String) async throws -> ChangePasswordResponse
     func changePassword(email: String, currentPassword: String, newPassword: String) async throws -> ChangePasswordResponse
     func verifyEmail(email: String?, token: String?, orderUUID: String?) async throws -> VerifyEmailResponse
+    func refreshSession() async throws -> SignInCustomerResponse
     func deleteAccount() async throws -> DeleteAccountResponse
     func logout() throws
 }

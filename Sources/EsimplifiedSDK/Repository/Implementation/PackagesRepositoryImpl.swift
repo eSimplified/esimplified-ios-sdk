@@ -15,23 +15,15 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
         self.cache = cache
     }
 
-    private func nextDayISO8601() -> String {
-        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date())!
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter.string(from: tomorrow)
-    }
-
-    func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, forceRefresh: Bool = false) async -> PackageResponse? {
+    func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 3600) async -> PackageResponse? {
         let cacheKey = "packages_\(countryCode ?? "")_\(countryNameSlug)"
-        if !forceRefresh, let cached: PackageResponse = cache.get(cacheKey) {
+        if !forceRefresh, let cached: PackageResponse = await cache.get(cacheKey) {
             return cached
         }
         let parameters = [
             "country_code": countryCode ?? "",
             "country_name_slug": countryNameSlug,
-            "reverse_order": "true",
-            "exp": nextDayISO8601()
+            "reverse_order": "true"
         ]
         do {
             let response: PackageResponse = try await client.fetch(
@@ -40,19 +32,19 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
                 parameters: parameters,
                 requiresAuth: false
             )
-            cache.set(cacheKey, value: response)
+            await cache.set(cacheKey, value: response, ttl: cacheTTL)
             return response
         } catch {
-            return nil
+            return await cache.getExpired(cacheKey)
         }
     }
 
-    func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool = false) async -> [Package] {
+    func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 3600) async -> [Package] {
         let cacheKey = "packages_topup_\(iccid)"
-        if !forceRefresh, let cached: [Package] = cache.get(cacheKey) {
+        if !forceRefresh, let cached: [Package] = await cache.get(cacheKey) {
             return cached
         }
-        let parameters = ["reverse_order": "true", "exp": nextDayISO8601()]
+        let parameters = ["reverse_order": "true"]
         do {
             let response: PackageResponse = try await client.fetch(
                 endpoint: .topUpEsim,
@@ -61,19 +53,19 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
                 id: iccid
             )
             let packages = response.packages
-            cache.set(cacheKey, value: packages)
+            await cache.set(cacheKey, value: packages, ttl: cacheTTL)
             return packages
         } catch {
-            return []
+            return await cache.getExpired(cacheKey) ?? []
         }
     }
 
-    func fetchCheckStockForPackage(packageTypeId: Int, forceRefresh: Bool = false) async -> CheckStockResponse? {
+    func fetchCheckStockForPackage(packageTypeId: Int, forceRefresh: Bool = false, cacheTTL: TimeInterval = 3600) async -> CheckStockResponse? {
         let cacheKey = "check_stock_\(packageTypeId)"
-        if !forceRefresh, let cached: CheckStockResponse = cache.get(cacheKey) {
+        if !forceRefresh, let cached: CheckStockResponse = await cache.get(cacheKey) {
             return cached
         }
-        let parameters = ["package_type_id": String(packageTypeId), "exp": nextDayISO8601()]
+        let parameters = ["package_type_id": String(packageTypeId)]
         do {
             let response: CheckStockResponse = try await client.fetch(
                 endpoint: .checkStock,
@@ -81,10 +73,10 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
                 parameters: parameters,
                 requiresAuth: false
             )
-            cache.set(cacheKey, value: response, ttl: 300)
+            await cache.set(cacheKey, value: response, ttl: cacheTTL)
             return response
         } catch {
-            return nil
+            return await cache.getExpired(cacheKey)
         }
     }
 }

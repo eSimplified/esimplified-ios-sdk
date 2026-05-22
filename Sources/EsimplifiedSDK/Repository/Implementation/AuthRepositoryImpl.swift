@@ -123,6 +123,30 @@ final class AuthRepositoryImpl: AuthRepositoryType {
         )
     }
 
+    func refreshSession() async throws -> SignInCustomerResponse {
+        guard let refreshToken = sessionProvider.getRefreshToken() else {
+            throw SdkError.authenticationRequired
+        }
+        let body: [String: String] = [
+            "grant_type": "refresh_token",
+            "refresh_token": refreshToken
+        ]
+        let response: SignInCustomerResponse = try await client.fetch(
+            endpoint: .auth,
+            method: .POST,
+            body: body,
+            requiresAuth: false
+        )
+        let expiresAt = Date().addingTimeInterval(TimeInterval(response.tokenExpiresIn))
+        try sessionProvider.saveAuthState(.authenticated(
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken ?? refreshToken,
+            expiresAt: expiresAt
+        ))
+        sessionProvider.onTokenRefreshed(response: response)
+        return response
+    }
+
     func deleteAccount() async throws -> DeleteAccountResponse {
         let response: DeleteAccountResponse = try await client.fetch(
             endpoint: .deleteAccount,

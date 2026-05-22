@@ -6,6 +6,6 @@
 import Foundation
 
 public protocol CountriesRepositoryType {
-    func fetchAllCountries(forceRefresh: Bool) async -> [Country]
+    func fetchAllCountries(forceRefresh: Bool, cacheTTL: TimeInterval) async -> [Country]
     func searchCountries(searchTerm: String) async -> [Country]
 }

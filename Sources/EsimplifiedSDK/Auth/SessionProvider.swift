@@ -6,4 +6,11 @@ public protocol SessionProvider {
     func getAccessToken() -> String?
     func getRefreshToken() -> String?
     func clearSession() throws
+    func onTokenRefreshed(response: SignInCustomerResponse)
+    func onAuthenticationFailed()
+}
+
+public extension SessionProvider {
+    func onTokenRefreshed(response: SignInCustomerResponse) {}
+    func onAuthenticationFailed() {}
 }

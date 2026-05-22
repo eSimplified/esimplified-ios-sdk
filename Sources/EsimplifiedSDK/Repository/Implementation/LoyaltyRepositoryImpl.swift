@@ -15,16 +15,23 @@ final class LoyaltyRepositoryImpl: LoyaltyRepositoryType {
         self.cache = cache
     }
 
-    func fetchKredsBalance(forceRefresh: Bool = true) async throws -> KredsLoyaltyBalanceResponse {
+    func fetchKredsBalance(forceRefresh: Bool = true, cacheTTL: TimeInterval = 3600) async throws -> KredsLoyaltyBalanceResponse {
         let cacheKey = "kreds_balance"
-        if !forceRefresh, let cached: KredsLoyaltyBalanceResponse = cache.get(cacheKey) {
+        if !forceRefresh, let cached: KredsLoyaltyBalanceResponse = await cache.get(cacheKey) {
             return cached
         }
-        let response: KredsLoyaltyBalanceResponse = try await client.fetch(
-            endpoint: .loyaltyPoints,
-            method: .GET
-        )
-        cache.set(cacheKey, value: response, ttl: 600)
-        return response
+        do {
+            let response: KredsLoyaltyBalanceResponse = try await client.fetch(
+                endpoint: .loyaltyPoints,
+                method: .GET
+            )
+            await cache.set(cacheKey, value: response, ttl: cacheTTL)
+            return response
+        } catch {
+            if let expired: KredsLoyaltyBalanceResponse = await cache.getExpired(cacheKey) {
+                return expired
+            }
+            throw error
+        }
     }
 }

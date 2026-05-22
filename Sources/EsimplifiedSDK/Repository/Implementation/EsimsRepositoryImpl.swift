@@ -15,9 +15,9 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
         self.cache = cache
     }
 
-    func fetchEsims(archivedEsims: Bool, forceRefresh: Bool = false) async -> [Esim] {
+    func fetchEsims(archivedEsims: Bool, forceRefresh: Bool = false, cacheTTL: TimeInterval = 86400) async -> [Esim] {
         let cacheKey = "esims_\(archivedEsims)"
-        if !forceRefresh, let cached: [Esim] = cache.get(cacheKey) {
+        if !forceRefresh, let cached: [Esim] = await cache.get(cacheKey) {
             return cached
         }
         let parameters = [
@@ -34,16 +34,16 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
                 parameters: parameters
             )
             let esims = response.esims
-            cache.set(cacheKey, value: esims, ttl: 300)
+            await cache.set(cacheKey, value: esims, ttl: cacheTTL)
             return esims
         } catch {
-            return []
+            return await cache.getExpired(cacheKey) ?? []
         }
     }
 
-    func fetchEsimDetails(iccid: String, forceRefresh: Bool = false) async -> Esim? {
+    func fetchEsimDetails(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 300) async -> Esim? {
         let cacheKey = "esim_details_\(iccid)"
-        if !forceRefresh, let cached: Esim = cache.get(cacheKey) {
+        if !forceRefresh, let cached: Esim = await cache.get(cacheKey) {
             return cached
         }
         do {
@@ -52,17 +52,17 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
                 method: .GET,
                 id: iccid
             )
-            cache.set(cacheKey, value: esim, ttl: 300)
+            await cache.set(cacheKey, value: esim, ttl: cacheTTL)
             return esim
         } catch {
-            return nil
+            return await cache.getExpired(cacheKey)
         }
     }
 
     func updateEsimName(customName: String, iccid: String) async -> Bool {
-        cache.remove("esim_details_\(iccid)")
-        cache.remove("esims_true")
-        cache.remove("esims_false")
+        await cache.remove("esim_details_\(iccid)")
+        await cache.remove("esims_true")
+        await cache.remove("esims_false")
         do {
             let response: UpdateEsimResponse = try await client.fetch(
                 endpoint: .updateEsim,
@@ -77,9 +77,9 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
     }
 
     func updateEsimAutoTopUpStatus(status: Bool, iccid: String) async -> Bool {
-        cache.remove("esim_details_\(iccid)")
-        cache.remove("esims_true")
-        cache.remove("esims_false")
+        await cache.remove("esim_details_\(iccid)")
+        await cache.remove("esims_true")
+        await cache.remove("esims_false")
         do {
             let response: UpdateEsimResponse = try await client.fetch(
                 endpoint: .updateEsim,
@@ -94,9 +94,9 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
     }
 
     func updateEsimArchivedStatus(status: Bool, iccid: String) async -> Bool {
-        cache.remove("esim_details_\(iccid)")
-        cache.remove("esims_true")
-        cache.remove("esims_false")
+        await cache.remove("esim_details_\(iccid)")
+        await cache.remove("esims_true")
+        await cache.remove("esims_false")
         do {
             let response: UpdateEsimResponse = try await client.fetch(
                 endpoint: .updateEsim,
