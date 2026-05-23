@@ -12,7 +12,7 @@ public enum SdkError: Error, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .networkError(let code, let message): return "HTTP \(code): \(message)"
+        case .networkError(_, let message): return message
         case .decodingError(let error): return "Decoding failed: \(error.localizedDescription)"
         case .authenticationRequired: return "Authentication required"
         case .noInternetConnection: return "No internet connection"
