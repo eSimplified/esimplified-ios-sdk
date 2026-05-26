@@ -19,6 +19,23 @@ public struct ApiErrorResponse: Codable {
     }
 }
 
+// MARK: Server Error Response (OAuth2 auth endpoint)
+
+public struct ServerErrorResponse: Codable {
+    public let error: String?
+    public let errorDescription: String?
+
+    enum CodingKeys: String, CodingKey {
+        case error
+        case errorDescription = "error_description"
+    }
+
+    public init(error: String? = nil, errorDescription: String? = nil) {
+        self.error = error
+        self.errorDescription = errorDescription
+    }
+}
+
 // MARK: Api Invalid Response
 
 public struct ApiInvalid: Codable {

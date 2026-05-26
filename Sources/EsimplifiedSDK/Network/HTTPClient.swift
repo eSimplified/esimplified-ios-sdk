@@ -79,6 +79,13 @@ actor HTTPClient {
             }
 
             guard (200..<300).contains(httpResponse.statusCode) else {
+                if endpoint == .auth,
+                   let serverError = try? JSONDecoder().decode(ServerErrorResponse.self, from: data) {
+                    throw SdkError.networkError(
+                        statusCode: httpResponse.statusCode,
+                        message: serverError.errorDescription ?? serverError.error ?? "Authentication failed"
+                    )
+                }
                 if let apiError = try? JSONDecoder().decode(ApiErrorResponse.self, from: data) {
                     throw SdkError.networkError(
                         statusCode: httpResponse.statusCode,
