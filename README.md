@@ -88,8 +88,10 @@ Sources/EsimplifiedSDK/
 │   └── Implementation/                # Internal concrete implementations
 ├── Network/                           # Internal — URLSession client, endpoints, error types
 │   ├── HTTPClient.swift
+│   ├── HTTPMethod.swift
 │   ├── Endpoints.swift
-│   └── NetworkLogger.swift
+│   ├── NetworkLogger.swift
+│   └── SdkCache.swift
 └── Auth/                              # Public protocols + internal defaults
     ├── SessionProvider.swift           # Public protocol
     ├── StorageProvider.swift           # Public protocol
@@ -173,7 +175,8 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `UserLocationResponse` | User's detected location (country, city, coordinates) |
 | `LocationDetails` | Location detail (country, country code, city, lat, lon, timezone) |
 | `RestrictedCountry` | Country with purchase restrictions (code, type, restricted for) |
-| `ApiErrorResponse` | API error (error, detail) |
+| `ApiErrorResponse` | API error response (error, detail) — used for non-auth endpoints |
+| `ServerErrorResponse` | OAuth2 error response (error, error_description) — used for auth endpoint |
 | `TrackedOrderResponse` | Order tracking result (conversion tracked) |
 | `UpdateEsimResponse` | eSIM update result (message) |
 
@@ -195,6 +198,7 @@ Authentication, registration, password management, and profile operations.
 | `resetPassword` | `func resetPassword(email: String, token: String, newPassword: String) async throws -> ChangePasswordResponse` | Reset password using email token |
 | `verifyEmail` | `func verifyEmail(email: String?, token: String?, orderUUID: String?) async throws -> VerifyEmailResponse` | Verify email address with token |
 | `deleteAccount` | `func deleteAccount() async throws -> DeleteAccountResponse` | Delete the authenticated user's account |
+| `refreshSession` | `func refreshSession() async throws -> SignInCustomerResponse` | Force a token refresh (e.g. for Face ID login, auth state validation) |
 | `logout` | `func logout() throws` | Clear stored session and tokens |
 
 ### CountriesRepository
@@ -376,7 +380,12 @@ class MySessionProvider: SessionProvider {
     func getAuthState() -> AuthState { /* read from Keychain */ }
     func getAccessToken() -> String? { /* ... */ }
     func getRefreshToken() -> String? { /* ... */ }
+    func getUserEmail() -> String? { /* ... */ }
     func clearSession() throws { /* clear Keychain */ }
+
+    // Optional callbacks (default no-op implementations provided)
+    func onTokenRefreshed(response: SignInCustomerResponse) { /* sync user data after refresh */ }
+    func onAuthenticationFailed() { /* handle sign-out / UI update */ }
 }
 
 let sdk = EsimplifiedSdk.initialize(
@@ -401,6 +410,52 @@ let sdk = EsimplifiedSdk.initialize(
     config: config,
     storageProvider: MyStorage()
 )
+```
+
+## Error Handling
+
+All SDK errors are thrown as `SdkError`:
+
+```swift
+public enum SdkError: Error, LocalizedError {
+    case networkError(statusCode: Int, message: String)  // HTTP error with backend message
+    case decodingError(Error)                             // JSON decode failure
+    case authenticationRequired                           // Token refresh failed, user must re-login
+    case noInternetConnection                             // No network
+    case serverError(String)                              // Generic server error
+    case missingCredentials                                // SDK not configured
+    case invalidURL                                        // URL construction failed
+    case unknown(Error)                                    // Unexpected error
+}
+```
+
+### Error message extraction
+
+The SDK parses backend error responses differently based on the endpoint:
+
+- **Auth endpoint** (`/auth/token/`): Parses `ServerErrorResponse` with `error` + `error_description` (OAuth2 standard). The `error_description` field contains the user-friendly message (e.g., "Invalid credentials: incorrect email or password").
+- **All other endpoints**: Parses `ApiErrorResponse` with `error` + `detail`. The `detail` field contains the user-friendly message.
+
+`SdkError.networkError.message` always contains the best available message — `error_description` for auth errors, `detail` for API errors, falling back to the raw `error` code if neither is present.
+
+### Handling errors in the app
+
+```swift
+do {
+    let response = try await sdk.authRepository.login(email: email, password: password)
+} catch let error as SdkError {
+    switch error {
+    case .authenticationRequired:
+        // Token refresh failed — redirect to login
+    case .networkError(let statusCode, let message):
+        // Show message to user (already user-friendly from backend)
+        showAlert(title: "Error", message: message)
+    default:
+        showAlert(title: "Error", message: error.localizedDescription)
+    }
+} catch {
+    showAlert(title: "Error", message: "An unexpected error occurred.")
+}
 ```
 
 ## Development Workflow
@@ -450,7 +505,7 @@ The version is defined in `EsimplifiedSDK.swift`:
 
 ```swift
 public enum EsimplifiedSDKVersion {
-    public static let version = "1.0.1"
+    public static let version = "1.1.5"
 }
 ```
 
