@@ -46,7 +46,7 @@ public struct SdkConfig {
         case .staging:
             return "https://\(clientName).stage.esimplified.io"
         case .production:
-            return "https://api.\(clientName).com"
+            return "https://\(clientName).live.esimplified.io"
         }
     }
 }
