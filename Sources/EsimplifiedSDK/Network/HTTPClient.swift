@@ -159,7 +159,7 @@ actor HTTPClient {
             }
         }
 
-        if requiresAuth, let token = sessionProvider.getAccessToken() {
+        if let token = sessionProvider.getAccessToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         } else {
             let credentials = "\(config.clientId):\(config.clientSecret)"
