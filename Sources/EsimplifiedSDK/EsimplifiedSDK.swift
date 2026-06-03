@@ -1,5 +1,5 @@
 public enum EsimplifiedSDKVersion {
-    public static let version = "1.1.5"
+    public static let version = "1.2.0"
 }
 
 public final class EsimplifiedSdk {
@@ -67,5 +67,14 @@ public final class EsimplifiedSdk {
         self.visaRewardsRepository = VisaRewardsRepositoryImpl(client: client)
         self.vouchersRepository = VouchersRepositoryImpl(client: client)
         self.storeReviewRepository = StoreReviewRepositoryImpl(client: client, cache: cache)
+    }
+
+    public func clearAllCaches() async {
+        await countriesRepository.invalidateCache()
+        await packagesRepository.invalidateCache()
+        await esimsRepository.invalidateCache()
+        await ordersRepository.invalidateCache()
+        await loyaltyRepository.invalidateCache()
+        await storeReviewRepository.invalidateCache()
     }
 }
