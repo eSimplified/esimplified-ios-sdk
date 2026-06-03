@@ -50,7 +50,7 @@ actor HTTPClient {
             }
         }
 
-        try await addHeaders(to: &request, requiresAuth: requiresAuth)
+        try await addHeaders(to: &request, requiresAuth: requiresAuth, forceBasicAuth: endpoint == .auth)
 
         logger.logRequest(method: method.rawValue, url: url.absoluteString, headers: request.allHTTPHeaderFields, body: request.httpBody)
         let start = Date()
@@ -148,7 +148,7 @@ actor HTTPClient {
         return url
     }
 
-    private func addHeaders(to request: inout URLRequest, requiresAuth: Bool) async throws {
+    private func addHeaders(to request: inout URLRequest, requiresAuth: Bool, forceBasicAuth: Bool = false) async throws {
         // Proactive token refresh — check if token is near expiry (5 min buffer)
         if requiresAuth {
             let state = sessionProvider.getAuthState()
@@ -159,7 +159,7 @@ actor HTTPClient {
             }
         }
 
-        if let token = sessionProvider.getAccessToken() {
+        if !forceBasicAuth, let token = sessionProvider.getAccessToken() {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         } else {
             let credentials = "\(config.clientId):\(config.clientSecret)"
