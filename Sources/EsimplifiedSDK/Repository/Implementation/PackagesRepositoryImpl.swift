@@ -79,4 +79,9 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
             return await cache.getExpired(cacheKey)
         }
     }
+
+    func invalidateCache() async {
+        await cache.removeWithPrefix("packages_")
+        await cache.removeWithPrefix("check_stock_")
+    }
 }

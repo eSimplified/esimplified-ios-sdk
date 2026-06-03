@@ -7,6 +7,7 @@ import Foundation
 
 public protocol LoyaltyRepositoryType {
     func fetchKredsBalance(forceRefresh: Bool, cacheTTL: TimeInterval) async throws -> KredsLoyaltyBalanceResponse
+    func invalidateCache() async
 }
 
 public extension LoyaltyRepositoryType {

@@ -30,4 +30,8 @@ final class StoreReviewRepositoryImpl: StoreReviewRepositoryType {
         await cache.set(cacheKey, value: response, ttl: cacheTTL)
         return response
     }
+
+    func invalidateCache() async {
+        await cache.remove("store_review")
+    }
 }
