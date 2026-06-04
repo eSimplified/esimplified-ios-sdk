@@ -7,6 +7,13 @@
 
 import Foundation
 
+// MARK: Loyalty Provider
+
+public enum LoyaltyProvider: String, Codable, Sendable {
+    case kreds
+    case mokafaa
+}
+
 // MARK: User Response
 
 public struct User: Codable, Equatable {
@@ -24,6 +31,7 @@ public struct User: Codable, Equatable {
     public var preferredLanguage: String?
     public var preferredCurrency: String?
     public var signedInWithProvider: Bool?
+    public var loyaltyProvider: LoyaltyProvider?
 
     enum CodingKeys: String, CodingKey {
         case email
@@ -40,6 +48,7 @@ public struct User: Codable, Equatable {
         case preferredLanguage = "preferred_language"
         case preferredCurrency = "preferred_currency"
         case signedInWithProvider = "signed_in_with_provider"
+        case loyaltyProvider = "loyalty_provider"
     }
 
     public init(
@@ -56,7 +65,8 @@ public struct User: Codable, Equatable {
         receiveSms: Bool? = true,
         preferredLanguage: String? = nil,
         preferredCurrency: String? = nil,
-        signedInWithProvider: Bool? = nil
+        signedInWithProvider: Bool? = nil,
+        loyaltyProvider: LoyaltyProvider? = nil
     ) {
         self.email = email
         self.phoneNumber = phoneNumber
@@ -72,5 +82,6 @@ public struct User: Codable, Equatable {
         self.preferredLanguage = preferredLanguage
         self.preferredCurrency = preferredCurrency
         self.signedInWithProvider = signedInWithProvider
+        self.loyaltyProvider = loyaltyProvider
     }
 }

@@ -1,5 +1,5 @@
 public enum EsimplifiedSDKVersion {
-    public static let version = "1.1.5"
+    public static let version = "1.2.0"
 }
 
 public final class EsimplifiedSdk {
@@ -12,6 +12,7 @@ public final class EsimplifiedSdk {
     public let paymentsRepository: PaymentsRepositoryType
     public let promoCodeRepository: PromoCodeRepositoryType
     public let loyaltyRepository: LoyaltyRepositoryType
+    public let mokafaaRepository: MokafaaRepositoryType
     public let userRepository: UserRepositoryType
     public let notificationRepository: NotificationRepositoryType
     public let visaRewardsRepository: VisaRewardsRepositoryType
@@ -62,6 +63,7 @@ public final class EsimplifiedSdk {
         self.paymentsRepository = PaymentsRepositoryImpl(client: client, sessionProvider: sessionProvider)
         self.promoCodeRepository = PromoCodeRepositoryImpl(client: client)
         self.loyaltyRepository = LoyaltyRepositoryImpl(client: client, cache: cache)
+        self.mokafaaRepository = MokafaaRepositoryImpl(client: client)
         self.userRepository = UserRepositoryImpl(client: client)
         self.notificationRepository = NotificationRepositoryImpl(client: client)
         self.visaRewardsRepository = VisaRewardsRepositoryImpl(client: client)
