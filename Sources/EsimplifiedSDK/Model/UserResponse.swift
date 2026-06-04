@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: Loyalty Provider
 
-public enum LoyaltyProvider: String, Codable, Sendable {
+public enum LoyaltyProvider: String, Codable {
     case kreds
     case mokafaa
 }

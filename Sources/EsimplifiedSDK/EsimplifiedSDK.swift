@@ -1,3 +1,9 @@
+//
+//  EsimplifiedSDK.swift
+//  EsimplifiedSDK
+//  Created by Kieran on 2026/06/04.
+//
+
 public enum EsimplifiedSDKVersion {
     public static let version = "1.2.0"
 }

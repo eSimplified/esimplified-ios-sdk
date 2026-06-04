@@ -1,26 +1,21 @@
 //
 //  MokafaaResponse.swift
 //  EsimplifiedSDK
+//  Created by Kieran on 2026/06/04.
 //
 
 import Foundation
 
 // MARK: Mokafaa OTP Purpose
 
-public enum MokafaaOtpPurpose: String, Codable, Sendable {
+public enum MokafaaOtpPurpose: String, Codable {
     case enrollment
     case checkout
 }
 
-// MARK: Mokafaa Platform
-
-public enum MokafaaPlatform: String, Codable, Sendable {
-    case ios
-}
-
 // MARK: Mokafaa OTP Status
 
-public enum MokafaaOtpStatus: String, Codable, Sendable {
+public enum MokafaaOtpStatus: String, Codable {
     case confirmed
     case reversed
     case failed
@@ -28,19 +23,19 @@ public enum MokafaaOtpStatus: String, Codable, Sendable {
 
 // MARK: Mokafaa OTP Initiate Request
 
-public struct MokafaaOtpInitiateRequest: Codable, Sendable {
+public struct MokafaaOtpInitiateRequest: Codable {
     public let purpose: MokafaaOtpPurpose
-    public let platform: MokafaaPlatform
+    public let platform: String
 
-    public init(purpose: MokafaaOtpPurpose, platform: MokafaaPlatform = .ios) {
+    public init(purpose: MokafaaOtpPurpose) {
         self.purpose = purpose
-        self.platform = platform
+        self.platform = "ios"
     }
 }
 
 // MARK: Mokafaa OTP Initiate Response
 
-public struct MokafaaOtpInitiateResponse: Codable, Sendable {
+public struct MokafaaOtpInitiateResponse: Codable {
     public let sessionId: String
     public let expiresAt: String
     public let maskedPhoneNumber: String?
@@ -60,7 +55,7 @@ public struct MokafaaOtpInitiateResponse: Codable, Sendable {
 
 // MARK: Mokafaa OTP Validate Request
 
-public struct MokafaaOtpValidateRequest: Codable, Sendable {
+public struct MokafaaOtpValidateRequest: Codable {
     public let sessionId: String
     public let otp: String
     public let points: Int?
@@ -80,7 +75,7 @@ public struct MokafaaOtpValidateRequest: Codable, Sendable {
 
 // MARK: Mokafaa OTP Validate Response
 
-public struct MokafaaOtpValidateResponse: Codable, Sendable {
+public struct MokafaaOtpValidateResponse: Codable {
     public let status: MokafaaOtpStatus
     public let pointsRedeemed: Int?
     public let pointsBalance: Int?

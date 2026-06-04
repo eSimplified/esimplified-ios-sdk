@@ -1,3 +1,9 @@
+//
+//  EsimplifiedSdkInitTests.swift
+//  EsimplifiedSDK
+//  Created by Kieran on 2026/06/04.
+//
+
 import Testing
 import Foundation
 @testable import EsimplifiedSDK
