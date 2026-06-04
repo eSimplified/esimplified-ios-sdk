@@ -109,4 +109,9 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
             return false
         }
     }
+
+    func invalidateCache() async {
+        await cache.removeWithPrefix("esims_")
+        await cache.removeWithPrefix("esim_details_")
+    }
 }

@@ -11,6 +11,7 @@ public protocol EsimsRepositoryType {
     func updateEsimName(customName: String, iccid: String) async -> Bool
     func updateEsimAutoTopUpStatus(status: Bool, iccid: String) async -> Bool
     func updateEsimArchivedStatus(status: Bool, iccid: String) async -> Bool
+    func invalidateCache() async
 }
 
 public extension EsimsRepositoryType {

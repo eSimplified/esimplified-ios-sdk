@@ -34,4 +34,8 @@ final class LoyaltyRepositoryImpl: LoyaltyRepositoryType {
             throw error
         }
     }
+
+    func invalidateCache() async {
+        await cache.remove("kreds_balance")
+    }
 }

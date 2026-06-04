@@ -70,4 +70,13 @@ public final class EsimplifiedSdk {
         self.vouchersRepository = VouchersRepositoryImpl(client: client)
         self.storeReviewRepository = StoreReviewRepositoryImpl(client: client, cache: cache)
     }
+
+    public func clearAllCaches() async {
+        await countriesRepository.invalidateCache()
+        await packagesRepository.invalidateCache()
+        await esimsRepository.invalidateCache()
+        await ordersRepository.invalidateCache()
+        await loyaltyRepository.invalidateCache()
+        await storeReviewRepository.invalidateCache()
+    }
 }

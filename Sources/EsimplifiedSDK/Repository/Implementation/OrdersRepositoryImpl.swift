@@ -82,4 +82,9 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
             // silently fail
         }
     }
+
+    func invalidateCache() async {
+        await cache.removeWithPrefix("orders_")
+        await cache.removeWithPrefix("order_")
+    }
 }

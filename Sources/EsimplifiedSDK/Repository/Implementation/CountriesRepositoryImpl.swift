@@ -50,4 +50,8 @@ final class CountriesRepositoryImpl: CountriesRepositoryType {
             return []
         }
     }
+
+    func invalidateCache() async {
+        await cache.removeWithPrefix("countries_")
+    }
 }

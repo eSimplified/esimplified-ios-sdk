@@ -40,6 +40,13 @@ actor SdkCache {
         store.removeValue(forKey: key)
     }
 
+    func removeWithPrefix(_ prefix: String) {
+        let keysToRemove = store.keys.filter { $0.hasPrefix(prefix) }
+        for key in keysToRemove {
+            store.removeValue(forKey: key)
+        }
+    }
+
     func clear() {
         store.removeAll()
     }
