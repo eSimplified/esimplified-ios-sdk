@@ -1,3 +1,9 @@
+//
+//  Endpoints.swift
+//  EsimplifiedSDK
+//  Created by Kieran on 2026/06/04.
+//
+
 import Foundation
 
 enum Endpoints: String {
@@ -28,4 +34,6 @@ enum Endpoints: String {
     case notificationSettings = "customer/notifications"
     case redeemVoucher = "customer/promotions/voucher"
     case loyaltyPoints = "customer/loyalty"
+    case initiateMokafaaOtp = "loyalty/mokafaa/otp/initiate"
+    case validateMokafaaOtp = "loyalty/mokafaa/otp/validate"
 }
