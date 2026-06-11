@@ -14,17 +14,21 @@ actor HTTPClient {
     private let session: URLSession
     private var isRefreshing = false
 
-    init(config: SdkConfig, sessionProvider: SessionProvider) {
+    init(config: SdkConfig, sessionProvider: SessionProvider, session: URLSession? = nil) {
         self.config = config
         self.sessionProvider = sessionProvider
         self.logger = NetworkLogger(isEnabled: config.enableLogging)
-        let sessionConfig = URLSessionConfiguration.default
-        sessionConfig.timeoutIntervalForRequest = 60.0
-        sessionConfig.timeoutIntervalForResource = 60.0
-        sessionConfig.waitsForConnectivity = true
-        sessionConfig.httpMaximumConnectionsPerHost = 5
-        sessionConfig.requestCachePolicy = .useProtocolCachePolicy
-        self.session = URLSession(configuration: sessionConfig)
+        if let session {
+            self.session = session
+        } else {
+            let sessionConfig = URLSessionConfiguration.default
+            sessionConfig.timeoutIntervalForRequest = 60.0
+            sessionConfig.timeoutIntervalForResource = 60.0
+            sessionConfig.waitsForConnectivity = true
+            sessionConfig.httpMaximumConnectionsPerHost = 5
+            sessionConfig.requestCachePolicy = .useProtocolCachePolicy
+            self.session = URLSession(configuration: sessionConfig)
+        }
     }
 
     func fetch<T: Decodable>(

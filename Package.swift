@@ -5,7 +5,8 @@ import PackageDescription
 let package = Package(
     name: "EsimplifiedSDK",
     platforms: [
-        .iOS(.v17)
+        .iOS(.v17),
+        .macOS(.v13)
     ],
     products: [
         .library(

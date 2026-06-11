@@ -44,7 +44,7 @@ struct SdkConfigTests {
             clientId: "id",
             clientSecret: "secret"
         )
-        #expect(config.baseURL == "https://api.acme.com")
+        #expect(config.baseURL == "https://acme.live.esimplified.io")
     }
 
     @Test("Logging can be enabled")
@@ -102,7 +102,7 @@ struct SdkErrorTests {
     @Test("Network error has description")
     func networkError() {
         let error = SdkError.networkError(statusCode: 404, message: "Not Found")
-        #expect(error.errorDescription == "HTTP 404: Not Found")
+        #expect(error.errorDescription == "Not Found")
     }
 
     @Test("Authentication required has description")

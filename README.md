@@ -10,19 +10,30 @@ Swift SDK for integrating the eSIMplified eSIM platform into iOS applications. P
 - Swift 5.0+
 - Xcode 16+
 
+## Prerequisites
+
+To use the SDK you need credentials issued by eSimplified:
+
+- **`clientName`** — your registered brand identifier (used to build your API base URL)
+- **`clientId`** — your OAuth2 client ID
+- **`clientSecret`** — your OAuth2 client secret
+- **`awsWafToken`** — your AWS WAF validation token
+
+Contact eSimplified to obtain these before integrating. See [Support](#support) below.
+
 ## Installation
 
 Add via Swift Package Manager in Xcode:
 
 1. **File → Add Package Dependencies**
 2. Enter: `https://github.com/eSimplified/esimplified-ios-sdk.git`
-3. Select version rule: **Up to Next Major Version** from `1.0.0`
+3. Select version rule: **Up to Next Major Version** from `1.0.2`
 
 Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.0.0")
+    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.0.2")
 ]
 ```
 
@@ -37,23 +48,17 @@ import EsimplifiedSDK
 
 let sdk = EsimplifiedSdk.initialize(
     config: SdkConfig(
-        environment: .staging,
-        clientName: "your-app",
-        apiVersion: "v2",
-        clientId: "your-client-id",
-        clientSecret: "your-client-secret",
-        awsWafToken: "your-waf-token",
-        enableLogging: true
-    ),
-    sessionProvider: yourSessionProvider,
-    customHeadersProvider: {
-        var headers: [String: String] = [:]
-        headers["accept-currency"] = "USD"
-        headers["accept-language"] = "en"
-        return headers
-    }
+        environment: .production,        // .production or .staging
+        clientName: "your-brand",        // issued by eSimplified
+        clientId: "your-client-id",      // issued by eSimplified
+        clientSecret: "your-client-secret", // issued by eSimplified
+        awsWafToken: "your-waf-token",   // issued by eSimplified
+        enableLogging: false             // set true for debug builds
+    )
 )
 ```
+
+That's it — sessions are stored in-memory by default. For persistence across app launches, supply a custom [`SessionProvider`](#custom-session-provider) (typically backed by Keychain).
 
 ### 2. Use repositories
 
@@ -62,19 +67,57 @@ let sdk = EsimplifiedSdk.initialize(
 let countries = await sdk.countriesRepository.fetchAllCountries()
 
 // Fetch packages for a country (unauthenticated)
-let packages = await sdk.packagesRepository.fetchPackagesForCountry(
+let response = await sdk.packagesRepository.fetchPackagesForCountry(
     countryCode: "US",
     countryNameSlug: "united-states"
 )
 
 // Login
-let response = try await sdk.authRepository.login(
+let session = try await sdk.authRepository.login(
     email: "user@example.com",
     password: "password"
 )
 
 // Fetch orders (authenticated)
 let orders = await sdk.ordersRepository.fetchOrders(withLoyaltyPoints: false)
+```
+
+## Common Recipe — Buy an eSIM
+
+End-to-end flow for purchasing an eSIM package:
+
+```swift
+// 1. Browse destinations
+let countries = await sdk.countriesRepository.fetchAllCountries()
+
+// 2. Show packages for selected country
+let response = await sdk.packagesRepository.fetchPackagesForCountry(
+    countryCode: "US",
+    countryNameSlug: "united-states"
+)
+let packages = response?.packages ?? []
+
+// 3. Authenticate the customer
+_ = try await sdk.authRepository.login(email: email, password: password)
+
+// 4. Create a Stripe payment intent
+let payment = try await sdk.paymentsRepository.fetchPayment(
+    transactionType: .buy,
+    packageTypeId: packages.first!.packageTypeId,
+    iccid: nil,
+    autoTopUp: false,
+    savePaymentDetail: true,
+    loyaltyPointsAmount: nil
+)
+// payment.uri → Stripe client secret. Confirm via Stripe SDK in your app.
+
+// 5. Once Stripe confirms, fetch the order to get the eSIM QR code
+let order = try await sdk.ordersRepository.fetchOrder(orderUUID: payment.orderId!)
+// order.qrCode → string to render as QR
+// order.activationCode → manual activation code
+
+// 6. Confirm conversion tracking
+await sdk.ordersRepository.trackedOrder(orderUUID: order.orderUUID)
 ```
 
 ## SDK Structure
@@ -119,7 +162,7 @@ SdkConfig(
 
 **Base URL construction:**
 - Staging: `https://{clientName}.stage.esimplified.io`
-- Production: `https://api.{clientName}.com`
+- Production: `https://{clientName}.live.esimplified.io`
 
 ## All Models
 
@@ -127,7 +170,8 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 
 | Model | Description |
 |---|---|
-| `User` | Authenticated user profile (email, name, phone, referral code, preferences) |
+| `User` | Authenticated user profile (email, name, phone, referral code, preferences, loyalty provider) |
+| `LoyaltyProvider` | Enum: kreds, mokafaa |
 | `SignInCustomerResponse` | Login response (access token, refresh token, expiry, user) |
 | `RegisterCustomerRequest` | Registration request (name, email, phone, password, marketing opt-in) |
 | `RegisterCustomerResponse` | Registration result (success, email, referral code) |
@@ -165,6 +209,12 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `LoyaltyPointsDetail` | Points detail (amount, currency, local currency, original USD) |
 | `KredsQuoteResponse` | Kreds discount quote (pricing, points, notices) |
 | `KredsQuoteRequest` | Quote request (package type ID, points amount) |
+| `MokafaaOtpPurpose` | Enum: enrollment, checkout |
+| `MokafaaOtpStatus` | Enum: confirmed, reversed, failed |
+| `MokafaaOtpInitiateRequest` | Mokafaa OTP initiation request (purpose, platform) |
+| `MokafaaOtpInitiateResponse` | Mokafaa OTP initiation result (session ID, expiry, masked phone) |
+| `MokafaaOtpValidateRequest` | Mokafaa OTP validation request (session ID, OTP, optional points) |
+| `MokafaaOtpValidateResponse` | Mokafaa OTP validation result (status, points redeemed, points balance) |
 | `NotificationSettings` | Notification preference (type + enabled flag) |
 | `VisaRewardResponse` | Visa rewards iframe URL and token |
 | `VisaValidateResponse` | Visa reward eligibility (used count, reward type, remaining) |
@@ -263,11 +313,14 @@ Promotional code management.
 
 ### LoyaltyRepository
 
-Kreds loyalty program balance.
+Loyalty program balance and Mokafaa OTP flow (for Mokafaa-enabled customers).
 
 | Method | Signature | Description |
 |---|---|---|
-| `fetchKredsBalance` | `func fetchKredsBalance(forceRefresh: Bool) async throws -> KredsLoyaltyBalanceResponse` | Fetch the customer's current Kreds balance |
+| `fetchKredsBalance` | `func fetchKredsBalance(forceRefresh: Bool = true, cacheTTL: TimeInterval = 3600) async throws -> KredsLoyaltyBalanceResponse` | Fetch the customer's current Kreds balance |
+| `initiateOtp` | `func initiateOtp(purpose: MokafaaOtpPurpose) async throws -> MokafaaOtpInitiateResponse` | Start a Mokafaa OTP flow (enrollment or checkout). Returns session ID for validation. |
+| `validateOtp` | `func validateOtp(sessionId: String, otp: String, points: Int?) async throws -> MokafaaOtpValidateResponse` | Validate the OTP code with optional points redemption |
+| `invalidateCache` | `func invalidateCache() async` | Clear all cached responses for this repository |
 
 ### UserRepository
 
@@ -412,6 +465,24 @@ let sdk = EsimplifiedSdk.initialize(
 )
 ```
 
+## Caching
+
+The SDK caches GET responses in-memory by default to reduce network traffic. Cacheable repositories (`countriesRepository`, `packagesRepository`, `esimsRepository`, `ordersRepository`, `loyaltyRepository`, `storeReviewRepository`) accept `forceRefresh: Bool` and `cacheTTL: TimeInterval` parameters on their fetch methods.
+
+**Per-repository invalidation:**
+
+```swift
+await sdk.esimsRepository.invalidateCache()
+```
+
+**Clear everything (e.g. on logout):**
+
+```swift
+await sdk.clearAllCaches()
+```
+
+Disable caching globally via `SdkConfig(enableCaching: false)`.
+
 ## Error Handling
 
 All SDK errors are thrown as `SdkError`:
@@ -457,6 +528,18 @@ do {
     showAlert(title: "Error", message: "An unexpected error occurred.")
 }
 ```
+
+## Support
+
+For credentials, integration help, or to report a bug, contact:
+
+- **Email:** support@esimplified.io
+
+---
+
+# For Contributors
+
+The remaining sections are intended for SDK maintainers, not integrators.
 
 ## Development Workflow
 
@@ -505,7 +588,7 @@ The version is defined in `EsimplifiedSDK.swift`:
 
 ```swift
 public enum EsimplifiedSDKVersion {
-    public static let version = "1.1.5"
+    public static let version = "1.0.2"
 }
 ```
 
@@ -545,6 +628,8 @@ main (production)
 ### Commit Messages
 
 Use conventional commits: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`, `build:`
+
+---
 
 ## License
 
