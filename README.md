@@ -27,13 +27,13 @@ Add via Swift Package Manager in Xcode:
 
 1. **File → Add Package Dependencies**
 2. Enter: `https://github.com/eSimplified/esimplified-ios-sdk.git`
-3. Select version rule: **Up to Next Major Version** from `1.0.2`
+3. Select version rule: **Up to Next Major Version** from `1.0.3`
 
 Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.0.2")
+    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.0.3")
 ]
 ```
 
@@ -556,7 +556,7 @@ The remaining sections are intended for SDK maintainers, not integrators.
    ```bash
    git add -A
    git commit -m "feat: add new repository method"
-   git tag 1.0.2
+   git tag 1.0.3
    git push origin main --tags
    ```
 
@@ -588,7 +588,7 @@ The version is defined in `EsimplifiedSDK.swift`:
 
 ```swift
 public enum EsimplifiedSDKVersion {
-    public static let version = "1.0.2"
+    public static let version = "1.0.3"
 }
 ```
 

@@ -5,7 +5,7 @@
 //
 
 public enum EsimplifiedSDKVersion {
-    public static let version = "1.0.2"
+    public static let version = "1.0.3"
 }
 
 public final class EsimplifiedSdk {

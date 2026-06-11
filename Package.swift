@@ -18,7 +18,10 @@ let package = Package(
         .target(
             name: "EsimplifiedSDK",
             dependencies: [],
-            path: "Sources/EsimplifiedSDK"
+            path: "Sources/EsimplifiedSDK",
+            resources: [
+                .copy("PrivacyInfo.xcprivacy")
+            ]
         ),
         .testTarget(
             name: "EsimplifiedSDKTests",
