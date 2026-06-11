@@ -1,5 +1,11 @@
 # eSIMplified iOS SDK
 
+[![CI](https://github.com/eSimplified/esimplified-ios-sdk/actions/workflows/ci.yml/badge.svg)](https://github.com/eSimplified/esimplified-ios-sdk/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/eSimplified/esimplified-ios-sdk)](https://github.com/eSimplified/esimplified-ios-sdk/releases/latest)
+[![Swift Versions](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FeSimplified%2Fesimplified-ios-sdk%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/eSimplified/esimplified-ios-sdk)
+[![Platforms](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FeSimplified%2Fesimplified-ios-sdk%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/eSimplified/esimplified-ios-sdk)
+[![License](https://img.shields.io/badge/license-Proprietary-blue)](LICENSE)
+
 Swift SDK for integrating the eSIMplified eSIM platform into iOS applications. Provides typed repository interfaces for authentication, eSIM management, package browsing, orders, payments, and more. All networking, authentication, and token management are handled internally — consuming apps interact only with clean Swift protocol interfaces.
 
 **Package:** `https://github.com/eSimplified/esimplified-ios-sdk.git`
@@ -633,4 +639,6 @@ Use conventional commits: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs
 
 ## License
 
-Proprietary. All rights reserved.
+Proprietary — © 2026 eSimplified Ltd. See [LICENSE](LICENSE) for the full terms.
+
+Use of the SDK requires API credentials issued by eSimplified and is governed by your commercial agreement.
