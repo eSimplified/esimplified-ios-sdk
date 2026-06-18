@@ -33,13 +33,13 @@ Add via Swift Package Manager in Xcode:
 
 1. **File → Add Package Dependencies**
 2. Enter: `https://github.com/eSimplified/esimplified-ios-sdk.git`
-3. Select version rule: **Up to Next Major Version** from `1.0.4`
+3. Select version rule: **Up to Next Major Version** from `1.0.5`
 
 Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.0.4")
+    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.0.5")
 ]
 ```
 
