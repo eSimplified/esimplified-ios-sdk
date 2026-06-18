@@ -47,24 +47,33 @@ dependencies: [
 
 ### 1. Initialize the SDK
 
-Call this once at app launch (e.g. in your `App.init()`):
+Call this once at app launch (e.g. in your `App.init()`).
+
+> ⚠️ **Do not ship `clientId`, `clientSecret`, or `awsWafToken` as string literals in your app code.** They're trivially extractable from a shipped IPA. Fetch them at runtime from a server-controlled source — Firebase Remote Config is the recommended pattern, so you can rotate credentials without publishing a new app version.
 
 ```swift
 import EsimplifiedSDK
+import FirebaseRemoteConfig
+
+// Fetch credentials from Firebase Remote Config at launch
+let remoteConfig = RemoteConfig.remoteConfig()
+_ = try? await remoteConfig.fetchAndActivate()
 
 let sdk = EsimplifiedSdk.initialize(
     config: SdkConfig(
-        environment: .production,        // .production or .staging
-        clientName: "your-brand",        // issued by eSimplified
-        clientId: "your-client-id",      // issued by eSimplified
-        clientSecret: "your-client-secret", // issued by eSimplified
-        awsWafToken: "your-waf-token",   // issued by eSimplified
-        enableLogging: false             // set true for debug builds
+        environment: .production,                                       // .production or .staging
+        clientName: "your-brand",                                       // issued by eSimplified
+        clientId: remoteConfig["client_id"].stringValue,                // OAuth2 client ID
+        clientSecret: remoteConfig["client_secret"].stringValue,        // OAuth2 client secret
+        awsWafToken: remoteConfig["x_auth_validation"].stringValue,     // AWS WAF validation token
+        enableLogging: false                                            // never enable in production
     )
 )
 ```
 
-That's it — sessions are stored in-memory by default. For persistence across app launches, supply a custom [`SessionProvider`](#custom-session-provider) (typically backed by Keychain).
+That's it — sessions are persisted to the iOS Keychain by default and survive app launches and restarts. To customise persistence (e.g. swap to a different storage backend), supply a custom [`StorageProvider`](#custom-storage-provider) or [`SessionProvider`](#custom-session-provider).
+
+If you can't use Remote Config, fetch from your own backend at launch. Avoid persisting these values long-term on device.
 
 ### 2. Use repositories
 
@@ -389,7 +398,7 @@ App calls authRepository.login(email, password)
 
 ### Token Storage
 
-The SDK delegates token persistence to the `SessionProvider` protocol. The consuming app implements this protocol to store tokens however it prefers (Keychain, UserDefaults, etc.). A default in-memory implementation is provided if no custom provider is supplied.
+The SDK delegates token persistence to the `SessionProvider` protocol. The consuming app implements this protocol to store tokens however it prefers (custom Keychain configuration, encrypted file, etc.). If no custom provider is supplied, the SDK uses `DefaultSessionProvider`, which delegates to `DefaultStorageProvider` — an iOS Keychain–backed implementation using `kSecClassGenericPassword` with `kSecAttrAccessibleAfterFirstUnlock`.
 
 ### Automatic Token Refresh
 
@@ -431,7 +440,7 @@ Clears stored session via `SessionProvider.clearSession()`.
 
 ## Custom Session Provider
 
-By default the SDK uses an in-memory session provider. To persist tokens across app launches, implement `SessionProvider` and pass it during initialization:
+By default the SDK persists tokens to the iOS Keychain via `DefaultSessionProvider`. Override this only if you need different storage semantics — for example, sharing tokens across an App Group via a Keychain access group, or routing through a custom encrypted file. Implement `SessionProvider` and pass it during initialization:
 
 ```swift
 class MySessionProvider: SessionProvider {
@@ -439,10 +448,13 @@ class MySessionProvider: SessionProvider {
     func getAuthState() -> AuthState { /* read from Keychain */ }
     func getAccessToken() -> String? { /* ... */ }
     func getRefreshToken() -> String? { /* ... */ }
-    func getUserEmail() -> String? { /* ... */ }
     func clearSession() throws { /* clear Keychain */ }
 
-    // Optional callbacks (default no-op implementations provided)
+    // Optional — protocol provides default implementations:
+    //   getUserEmail() -> nil
+    //   onTokenRefreshed(...) -> no-op
+    //   onAuthenticationFailed() -> no-op
+    func getUserEmail() -> String? { /* return cached email if you track it */ }
     func onTokenRefreshed(response: SignInCustomerResponse) { /* sync user data after refresh */ }
     func onAuthenticationFailed() { /* handle sign-out / UI update */ }
 }
@@ -543,36 +555,15 @@ For credentials, integration help, or to report a bug, contact:
 
 ---
 
-# For Contributors
+# Building from Source
 
-The remaining sections are intended for SDK maintainers, not integrators.
-
-## Development Workflow
-
-### Making SDK Changes
-
-1. Clone the SDK repository alongside the app:
-   ```bash
-   git clone git@github.com:eSimplified/esimplified-ios-sdk.git
-   ```
-
-2. Make your changes in the SDK source code.
-
-3. Commit, tag, and push:
-   ```bash
-   git add -A
-   git commit -m "feat: add new repository method"
-   git tag 1.0.3
-   git push origin main --tags
-   ```
-
-4. In the consuming app, update the package:
-   - Right-click **esimplified-ios-sdk** in Package Dependencies → **Update Package**
-
-### Build Commands
+If you want to verify the SDK builds cleanly or inspect the source:
 
 ```bash
-# Build the SDK (verifies compilation)
+git clone https://github.com/eSimplified/esimplified-ios-sdk.git
+cd esimplified-ios-sdk
+
+# Build (verifies compilation)
 swift build
 
 # Run tests
@@ -582,27 +573,6 @@ swift test
 swift package clean && swift build
 ```
 
-## Versioning
-
-The SDK follows [Semantic Versioning](https://semver.org/):
-
-- **MAJOR** (1.x.x) — Breaking API changes (removed/renamed repository methods, model field changes that break decoding)
-- **MINOR** (x.1.x) — New features (new repository methods, new model classes, new optional parameters)
-- **PATCH** (x.x.1) — Bug fixes, internal improvements, documentation updates
-
-The version is defined in `EsimplifiedSDK.swift`:
-
-```swift
-public enum EsimplifiedSDKVersion {
-    public static let version = "1.0.3"
-}
-```
-
-When bumping the version:
-1. Update `version` in `EsimplifiedSDK.swift`
-2. Commit, tag with the new version, and push
-3. Update the package in consuming apps
-
 ## Tech Stack
 
 | Library | Purpose |
@@ -611,31 +581,6 @@ When bumping the version:
 | Foundation | JSON encoding/decoding, URLSession networking |
 | Swift Concurrency | async/await for all API calls |
 | URLSession | HTTP transport |
-
-## Git Workflow
-
-### Branching Model
-
-```
-main (production)
-  ├── feature/FeatureNameTicketNumber
-  └── bugfix/BugNameTicketNumber
-```
-
-### Flow
-
-1. Create `feature/` or `bugfix/` branch from `main`
-2. Work on branch, commit changes
-3. PR into `main`
-4. After merge, bump version in `EsimplifiedSDK.swift`
-5. Tag the release (e.g., `1.1.0`)
-6. Push with `git push origin main --tags`
-
-### Commit Messages
-
-Use conventional commits: `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`, `build:`
-
----
 
 ## License
 

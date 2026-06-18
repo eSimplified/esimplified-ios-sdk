@@ -5,3 +5,9 @@ xcuserdata/
 DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
+
+# AI-assistant artifacts and internal-only docs — kept locally, not for version control
+CLAUDE.md
+.claude/
+docs/superpowers/
+INTERNAL.md
