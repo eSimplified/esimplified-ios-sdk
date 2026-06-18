@@ -14,7 +14,7 @@ public struct RegisterCustomerRequest: Codable {
     public let mobileNumber: String
     public let referredBy: String?
     public let password: String
-    public let marketingOptIn: Bool
+    public let marketingOptIn: Bool?
 
     enum CodingKeys: String, CodingKey {
         case email, password
@@ -33,10 +33,10 @@ public struct RegisterCustomerRequest: Codable {
         try container.encode(mobileNumber, forKey: .mobileNumber)
         try container.encodeIfPresent(referredBy, forKey: .referredBy)
         try container.encode(password, forKey: .password)
-        try container.encode(marketingOptIn, forKey: .marketingOptIn)
+        try container.encodeIfPresent(marketingOptIn, forKey: .marketingOptIn)
     }
 
-    public init(firstName: String, lastName: String, email: String, mobileNumber: String, referredBy: String?, password: String, marketingOptIn: Bool) {
+    public init(firstName: String, lastName: String, email: String, mobileNumber: String, referredBy: String?, password: String, marketingOptIn: Bool?) {
         self.firstName = firstName
         self.lastName = lastName
         self.email = email
