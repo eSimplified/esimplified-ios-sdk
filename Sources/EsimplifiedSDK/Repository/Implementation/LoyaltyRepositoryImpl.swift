@@ -49,8 +49,8 @@ final class LoyaltyRepositoryImpl: LoyaltyRepositoryType {
         )
     }
 
-    func validateOtp(sessionId: String, otp: String, points: Int?) async throws -> MokafaaOtpValidateResponse {
-        let body = MokafaaOtpValidateRequest(sessionId: sessionId, otp: otp, points: points)
+    func validateOtp(sessionId: String, otp: String, points: Int?, packageTypeId: Int?) async throws -> MokafaaOtpValidateResponse {
+        let body = MokafaaOtpValidateRequest(sessionId: sessionId, otp: otp, points: points, packageTypeId: packageTypeId)
         return try await client.fetch(
             endpoint: .validateMokafaaOtp,
             method: .POST,
