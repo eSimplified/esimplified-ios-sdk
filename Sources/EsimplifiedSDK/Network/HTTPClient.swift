@@ -6,40 +6,6 @@
 
 import Foundation
 
-#if DEBUG
-/// DEBUG-only delegate that trusts self-signed certs for the dev environment host
-/// (Traefik default cert until a real cert is provisioned). Strict TLS for every
-/// other host. Compiled out of release builds.
-private final class DevTrustOverrideDelegate: NSObject, URLSessionDelegate {
-
-    private static let trustedHostSuffixes: [String] = [
-        "knowroaming.api.dev.esimplified.io",
-        ".api.dev.esimplified.io"
-    ]
-
-    func urlSession(
-        _ session: URLSession,
-        didReceive challenge: URLAuthenticationChallenge,
-        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
-    ) {
-        let host = challenge.protectionSpace.host
-        let method = challenge.protectionSpace.authenticationMethod
-        print("🔐 DEV-TRUST: challenge host=\(host) method=\(method)")
-        guard
-            method == NSURLAuthenticationMethodServerTrust,
-            let serverTrust = challenge.protectionSpace.serverTrust,
-            Self.trustedHostSuffixes.contains(where: { host == $0 || host.hasSuffix($0) })
-        else {
-            print("🔐 DEV-TRUST: falling through to default for host=\(host)")
-            completionHandler(.performDefaultHandling, nil)
-            return
-        }
-        print("🔐 DEV-TRUST: ACCEPTING self-signed cert for host=\(host)")
-        completionHandler(.useCredential, URLCredential(trust: serverTrust))
-    }
-}
-#endif
-
 actor HTTPClient {
 
     private let config: SdkConfig
@@ -61,21 +27,7 @@ actor HTTPClient {
             sessionConfig.waitsForConnectivity = true
             sessionConfig.httpMaximumConnectionsPerHost = 5
             sessionConfig.requestCachePolicy = .useProtocolCachePolicy
-            #if DEBUG
-            if config.environment == .dev {
-                print("🔐 HTTPClient: initializing with DevTrustOverrideDelegate (env=.dev, baseURL=\(config.baseURL))")
-                self.session = URLSession(
-                    configuration: sessionConfig,
-                    delegate: DevTrustOverrideDelegate(),
-                    delegateQueue: nil
-                )
-            } else {
-                print("🔐 HTTPClient: initializing WITHOUT trust override (env != .dev, baseURL=\(config.baseURL))")
-                self.session = URLSession(configuration: sessionConfig)
-            }
-            #else
             self.session = URLSession(configuration: sessionConfig)
-            #endif
         }
     }
 
@@ -164,11 +116,6 @@ actor HTTPClient {
             throw error
         } catch {
             logger.logError(method: method.rawValue, url: url.absoluteString, error: error)
-            if let urlError = error as? URLError {
-                print("🌐 URLError code=\(urlError.code.rawValue) (.\(String(describing: urlError.code))) desc=\(urlError.localizedDescription) failingURL=\(urlError.failingURL?.absoluteString ?? "nil") underlying=\(urlError.errorUserInfo[NSUnderlyingErrorKey].debugDescription)")
-            } else {
-                print("🌐 Non-URL error type=\(type(of: error)) desc=\(error.localizedDescription)")
-            }
             throw SdkError.unknown(error)
         }
     }

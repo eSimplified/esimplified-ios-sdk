@@ -17,15 +17,10 @@ public enum LoyaltyProvider: String, Codable {
 // MARK: Mokafaa Enrollment
 
 public enum MokafaaEnrollmentState: String, Codable {
-    /// Loyalty provider is Mokafaa — enrolled, nothing to do.
     case completed
-    /// A live enrollment OTP is awaiting validation (`sessionExpiresAt` is set).
     case pending
-    /// An OTP attempt lapsed — offer to restart enrollment.
     case expired
-    /// Chose Mokafaa at signup but no OTP attempt yet — prompt to start enrollment.
     case elected
-    /// Everything else — optionally offer enrollment.
     case notElected = "not_elected"
 }
 
@@ -45,8 +40,6 @@ public struct MokafaaEnrollment: Codable, Equatable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        // Tolerate states this SDK version doesn't know about — treat them as not elected
-        // rather than failing the whole customer decode.
         let rawState = try container.decode(String.self, forKey: .state)
         state = MokafaaEnrollmentState(rawValue: rawState) ?? .notElected
         sessionExpiresAt = try container.decodeIfPresent(String.self, forKey: .sessionExpiresAt)

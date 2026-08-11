@@ -12,8 +12,6 @@ import Foundation
 public struct ApiErrorResponse: Codable {
     public let error: String?
     public let detail: String?
-    /// Localized, user-facing message — e.g. payment validation errors send a generic
-    /// `detail` ("Payment request failed") with the real localized text in `message`.
     public let message: String?
     public let type: String?
 
