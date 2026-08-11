@@ -9,7 +9,6 @@ import Foundation
 public enum SdkEnvironment: Equatable {
     case staging
     case production
-    case dev
 }
 
 public struct SdkConfig {
@@ -54,8 +53,6 @@ public struct SdkConfig {
             return "https://\(clientName).stage.esimplified.io"
         case .production:
             return "https://\(clientName).live.esimplified.io"
-        case .dev:
-            return "https://\(clientName).api.dev.esimplified.io"
         }
     }
 }
