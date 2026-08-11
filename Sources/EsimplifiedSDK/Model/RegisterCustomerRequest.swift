@@ -15,6 +15,7 @@ public struct RegisterCustomerRequest: Codable {
     public let referredBy: String?
     public let password: String
     public let marketingOptIn: Bool?
+    public let loyaltyElection: LoyaltyProvider?
 
     enum CodingKeys: String, CodingKey {
         case email, password
@@ -23,6 +24,7 @@ public struct RegisterCustomerRequest: Codable {
         case mobileNumber = "phone_number"
         case referredBy = "referred_by"
         case marketingOptIn = "marketing_opt_in"
+        case loyaltyElection = "loyalty_election"
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -34,9 +36,10 @@ public struct RegisterCustomerRequest: Codable {
         try container.encodeIfPresent(referredBy, forKey: .referredBy)
         try container.encode(password, forKey: .password)
         try container.encodeIfPresent(marketingOptIn, forKey: .marketingOptIn)
+        try container.encodeIfPresent(loyaltyElection, forKey: .loyaltyElection)
     }
 
-    public init(firstName: String, lastName: String, email: String, mobileNumber: String, referredBy: String?, password: String, marketingOptIn: Bool?) {
+    public init(firstName: String, lastName: String, email: String, mobileNumber: String, referredBy: String?, password: String, marketingOptIn: Bool?, loyaltyElection: LoyaltyProvider? = nil) {
         self.firstName = firstName
         self.lastName = lastName
         self.email = email
@@ -44,5 +47,6 @@ public struct RegisterCustomerRequest: Codable {
         self.referredBy = referredBy
         self.password = password
         self.marketingOptIn = marketingOptIn
+        self.loyaltyElection = loyaltyElection
     }
 }

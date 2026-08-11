@@ -14,6 +14,38 @@ public enum LoyaltyProvider: String, Codable {
     case mokafaa
 }
 
+// MARK: Mokafaa Enrollment
+
+public enum MokafaaEnrollmentState: String, Codable {
+    case completed
+    case pending
+    case expired
+    case elected
+    case notElected = "not_elected"
+}
+
+public struct MokafaaEnrollment: Codable, Equatable {
+    public let state: MokafaaEnrollmentState
+    public let sessionExpiresAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case state
+        case sessionExpiresAt = "session_expires_at"
+    }
+
+    public init(state: MokafaaEnrollmentState, sessionExpiresAt: String? = nil) {
+        self.state = state
+        self.sessionExpiresAt = sessionExpiresAt
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let rawState = try container.decode(String.self, forKey: .state)
+        state = MokafaaEnrollmentState(rawValue: rawState) ?? .notElected
+        sessionExpiresAt = try container.decodeIfPresent(String.self, forKey: .sessionExpiresAt)
+    }
+}
+
 // MARK: User Response
 
 public struct User: Codable, Equatable {
@@ -32,6 +64,7 @@ public struct User: Codable, Equatable {
     public var preferredCurrency: String?
     public var signedInWithProvider: Bool?
     public var loyaltyProvider: LoyaltyProvider?
+    public var mokafaaEnrollment: MokafaaEnrollment?
 
     enum CodingKeys: String, CodingKey {
         case email
@@ -49,6 +82,7 @@ public struct User: Codable, Equatable {
         case preferredCurrency = "preferred_currency"
         case signedInWithProvider = "signed_in_with_provider"
         case loyaltyProvider = "loyalty_provider"
+        case mokafaaEnrollment = "mokafaa_enrollment"
     }
 
     public init(
@@ -66,7 +100,8 @@ public struct User: Codable, Equatable {
         preferredLanguage: String? = nil,
         preferredCurrency: String? = nil,
         signedInWithProvider: Bool? = nil,
-        loyaltyProvider: LoyaltyProvider? = nil
+        loyaltyProvider: LoyaltyProvider? = nil,
+        mokafaaEnrollment: MokafaaEnrollment? = nil
     ) {
         self.email = email
         self.phoneNumber = phoneNumber
@@ -83,5 +118,6 @@ public struct User: Codable, Equatable {
         self.preferredCurrency = preferredCurrency
         self.signedInWithProvider = signedInWithProvider
         self.loyaltyProvider = loyaltyProvider
+        self.mokafaaEnrollment = mokafaaEnrollment
     }
 }

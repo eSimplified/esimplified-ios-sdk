@@ -12,10 +12,12 @@ import Foundation
 public struct ApiErrorResponse: Codable {
     public let error: String?
     public let detail: String?
+    public let message: String?
 
-    public init(error: String? = nil, detail: String? = nil) {
+    public init(error: String? = nil, detail: String? = nil, message: String? = nil) {
         self.error = error
         self.detail = detail
+        self.message = message
     }
 }
 

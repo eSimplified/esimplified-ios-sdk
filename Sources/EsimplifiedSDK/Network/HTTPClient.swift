@@ -99,7 +99,7 @@ actor HTTPClient {
                 if let apiError = try? JSONDecoder().decode(ApiErrorResponse.self, from: data) {
                     throw SdkError.networkError(
                         statusCode: httpResponse.statusCode,
-                        message: apiError.detail ?? apiError.error ?? "Unknown error"
+                        message: apiError.message ?? apiError.detail ?? apiError.error ?? "Unknown error"
                     )
                 }
                 let message = String(data: data, encoding: .utf8) ?? "Unknown error"

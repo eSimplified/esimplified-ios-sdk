@@ -39,6 +39,17 @@ struct ModelDecodingTestsExtended {
         #expect(r.refreshToken == nil)
     }
 
+    @Test("SignInCustomerResponse decodes loyalty fields on user")
+    func signInResponseLoyaltyFields() throws {
+        let json = #"""
+        {"access_token":"at","expires_in":3600,"token_type":"Bearer","scope":"all","refresh_token":"rt","user":{"email":"a@b.com","loyalty_provider":"mokafaa","mokafaa_enrollment":{"state":"pending","session_expires_at":"2026-08-11T10:05:00Z"}}}
+        """#
+        let r: SignInCustomerResponse = try decode(json)
+        #expect(r.user?.loyaltyProvider == .mokafaa)
+        #expect(r.user?.mokafaaEnrollment?.state == .pending)
+        #expect(r.user?.mokafaaEnrollment?.sessionExpiresAt == "2026-08-11T10:05:00Z")
+    }
+
     @Test("VerifyEmailResponse decodes email_verified")
     func verifyEmailResponse() throws {
         let json = #"{"email":"a@b.com","email_verified":true}"#

@@ -59,17 +59,20 @@ public struct MokafaaOtpValidateRequest: Codable {
     public let sessionId: String
     public let otp: String
     public let points: Int?
+    public let packageTypeId: Int?
 
-    public init(sessionId: String, otp: String, points: Int? = nil) {
+    public init(sessionId: String, otp: String, points: Int? = nil, packageTypeId: Int? = nil) {
         self.sessionId = sessionId
         self.otp = otp
         self.points = points
+        self.packageTypeId = packageTypeId
     }
 
     enum CodingKeys: String, CodingKey {
         case sessionId = "session_id"
         case otp
         case points
+        case packageTypeId = "package_type_id"
     }
 }
 
