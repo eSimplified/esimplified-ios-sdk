@@ -8,6 +8,7 @@ import Foundation
 
 public enum SdkEnvironment: Equatable {
     case staging
+    case testing
     case production
 }
 
@@ -51,6 +52,8 @@ public struct SdkConfig {
         switch environment {
         case .staging:
             return "https://\(clientName).stage.esimplified.io"
+        case .testing:
+            return "https://\(clientName).test.esimplified.io"
         case .production:
             return "https://\(clientName).live.esimplified.io"
         }

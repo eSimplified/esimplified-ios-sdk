@@ -33,13 +33,13 @@ Add via Swift Package Manager in Xcode:
 
 1. **File → Add Package Dependencies**
 2. Enter: `https://github.com/eSimplified/esimplified-ios-sdk.git`
-3. Select version rule: **Up to Next Major Version** from `1.0.7`
+3. Select version rule: **Up to Next Major Version** from `1.0.8`
 
 Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.0.7")
+    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.0.8")
 ]
 ```
 
@@ -61,7 +61,7 @@ _ = try? await remoteConfig.fetchAndActivate()
 
 let sdk = EsimplifiedSdk.initialize(
     config: SdkConfig(
-        environment: .production,                                       // .production or .staging
+        environment: .production,                                       // .production, .staging or .testing
         clientName: "your-brand",                                       // issued by eSimplified
         clientId: remoteConfig["client_id"].stringValue,                // OAuth2 client ID
         clientSecret: remoteConfig["client_secret"].stringValue,        // OAuth2 client secret
@@ -162,7 +162,7 @@ Sources/EsimplifiedSDK/
 
 ```swift
 SdkConfig(
-    environment: SdkEnvironment,       // .staging or .production
+    environment: SdkEnvironment,       // .staging, .testing or .production
     clientName: String,                 // Used to construct base URL
     apiVersion: String,                 // API version path segment (default: "v2")
     clientId: String,                   // OAuth2 client ID
@@ -177,6 +177,7 @@ SdkConfig(
 
 **Base URL construction:**
 - Staging: `https://{clientName}.stage.esimplified.io`
+- Testing: `https://{clientName}.test.esimplified.io`
 - Production: `https://{clientName}.live.esimplified.io`
 
 ## All Models
