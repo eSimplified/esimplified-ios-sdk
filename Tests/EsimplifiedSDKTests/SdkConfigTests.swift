@@ -36,6 +36,17 @@ struct SdkConfigTests {
         #expect(config.baseURL == "https://acme.stage.esimplified.io")
     }
 
+    @Test("Testing base URL uses client name")
+    func testingURL() {
+        let config = SdkConfig(
+            environment: .testing,
+            clientName: "acme",
+            clientId: "id",
+            clientSecret: "secret"
+        )
+        #expect(config.baseURL == "https://acme.test.esimplified.io")
+    }
+
     @Test("Production base URL uses client name")
     func productionURL() {
         let config = SdkConfig(
