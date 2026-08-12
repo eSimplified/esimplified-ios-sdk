@@ -22,13 +22,6 @@ final class UserRepositoryImpl: UserRepositoryType {
         )
     }
 
-    func fetchPreferences() async throws -> User {
-        try await client.fetch(
-            endpoint: .customerPreferences,
-            method: .GET
-        )
-    }
-
     func updatePreferences(_ request: UpdateCustomerPreferencesRequest) async throws -> User {
         try await client.fetch(
             endpoint: .customerPreferences,

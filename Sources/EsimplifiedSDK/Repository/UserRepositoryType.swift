@@ -8,7 +8,6 @@ import Foundation
 
 public protocol UserRepositoryType {
     func updateProfile(_ request: UpdateCustomerRequest) async throws -> UpdateCustomerResponse
-    func fetchPreferences() async throws -> User
     func updatePreferences(_ request: UpdateCustomerPreferencesRequest) async throws -> User
     func fetchUserLocation() async throws -> UserLocationResponse
 }
