@@ -12,7 +12,7 @@ actor HTTPClient {
     private let sessionProvider: SessionProvider
     private let logger: NetworkLogger
     private let session: URLSession
-    private var isRefreshing = false
+    private var refreshTask: Task<Void, Error>?
 
     init(config: SdkConfig, sessionProvider: SessionProvider, session: URLSession? = nil) {
         self.config = config
@@ -37,7 +37,8 @@ actor HTTPClient {
         parameters: [String: String]? = nil,
         body: Encodable? = nil,
         id: String? = nil,
-        requiresAuth: Bool = true
+        requiresAuth: Bool = true,
+        isRetry: Bool = false
     ) async throws -> T {
         let url = try constructURL(endpoint: endpoint, id: id, parameters: parameters)
         var request = URLRequest(url: url)
@@ -81,10 +82,12 @@ actor HTTPClient {
 
             if (httpResponse.statusCode == 401 || httpResponse.statusCode == 403),
                requiresAuth,
-               !isRefreshing {
+               !isRetry {
+                let staleAccessToken = request.value(forHTTPHeaderField: "Authorization")
+                    .flatMap { $0.hasPrefix("Bearer ") ? String($0.dropFirst(7)) : nil }
                 return try await handleTokenRefreshAndRetry(
                     endpoint: endpoint, method: method, parameters: parameters,
-                    body: body, id: id
+                    body: body, id: id, staleAccessToken: staleAccessToken
                 )
             }
 
@@ -159,14 +162,8 @@ actor HTTPClient {
     }
 
     private func addHeaders(to request: inout URLRequest, requiresAuth: Bool, forceBasicAuth: Bool = false) async throws {
-        // Proactive token refresh — check if token is near expiry (5 min buffer)
-        if requiresAuth {
-            let state = sessionProvider.getAuthState()
-            if state.isExpired, !isRefreshing {
-                if let refreshToken = sessionProvider.getRefreshToken() {
-                    try await performTokenRefresh(refreshToken: refreshToken)
-                }
-            }
+        if requiresAuth, sessionProvider.getAuthState().isExpired, sessionProvider.getRefreshToken() != nil {
+            try await serializedRefresh(staleAccessToken: nil)
         }
 
         if !forceBasicAuth, let token = sessionProvider.getAccessToken() {
@@ -189,34 +186,65 @@ actor HTTPClient {
         }
     }
 
-    private func performTokenRefresh(refreshToken: String) async throws {
-        isRefreshing = true
-        defer { isRefreshing = false }
+    private func serializedRefresh(staleAccessToken: String?) async throws {
+        if let inFlight = refreshTask {
+            _ = try? await inFlight.value
+            return try await serializedRefresh(staleAccessToken: staleAccessToken)
+        }
 
+        if let staleAccessToken {
+            if let currentAccessToken = sessionProvider.getAccessToken(),
+               !currentAccessToken.isEmpty,
+               currentAccessToken != staleAccessToken {
+                return
+            }
+        } else if !sessionProvider.getAuthState().isExpired {
+            return
+        }
+
+        guard let refreshToken = sessionProvider.getRefreshToken() else {
+            sessionProvider.onAuthenticationFailed()
+            throw SdkError.authenticationRequired
+        }
+
+        let task = Task {
+            defer { self.refreshTask = nil }
+            try await self.executeRefresh(refreshToken: refreshToken)
+        }
+        refreshTask = task
+        try await task.value
+    }
+
+    private func executeRefresh(refreshToken: String) async throws {
         let tokenBody: [String: String] = [
             "grant_type": "refresh_token",
             "refresh_token": refreshToken
         ]
 
+        let response: SignInCustomerResponse
         do {
-            let response: SignInCustomerResponse = try await fetch(
+            response = try await fetch(
                 endpoint: .auth,
                 method: .POST,
                 body: tokenBody,
                 requiresAuth: false
             )
-
-            let expiresAt = Date().addingTimeInterval(TimeInterval(response.tokenExpiresIn))
-            try sessionProvider.saveAuthState(.authenticated(
-                accessToken: response.accessToken,
-                refreshToken: response.refreshToken ?? refreshToken,
-                expiresAt: expiresAt
-            ))
-            sessionProvider.onTokenRefreshed(response: response)
-        } catch {
-            sessionProvider.onAuthenticationFailed()
-            throw SdkError.authenticationRequired
+        } catch let error as SdkError {
+            if case .networkError(let statusCode, _) = error,
+               statusCode == 400 || statusCode == 401 || statusCode == 403 {
+                sessionProvider.onAuthenticationFailed()
+                throw SdkError.authenticationRequired
+            }
+            throw error
         }
+
+        let expiresAt = Date().addingTimeInterval(TimeInterval(response.tokenExpiresIn))
+        try sessionProvider.saveAuthState(.authenticated(
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken ?? refreshToken,
+            expiresAt: expiresAt
+        ))
+        sessionProvider.onTokenRefreshed(response: response)
     }
 
     private func handleTokenRefreshAndRetry<T: Decodable>(
@@ -224,14 +252,10 @@ actor HTTPClient {
         method: HTTPMethod,
         parameters: [String: String]?,
         body: Encodable?,
-        id: String?
+        id: String?,
+        staleAccessToken: String?
     ) async throws -> T {
-        guard let refreshToken = sessionProvider.getRefreshToken() else {
-            sessionProvider.onAuthenticationFailed()
-            throw SdkError.authenticationRequired
-        }
-
-        try await performTokenRefresh(refreshToken: refreshToken)
+        try await serializedRefresh(staleAccessToken: staleAccessToken)
 
         return try await fetch(
             endpoint: endpoint,
@@ -239,7 +263,8 @@ actor HTTPClient {
             parameters: parameters,
             body: body,
             id: id,
-            requiresAuth: true
+            requiresAuth: true,
+            isRetry: true
         )
     }
 }
