@@ -84,7 +84,7 @@ actor HTTPClient {
                requiresAuth,
                !isRetry {
                 let staleAccessToken = request.value(forHTTPHeaderField: "Authorization")
-                    .flatMap { $0.hasPrefix("Bearer ") ? String($0.dropFirst(7)) : nil }
+                    .flatMap { $0.hasPrefix("Bearer ") ? String($0.dropFirst("Bearer ".count)) : nil }
                 return try await handleTokenRefreshAndRetry(
                     endpoint: endpoint, method: method, parameters: parameters,
                     body: body, id: id, staleAccessToken: staleAccessToken
