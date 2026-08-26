@@ -48,8 +48,9 @@ public struct Esim: Codable, Identifiable, Hashable {
     public var profile: EsimProfile?
     public let esimName: String?
     public let autoTopUp: Bool
+    public let isPrimary: Bool
 
-    public init(iccid: String, country: Country? = nil, orderUUID: String? = nil, androidSha: Bool, archived: Bool, orderNumber: String? = nil, assignedDate: String, packageDetails: [PackageDetail]? = nil, dataUsageRemainingBytes: Int, dataUsageRemainingGigabytes: Double, dateActivatedEpoch: Int? = nil, dateExpiryEpoch: Int? = nil, daysLeftToExpiry: Int? = nil, profile: EsimProfile? = nil, esimName: String? = nil, autoTopUp: Bool) {
+    public init(iccid: String, country: Country? = nil, orderUUID: String? = nil, androidSha: Bool, archived: Bool, orderNumber: String? = nil, assignedDate: String, packageDetails: [PackageDetail]? = nil, dataUsageRemainingBytes: Int, dataUsageRemainingGigabytes: Double, dateActivatedEpoch: Int? = nil, dateExpiryEpoch: Int? = nil, daysLeftToExpiry: Int? = nil, profile: EsimProfile? = nil, esimName: String? = nil, autoTopUp: Bool, isPrimary: Bool = false) {
         self.iccid = iccid
         self.country = country
         self.orderUUID = orderUUID
@@ -66,6 +67,7 @@ public struct Esim: Codable, Identifiable, Hashable {
         self.profile = profile
         self.esimName = esimName
         self.autoTopUp = autoTopUp
+        self.isPrimary = isPrimary
     }
 
     public var hasUnlimitedPackage: Bool {
@@ -86,6 +88,7 @@ public struct Esim: Codable, Identifiable, Hashable {
         case daysLeftToExpiry = "days_left_to_expiry"
         case esimName = "esim_name"
         case autoTopUp = "auto_top_up"
+        case isPrimary = "is_primary"
     }
 }
 

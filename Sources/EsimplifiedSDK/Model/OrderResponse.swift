@@ -51,7 +51,7 @@ public struct Order: Codable, Identifiable {
     public let purchaseCountry: PurchaseCountry?
     public let packageTypeID: Int
     public let paymentStatus: String
-    public let country: Country
+    public let country: Country?
     public let loyaltyPointsEarned: LoyaltyPointsDetail?
     public let loyaltyPointsSpent: LoyaltyPointsDetail?
 
@@ -102,7 +102,7 @@ public struct Order: Codable, Identifiable {
         purchaseCountry: PurchaseCountry? = nil,
         packageTypeID: Int,
         paymentStatus: String,
-        country: Country,
+        country: Country?,
         loyaltyPointsEarned: LoyaltyPointsDetail? = nil,
         loyaltyPointsSpent: LoyaltyPointsDetail? = nil
     ) {
@@ -151,7 +151,7 @@ public struct Order: Codable, Identifiable {
         purchaseCountry = try container.decodeIfPresent(PurchaseCountry.self, forKey: .purchaseCountry)
         packageTypeID = try container.decode(Int.self, forKey: .packageTypeID)
         paymentStatus = try container.decode(String.self, forKey: .paymentStatus)
-        country = try container.decode(Country.self, forKey: .country)
+        country = try container.decodeIfPresent(Country.self, forKey: .country)
         loyaltyPointsEarned = try container.decodeIfPresent(LoyaltyPointsDetail.self, forKey: .loyaltyPointsEarned)
         loyaltyPointsSpent = try container.decodeIfPresent(LoyaltyPointsDetail.self, forKey: .loyaltyPointsSpent)
     }

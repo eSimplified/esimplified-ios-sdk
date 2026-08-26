@@ -16,7 +16,7 @@ public struct OrderDetail: Codable {
     public let activationCode: String
     public let countryName: String
     public let countryCode: String
-    public let country: Country
+    public let country: Country?
     public let orderNumber: Int
     public let orderType: String
     public let orderDate: String
@@ -80,7 +80,7 @@ public struct OrderDetail: Codable {
         activationCode: String,
         countryName: String,
         countryCode: String,
-        country: Country,
+        country: Country?,
         orderNumber: Int,
         orderType: String,
         orderDate: String,
@@ -147,7 +147,7 @@ public struct OrderDetail: Codable {
         activationCode = try container.decode(String.self, forKey: .activationCode)
         countryName = try container.decode(String.self, forKey: .countryName)
         countryCode = try container.decode(String.self, forKey: .countryCode)
-        country = try container.decode(Country.self, forKey: .country)
+        country = try container.decodeIfPresent(Country.self, forKey: .country)
         orderNumber = try container.decode(Int.self, forKey: .orderNumber)
         orderType = try container.decode(String.self, forKey: .orderType)
         orderDate = try container.decode(String.self, forKey: .orderDate)
