@@ -16,10 +16,10 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
         self.cache = cache
     }
 
-    func fetchOrders(forceRefresh: Bool = false, withLoyaltyPoints: Bool, cacheTTL: TimeInterval = 600) async -> [Order] {
+    func fetchOrdersResult(forceRefresh: Bool = false, withLoyaltyPoints: Bool, cacheTTL: TimeInterval = 600) async -> RepositoryResult<[Order]> {
         let cacheKey = "orders_\(withLoyaltyPoints)"
         if !forceRefresh, let cached: [Order] = await cache.get(cacheKey) {
-            return cached
+            return RepositoryResult(value: cached)
         }
         let parameters: [String: String] = withLoyaltyPoints ? ["used_points": "true"] : [:]
         do {
@@ -30,10 +30,17 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
             )
             let orders = response.orders
             await cache.set(cacheKey, value: orders, ttl: cacheTTL)
-            return orders
+            return RepositoryResult(value: orders)
         } catch {
-            return await cache.getExpired(cacheKey) ?? []
+            let failure = error as? SdkError ?? .unknown(error)
+            let expired: [Order] = await cache.getExpired(cacheKey) ?? []
+            return RepositoryResult(value: expired, isStale: !expired.isEmpty, failure: failure)
         }
+    }
+
+    /// Preserved signature. One code path with the `Result` variant above.
+    func fetchOrders(forceRefresh: Bool = false, withLoyaltyPoints: Bool, cacheTTL: TimeInterval = 600) async -> [Order] {
+        await fetchOrdersResult(forceRefresh: forceRefresh, withLoyaltyPoints: withLoyaltyPoints, cacheTTL: cacheTTL).value
     }
 
     func fetchOrder(orderUUID: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 300) async throws -> OrderDetail {

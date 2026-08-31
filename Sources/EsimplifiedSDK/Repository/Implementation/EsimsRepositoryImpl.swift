@@ -16,10 +16,10 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
         self.cache = cache
     }
 
-    func fetchEsims(archivedEsims: Bool, forceRefresh: Bool = false, cacheTTL: TimeInterval = 86400) async -> [Esim] {
+    func fetchEsimsResult(archivedEsims: Bool, forceRefresh: Bool = false, cacheTTL: TimeInterval = 86400) async -> RepositoryResult<[Esim]> {
         let cacheKey = "esims_\(archivedEsims)"
         if !forceRefresh, let cached: [Esim] = await cache.get(cacheKey) {
-            return cached
+            return RepositoryResult(value: cached)
         }
         let parameters = [
             "show_package_details": "true",
@@ -36,16 +36,23 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
             )
             let esims = response.esims
             await cache.set(cacheKey, value: esims, ttl: cacheTTL)
-            return esims
+            return RepositoryResult(value: esims)
         } catch {
-            return await cache.getExpired(cacheKey) ?? []
+            let failure = error as? SdkError ?? .unknown(error)
+            let expired: [Esim] = await cache.getExpired(cacheKey) ?? []
+            return RepositoryResult(value: expired, isStale: !expired.isEmpty, failure: failure)
         }
     }
 
-    func fetchEsimDetails(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 300) async -> Esim? {
+    /// Preserved signature. One code path with the `Result` variant above.
+    func fetchEsims(archivedEsims: Bool, forceRefresh: Bool = false, cacheTTL: TimeInterval = 86400) async -> [Esim] {
+        await fetchEsimsResult(archivedEsims: archivedEsims, forceRefresh: forceRefresh, cacheTTL: cacheTTL).value
+    }
+
+    func fetchEsimDetailsResult(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 300) async -> RepositoryResult<Esim?> {
         let cacheKey = "esim_details_\(iccid)"
         if !forceRefresh, let cached: Esim = await cache.get(cacheKey) {
-            return cached
+            return RepositoryResult(value: cached)
         }
         do {
             let esim: Esim = try await client.fetch(
@@ -54,61 +61,125 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
                 id: iccid
             )
             await cache.set(cacheKey, value: esim, ttl: cacheTTL)
-            return esim
+            return RepositoryResult(value: esim)
         } catch {
-            return await cache.getExpired(cacheKey)
+            let failure = error as? SdkError ?? .unknown(error)
+            let expired: Esim? = await cache.getExpired(cacheKey)
+            return RepositoryResult(value: expired, isStale: expired != nil, failure: failure)
         }
     }
 
+    /// Preserved signature. One code path with the `Result` variant above.
+    func fetchEsimDetails(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 300) async -> Esim? {
+        await fetchEsimDetailsResult(iccid: iccid, forceRefresh: forceRefresh, cacheTTL: cacheTTL).value
+    }
+
+    func updateEsimNameOrThrow(customName: String, iccid: String) async throws {
+        await invalidateEsimCaches(iccid: iccid)
+        let response: UpdateEsimResponse = try await client.fetch(
+            endpoint: .updateEsim,
+            method: .PUT,
+            body: ["esim_name": customName],
+            id: iccid
+        )
+        // A 2xx with an unexpected message is a real failure, and a distinct one from a dead
+        // request — the Bool signature collapsed both into `false`.
+        guard response.message == Self.updateSucceededMessage else {
+            throw SdkError.serverError(response.message ?? "The update did not succeed")
+        }
+    }
+
+    /// Preserved signature. One code path with the throwing variant above.
     func updateEsimName(customName: String, iccid: String) async -> Bool {
-        await cache.remove("esim_details_\(iccid)")
-        await cache.remove("esims_true")
-        await cache.remove("esims_false")
         do {
-            let response: UpdateEsimResponse = try await client.fetch(
-                endpoint: .updateEsim,
-                method: .PUT,
-                body: ["esim_name": customName],
-                id: iccid
-            )
-            return response.message == "eSIM updated successfully"
+            try await updateEsimNameOrThrow(customName: customName, iccid: iccid)
+            return true
         } catch {
             return false
         }
     }
 
+    func updateEsimAutoTopUpStatusOrThrow(status: Bool, iccid: String) async throws {
+        await invalidateEsimCaches(iccid: iccid)
+        let response: UpdateEsimResponse = try await client.fetch(
+            endpoint: .updateEsim,
+            method: .PUT,
+            body: ["auto_top_up": status],
+            id: iccid
+        )
+        // A 2xx with an unexpected message is a real failure, and a distinct one from a dead
+        // request — the Bool signature collapsed both into `false`.
+        guard response.message == Self.updateSucceededMessage else {
+            throw SdkError.serverError(response.message ?? "The update did not succeed")
+        }
+    }
+
+    /// Preserved signature. One code path with the throwing variant above.
     func updateEsimAutoTopUpStatus(status: Bool, iccid: String) async -> Bool {
-        await cache.remove("esim_details_\(iccid)")
-        await cache.remove("esims_true")
-        await cache.remove("esims_false")
         do {
-            let response: UpdateEsimResponse = try await client.fetch(
-                endpoint: .updateEsim,
-                method: .PUT,
-                body: ["auto_top_up": status],
-                id: iccid
-            )
-            return response.message == "eSIM updated successfully"
+            try await updateEsimAutoTopUpStatusOrThrow(status: status, iccid: iccid)
+            return true
         } catch {
             return false
         }
     }
 
+    func updateEsimArchivedStatusOrThrow(status: Bool, iccid: String) async throws {
+        await invalidateEsimCaches(iccid: iccid)
+        let response: UpdateEsimResponse = try await client.fetch(
+            endpoint: .updateEsim,
+            method: .PUT,
+            body: ["archived": status],
+            id: iccid
+        )
+        // A 2xx with an unexpected message is a real failure, and a distinct one from a dead
+        // request — the Bool signature collapsed both into `false`.
+        guard response.message == Self.updateSucceededMessage else {
+            throw SdkError.serverError(response.message ?? "The update did not succeed")
+        }
+    }
+
+    /// Preserved signature. One code path with the throwing variant above.
     func updateEsimArchivedStatus(status: Bool, iccid: String) async -> Bool {
-        await cache.remove("esim_details_\(iccid)")
-        await cache.remove("esims_true")
-        await cache.remove("esims_false")
         do {
-            let response: UpdateEsimResponse = try await client.fetch(
-                endpoint: .updateEsim,
-                method: .PUT,
-                body: ["archived": status],
-                id: iccid
-            )
-            return response.message == "eSIM updated successfully"
+            try await updateEsimArchivedStatusOrThrow(status: status, iccid: iccid)
+            return true
         } catch {
             return false
         }
+    }
+
+    func updateEsimPrimaryStatusOrThrow(status: Bool, iccid: String) async throws {
+        await invalidateEsimCaches(iccid: iccid)
+        let response: UpdateEsimResponse = try await client.fetch(
+            endpoint: .updateEsim,
+            method: .PUT,
+            body: ["is_primary": status],
+            id: iccid
+        )
+        // A 2xx with an unexpected message is a real failure, and a distinct one from a dead
+        // request — the Bool signature collapsed both into `false`.
+        guard response.message == Self.updateSucceededMessage else {
+            throw SdkError.serverError(response.message ?? "The update did not succeed")
+        }
+    }
+
+    /// Preserved signature. One code path with the throwing variant above.
+    func updateEsimPrimaryStatus(status: Bool, iccid: String) async -> Bool {
+        do {
+            try await updateEsimPrimaryStatusOrThrow(status: status, iccid: iccid)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    private static let updateSucceededMessage = "eSIM updated successfully"
+
+    private func invalidateEsimCaches(iccid: String) async {
+        await cache.remove("esim_details_\(iccid)")
+        await cache.remove("esims_true")
+        await cache.remove("esims_false")
     }
 
     func invalidateCache() async {

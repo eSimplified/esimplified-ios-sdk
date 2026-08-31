@@ -21,14 +21,21 @@ actor HTTPClient {
         if let session {
             self.session = session
         } else {
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 60.0
-            sessionConfig.timeoutIntervalForResource = 60.0
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.httpMaximumConnectionsPerHost = 5
-            sessionConfig.requestCachePolicy = .useProtocolCachePolicy
-            self.session = URLSession(configuration: sessionConfig)
+            self.session = URLSession(configuration: Self.makeDefaultSessionConfiguration())
         }
+    }
+
+    /// `waitsForConnectivity` is deliberately **false**: with it on, an offline request hangs
+    /// until the resource timeout and then reports `.timedOut`, so the app could never tell
+    /// "you're offline" from "the server is slow". Offline must fail immediately.
+    static func makeDefaultSessionConfiguration() -> URLSessionConfiguration {
+        let sessionConfig = URLSessionConfiguration.default
+        sessionConfig.timeoutIntervalForRequest = 60.0
+        sessionConfig.timeoutIntervalForResource = 60.0
+        sessionConfig.waitsForConnectivity = false
+        sessionConfig.httpMaximumConnectionsPerHost = 5
+        sessionConfig.requestCachePolicy = .useProtocolCachePolicy
+        return sessionConfig
     }
 
     func fetch<T: Decodable>(
@@ -119,6 +126,9 @@ actor HTTPClient {
             throw error
         } catch {
             logger.logError(method: method.rawValue, url: url.absoluteString, error: error)
+            if let urlError = error as? URLError, urlError.isOffline {
+                throw SdkError.noInternetConnection
+            }
             throw SdkError.unknown(error)
         }
     }
@@ -280,5 +290,19 @@ struct AnyEncodable: Encodable {
 
     func encode(to encoder: Encoder) throws {
         try encode(encoder)
+    }
+}
+
+// MARK: - Offline Detection
+
+private extension URLError {
+
+    /// The request never left the device, so there is nothing the server could have said.
+    /// A timeout is deliberately excluded — it is not the same as having no connection.
+    var isOffline: Bool {
+        [.notConnectedToInternet,
+         .networkConnectionLost,
+         .dataNotAllowed,
+         .internationalRoamingOff].contains(code)
     }
 }
