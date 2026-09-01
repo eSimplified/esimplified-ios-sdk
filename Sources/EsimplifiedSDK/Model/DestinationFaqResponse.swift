@@ -30,15 +30,13 @@ public struct DestinationFaqResponse: Codable, Hashable {
 
 // MARK: FAQ
 
-public struct Faq: Codable, Hashable, Identifiable {
+/// Deliberately NOT `Identifiable`. The service sends no id, and it does not need to: the response
+/// is an ORDERED array, so a row's position is its identity — the first entry is the first card.
+/// Callers key their `ForEach` on the index, which cannot collide the way a question string can.
+public struct Faq: Codable, Hashable {
 
     public let question: String
     public let answer: String
-
-    /// The question, because the service sends no id. Two identical questions on one destination
-    /// would collide in a `ForEach`, but that is a content error worth seeing rather than hiding
-    /// behind a synthesised `UUID` that changes on every decode and breaks view identity.
-    public var id: String { question }
 
     public init(question: String, answer: String) {
         self.question = question
