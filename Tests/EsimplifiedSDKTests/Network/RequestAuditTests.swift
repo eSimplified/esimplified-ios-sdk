@@ -114,6 +114,50 @@ struct RequestAuditTests {
         #expect(summary.last?.extraCalls == 1)
     }
 
+    // MARK: - Normalisation
+
+    /// The bug this catches: query parameters come from a Swift Dictionary, so the SAME request
+    /// serialises in a different ORDER from one call to the next. Two identical
+    /// `customer/esims/?is_primary=true` calls were observed on one launch and went unreported
+    /// because the raw strings differed.
+    @Test("Same parameters in a different order is the same request")
+    func parameterOrderDoesNotHideADuplicate() async {
+        let audit = RequestAudit(window: 2.0)
+
+        _ = await audit.record(
+            method: "GET",
+            url: "https://api/customer/esims/?show_legacy=false&is_primary=true&limit=1000",
+            now: start
+        )
+        let reordered = await audit.record(
+            method: "GET",
+            url: "https://api/customer/esims/?limit=1000&is_primary=true&show_legacy=false",
+            now: start.addingTimeInterval(0.2)
+        )
+
+        #expect(reordered == true)
+    }
+
+    @Test("Normalisation still distinguishes genuinely different parameters")
+    func normalisationKeepsRealDifferences() async {
+        let audit = RequestAudit(window: 2.0)
+
+        _ = await audit.record(method: "GET", url: "https://api/e/?a=1&b=2", now: start)
+        let different = await audit.record(method: "GET", url: "https://api/e/?a=1&b=3", now: start.addingTimeInterval(0.1))
+
+        #expect(different == false)
+    }
+
+    @Test("A URL with no query is left alone")
+    func urlWithoutQuery() async {
+        let audit = RequestAudit(window: 2.0)
+
+        _ = await audit.record(method: "GET", url: "https://api/get_country/", now: start)
+        let again = await audit.record(method: "GET", url: "https://api/get_country/", now: start.addingTimeInterval(0.1))
+
+        #expect(again == true)
+    }
+
     @Test("Reset clears both the recent window and the tally")
     func resetClearsEverything() async {
         let audit = RequestAudit(window: 2.0)

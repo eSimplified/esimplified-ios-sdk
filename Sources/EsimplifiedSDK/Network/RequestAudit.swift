@@ -39,12 +39,30 @@ actor RequestAudit {
         self.window = window
     }
 
+    /// Normalises a URL so the same logical request always produces the same key.
+    ///
+    /// 🔴 Query parameters are built from a Swift `Dictionary`, whose order is NOT stable — the
+    /// SAME request serialises differently from one call to the next. Comparing raw URL strings
+    /// therefore MISSED real duplicates: two identical `customer/esims/?is_primary=true` calls
+    /// were observed on one launch, differing only in parameter order, and went unreported.
+    /// Sorting the query pairs is what makes the comparison mean anything.
+    static func normalise(_ url: String) -> String {
+        guard let components = URLComponents(string: url) else { return url }
+        guard let items = components.queryItems, !items.isEmpty else { return url }
+        let sorted = items
+            .map { "\($0.name)=\($0.value ?? "")" }
+            .sorted()
+            .joined(separator: "&")
+        let base = components.scheme.map { "\($0)://" } ?? ""
+        return base + (components.host ?? "") + components.path + "?" + sorted
+    }
+
     /// Records a request and reports whether it duplicates a very recent one.
     ///
     /// `now` is injected so tests do not sleep.
     @discardableResult
     func record(method: String, url: String, now: Date = Date()) -> Bool {
-        let key = "\(method) \(url)"
+        let key = "\(method) \(Self.normalise(url))"
         defer { recent[key] = Entry(method: method, url: url, at: now) }
 
         guard let previous = recent[key] else { return false }
