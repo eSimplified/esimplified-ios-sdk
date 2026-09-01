@@ -167,8 +167,27 @@ public struct EsimInfo: Codable {
     public let smDpAddress: String
     public let assignedDate: String
     public let premium: Bool
+    /// The customer's name for the eSIM this order was placed against, e.g. "Kieran's eSIM".
+    ///
+    /// `customer/orders/` has always returned this — the model simply did not decode it, so
+    /// `Order history` fetched the ENTIRE eSIM list just to join ICCID → name. On a large account
+    /// that second call measured **17,941 ms**. Nullable: the service sends `null` for an eSIM the
+    /// customer never named.
+    public let esimName: String?
+    /// Whether the eSIM is universal rather than country-locked. Also already in the payload.
+    public let isUniversal: Bool?
 
-    public init(iccid: String, country: String, matchingID: String, androidSha: Bool, smDpAddress: String, assignedDate: String, premium: Bool) {
+    public init(
+        iccid: String,
+        country: String,
+        matchingID: String,
+        androidSha: Bool,
+        smDpAddress: String,
+        assignedDate: String,
+        premium: Bool,
+        esimName: String? = nil,
+        isUniversal: Bool? = nil
+    ) {
         self.iccid = iccid
         self.country = country
         self.matchingID = matchingID
@@ -176,6 +195,8 @@ public struct EsimInfo: Codable {
         self.smDpAddress = smDpAddress
         self.assignedDate = assignedDate
         self.premium = premium
+        self.esimName = esimName
+        self.isUniversal = isUniversal
     }
 
     enum CodingKeys: String, CodingKey {
@@ -184,6 +205,8 @@ public struct EsimInfo: Codable {
         case androidSha = "android_sha"
         case smDpAddress = "sm_dp_address"
         case assignedDate = "assigned_date"
+        case esimName = "esim_name"
+        case isUniversal = "is_universal"
     }
 }
 

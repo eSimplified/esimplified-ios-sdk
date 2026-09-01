@@ -47,3 +47,99 @@ struct ModelDecodingTests {
         #expect(countries[0].restrictionType == .global)
     }
 }
+
+// MARK: - Order eSIM Name
+
+/// `customer/orders/` embeds the eSIM the order was placed against, including the customer's name
+/// for it. `EsimInfo` did not decode that field, so `Order history` fetched the ENTIRE eSIM list
+/// (`show_legacy=true`) purely to join ICCID → name — **17,941 ms** on a large account.
+@Suite("Order eSIM Info")
+struct OrderEsimInfoDecodingTests {
+
+    private func decode(_ json: String) throws -> EsimInfo {
+        try JSONDecoder().decode(EsimInfo.self, from: Data(json.utf8))
+    }
+
+    @Test("Decodes the customer's eSIM name straight off the order")
+    func decodesEsimName() throws {
+        let esim = try decode("""
+        {
+          "id": 4257,
+          "iccid": "250700000031473",
+          "country": "Andorra",
+          "matching_id": "25011473",
+          "android_sha": false,
+          "sm_dp_address": "test.esim.com",
+          "assigned_date": "2026-08-20T12:44:23.339874Z",
+          "premium": false,
+          "archived": false,
+          "esim_name": "Kieran's eSIM",
+          "is_universal": true
+        }
+        """)
+
+        #expect(esim.esimName == "Kieran's eSIM")
+        #expect(esim.isUniversal == true)
+        #expect(esim.iccid == "250700000031473")
+    }
+
+    /// A legacy, country-locked eSIM — the case the extra network call was supposedly needed for.
+    @Test("Decodes a legacy eSIM's name and flags it non-universal")
+    func decodesLegacyEsimName() throws {
+        let esim = try decode("""
+        {
+          "iccid": "260700000049466",
+          "country": "USA",
+          "matching_id": "26029466",
+          "android_sha": false,
+          "sm_dp_address": "test.esim.com",
+          "assigned_date": "2026-08-25T14:13:09.443444Z",
+          "premium": false,
+          "esim_name": "Kirrie’s device",
+          "is_universal": false
+        }
+        """)
+
+        #expect(esim.esimName == "Kirrie’s device")
+        #expect(esim.isUniversal == false)
+    }
+
+    @Test("A null name decodes as nil rather than failing")
+    func nullEsimNameIsNil() throws {
+        let esim = try decode("""
+        {
+          "iccid": "100700000128227",
+          "country": "Afghanistan",
+          "matching_id": "10108227",
+          "android_sha": false,
+          "sm_dp_address": "test.esim.com",
+          "assigned_date": "2026-08-20T12:49:18.009066Z",
+          "premium": false,
+          "esim_name": null,
+          "is_universal": false
+        }
+        """)
+
+        #expect(esim.esimName == nil)
+        #expect(esim.country == "Afghanistan")
+    }
+
+    /// Older payloads, and every existing fixture, omit the keys entirely.
+    @Test("Missing keys decode as nil, so existing payloads keep working")
+    func missingKeysDecode() throws {
+        let esim = try decode("""
+        {
+          "iccid": "1",
+          "country": "Global",
+          "matching_id": "2",
+          "android_sha": false,
+          "sm_dp_address": "a",
+          "assigned_date": "b",
+          "premium": false
+        }
+        """)
+
+        #expect(esim.esimName == nil)
+        #expect(esim.isUniversal == nil)
+    }
+}
