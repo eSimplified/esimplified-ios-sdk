@@ -30,6 +30,7 @@ enum Endpoints: String {
     case visaIframe = "customer/promotions/iframe"
     case validateVisa = "customer/promotions/validate"
     case storeReview = "reviews"
+    case destinationFaqs = "faqs/destinations/placeholder"
     case deleteAccount = "customer/delete"
     case updateEsim = "customer/esims/placeholder"
     case verifyEmail = "verify-email"
