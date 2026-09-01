@@ -35,7 +35,15 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
             "show_balance_remaining": "true",
             "show_esim_details": "true",
             "order_by": "-assigned_date",
-            "show_archived_esims": archivedEsims ? "true" : "false"
+            "show_archived_esims": archivedEsims ? "true" : "false",
+            // 🔴 This endpoint is PAGINATED and defaults to 25. `EsimsResponse` decodes `count` and
+            // `next` but nothing ever read them, so the list was silently truncated: an account
+            // with 296 eSIMs got 25 (owner-verified 2026-09-01, `?show_legacy=true` → count 296,
+            // next offset=25). Matches `CountriesRepositoryImpl`, which already asks for 1000.
+            //
+            // A limit is a ceiling, not paging. `next` still needs following if any account ever
+            // exceeds this — see the handoff.
+            "limit": "1000"
         ]
         // Service change 2026-09-01: this endpoint returns UNIVERSAL eSIMs only; `show_legacy=true`
         // is required to get everything. Sent EXPLICITLY either way rather than omitted when false,

@@ -94,6 +94,20 @@ extension NetworkSuite {
         #expect(esimsQuery()["is_primary"] == nil)
     }
 
+    /// 🔴 The endpoint paginates at 25 by default. Owner-verified 2026-09-01: `?show_legacy=true`
+    /// returned `count: 296` with a `next` offset — so without a limit the app showed 25 of 296.
+    @Test("eSIMs: asks for a high limit so a long list is not silently truncated")
+    func esimsAsksForAHighLimit() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"esims": []}"#)
+        let (client, cache) = makeEsimsEnv()
+        let repo = EsimsRepositoryImpl(client: client, cache: cache)
+
+        _ = await repo.fetchEsims(archivedEsims: false)
+
+        #expect(esimsQuery()["limit"] == "1000")
+    }
+
     /// 🔴 Different queries return different eSIMs. Sharing one cache key would let a
     /// universal-only or primary-only response satisfy a later request for the FULL list, silently
     /// hiding eSIMs the customer owns.
