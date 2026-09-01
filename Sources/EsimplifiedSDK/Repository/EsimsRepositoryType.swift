@@ -7,27 +7,16 @@
 import Foundation
 
 public protocol EsimsRepositoryType {
-    /// - Parameters:
-    ///   - showLegacy: `GET /customer/esims/` returns UNIVERSAL eSIMs only; `show_legacy=true` is
-    ///     required to get everything (service change, 2026-09-01). Defaults to `true` so a caller
-    ///     listing a customer's plans cannot accidentally hide their legacy eSIMs.
-    ///   - isPrimary: filters server-side to the single primary eSIM. The full list is what makes
-    ///     this endpoint slow, so ask for one when one is all you need.
     func fetchEsims(archivedEsims: Bool, showLegacy: Bool, isPrimary: Bool?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> [Esim]
     func fetchEsimDetails(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> Esim?
     func updateEsimName(customName: String, iccid: String) async -> Bool
     func updateEsimAutoTopUpStatus(status: Bool, iccid: String) async -> Bool
     func updateEsimArchivedStatus(status: Bool, iccid: String) async -> Bool
-    /// Marks this eSIM as the account's current device. Exactly one eSIM is primary at a time —
-    /// the service moves the flag off whichever held it.
     func updateEsimPrimaryStatus(status: Bool, iccid: String) async -> Bool
     func invalidateCache() async
 
-    /// Cache-first read that also reports why a refresh failed. See `RepositoryResult`.
     func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool, isPrimary: Bool?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Esim]>
     func fetchEsimDetailsResult(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<Esim?>
-    /// Throwing mutations. The `Bool` variants cannot distinguish a dead request from a server
-    /// that answered with an unexpected message, so nothing downstream can show a real error.
     func updateEsimNameOrThrow(customName: String, iccid: String) async throws
     func updateEsimAutoTopUpStatusOrThrow(status: Bool, iccid: String) async throws
     func updateEsimArchivedStatusOrThrow(status: Bool, iccid: String) async throws
@@ -72,8 +61,6 @@ public extension EsimsRepositoryType {
 
 // MARK: - Result And Throwing Defaults
 
-/// Defaults so existing conformers — the app's mock and its inline test stubs — keep compiling
-/// without change. Only the real implementation overrides them.
 public extension EsimsRepositoryType {
 
     func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool, isPrimary: Bool?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Esim]> {

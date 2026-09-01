@@ -12,7 +12,6 @@ public protocol PackagesRepositoryType {
     func fetchCheckStockForPackage(packageTypeId: Int, forceRefresh: Bool, cacheTTL: TimeInterval) async -> CheckStockResponse?
     func invalidateCache() async
 
-    /// Cache-first reads that also report why a refresh failed. See `RepositoryResult`.
     func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, countryName: String?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?>
     func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Package]>
 
@@ -43,8 +42,6 @@ public extension PackagesRepositoryType {
 
 // MARK: - Result Defaults
 
-/// Defaults so existing conformers — the app's mock and its inline test stubs — keep compiling
-/// without change. Only the real implementation overrides them.
 public extension PackagesRepositoryType {
 
     func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, countryName: String?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?> {

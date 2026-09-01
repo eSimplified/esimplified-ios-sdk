@@ -9,11 +9,6 @@ import Foundation
 
 // MARK: - Request Audit
 
-/// `RequestAudit` exists to catch the failure this codebase keeps repeating: the same request
-/// issued more than once for a single screen. Home was making **four** `customer/esims/` calls per
-/// launch, and it was found by reading console lines by hand.
-///
-/// Time is injected throughout so nothing here sleeps.
 @Suite("Request Audit")
 struct RequestAuditTests {
 
@@ -48,9 +43,6 @@ struct RequestAuditTests {
         #expect(later == false)
     }
 
-    /// The point of the narrow definition: making two callers ask the SAME question is how the
-    /// second one hits cache. Different query strings are different questions and must NOT be
-    /// reported, or the signal drowns.
     @Test("Different query parameters are different questions, not duplicates")
     func differentQueryIsNotDuplicate() async {
         let audit = RequestAudit(window: 2.0)
@@ -83,7 +75,6 @@ struct RequestAuditTests {
     func burstCountsEveryExtraCall() async {
         let audit = RequestAudit(window: 2.0)
 
-        // Home's actual bug shape: four calls for one screen.
         for index in 0..<4 {
             _ = await audit.record(
                 method: "GET",
@@ -116,10 +107,6 @@ struct RequestAuditTests {
 
     // MARK: - Normalisation
 
-    /// The bug this catches: query parameters come from a Swift Dictionary, so the SAME request
-    /// serialises in a different ORDER from one call to the next. Two identical
-    /// `customer/esims/?is_primary=true` calls were observed on one launch and went unreported
-    /// because the raw strings differed.
     @Test("Same parameters in a different order is the same request")
     func parameterOrderDoesNotHideADuplicate() async {
         let audit = RequestAudit(window: 2.0)

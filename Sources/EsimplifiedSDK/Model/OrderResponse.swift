@@ -167,14 +167,7 @@ public struct EsimInfo: Codable {
     public let smDpAddress: String
     public let assignedDate: String
     public let premium: Bool
-    /// The customer's name for the eSIM this order was placed against, e.g. "Kieran's eSIM".
-    ///
-    /// `customer/orders/` has always returned this — the model simply did not decode it, so
-    /// `Order history` fetched the ENTIRE eSIM list just to join ICCID → name. On a large account
-    /// that second call measured **17,941 ms**. Nullable: the service sends `null` for an eSIM the
-    /// customer never named.
     public let esimName: String?
-    /// Whether the eSIM is universal rather than country-locked. Also already in the payload.
     public let isUniversal: Bool?
 
     public init(

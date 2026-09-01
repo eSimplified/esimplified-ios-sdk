@@ -50,9 +50,6 @@ struct ModelDecodingTests {
 
 // MARK: - Order eSIM Name
 
-/// `customer/orders/` embeds the eSIM the order was placed against, including the customer's name
-/// for it. `EsimInfo` did not decode that field, so `Order history` fetched the ENTIRE eSIM list
-/// (`show_legacy=true`) purely to join ICCID → name — **17,941 ms** on a large account.
 @Suite("Order eSIM Info")
 struct OrderEsimInfoDecodingTests {
 
@@ -83,7 +80,6 @@ struct OrderEsimInfoDecodingTests {
         #expect(esim.iccid == "250700000031473")
     }
 
-    /// A legacy, country-locked eSIM — the case the extra network call was supposedly needed for.
     @Test("Decodes a legacy eSIM's name and flags it non-universal")
     func decodesLegacyEsimName() throws {
         let esim = try decode("""
@@ -124,7 +120,6 @@ struct OrderEsimInfoDecodingTests {
         #expect(esim.country == "Afghanistan")
     }
 
-    /// Older payloads, and every existing fixture, omit the keys entirely.
     @Test("Missing keys decode as nil, so existing payloads keep working")
     func missingKeysDecode() throws {
         let esim = try decode("""

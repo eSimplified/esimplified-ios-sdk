@@ -28,7 +28,6 @@ extension NetworkSuite {
         let count: Int
     }
 
-    /// Drives `client.fetch` against a session that fails with the given `URLError` code.
     private func fetchFailing(with code: URLError.Code) async -> Error? {
         MockURLProtocol.reset()
         MockURLProtocol.handler = { _ in throw URLError(code) }
@@ -88,9 +87,6 @@ extension NetworkSuite {
 
     // MARK: The Real Session Must Fail Fast When Offline
 
-    /// `waitsForConnectivity = true` makes an offline request hang until the 60s resource
-    /// timeout and then surface as `.timedOut`, so the offline sheet would never appear —
-    /// the customer just watches a spinner. Offline has to fail immediately.
     @Test("The default session does not wait for connectivity")
     func defaultSessionFailsFastWhenOffline() {
         let configuration = HTTPClient.makeDefaultSessionConfiguration()

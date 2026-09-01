@@ -20,8 +20,6 @@ final class FaqAndSupportRepositoryImpl: FaqAndSupportRepositoryType {
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 86400
     ) async -> RepositoryResult<[Faq]> {
-        // Keyed by slug: every destination has its own answers, and a shared key would show one
-        // destination's FAQs under another.
         let cacheKey = "faqs_destination_\(countryNameSlug)"
         if !forceRefresh, let cached: [Faq] = await cache.get(cacheKey) {
             return RepositoryResult(value: cached)

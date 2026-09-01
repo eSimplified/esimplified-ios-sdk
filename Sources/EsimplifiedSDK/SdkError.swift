@@ -16,8 +16,6 @@ public enum SdkError: Error, LocalizedError {
     case invalidURL
     case unknown(Error)
 
-    /// True when the request never reached the network. The app shows the offline sheet for
-    /// these and the error sheet for everything else.
     public var isOffline: Bool {
         if case .noInternetConnection = self { return true }
         return false

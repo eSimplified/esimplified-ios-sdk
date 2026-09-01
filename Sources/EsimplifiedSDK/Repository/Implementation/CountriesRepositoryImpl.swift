@@ -39,7 +39,6 @@ final class CountriesRepositoryImpl: CountriesRepositoryType {
         }
     }
 
-    /// Preserved signature. One code path with the `Result` variant above.
     func fetchAllCountries(forceRefresh: Bool = false, cacheTTL: TimeInterval = 86400) async -> [Country] {
         await fetchAllCountriesResult(forceRefresh: forceRefresh, cacheTTL: cacheTTL).value
     }

@@ -23,9 +23,6 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 86400
     ) async -> RepositoryResult<[Esim]> {
-        // 🔴 The cache key carries every parameter that changes WHICH eSIMs come back. Sharing one
-        // key would let a universal-only or primary-only response satisfy a later request for the
-        // full list, silently hiding eSIMs the customer owns.
         let cacheKey = "esims_\(archivedEsims)_legacy\(showLegacy)_primary\(isPrimary.map(String.init) ?? "any")"
         if !forceRefresh, let cached: [Esim] = await cache.get(cacheKey) {
             return RepositoryResult(value: cached)
@@ -36,25 +33,10 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
             "show_esim_details": "true",
             "order_by": "-assigned_date",
             "show_archived_esims": archivedEsims ? "true" : "false",
-            // 🔴 This endpoint is PAGINATED and defaults to 25. `EsimsResponse` decodes `count` and
-            // `next` but nothing ever read them, so the list was silently truncated: an account
-            // with 296 eSIMs got 25 (owner-verified 2026-09-01, `?show_legacy=true` → count 296,
-            // next offset=25). Matches `CountriesRepositoryImpl`, which already asks for 1000.
-            //
-            // A limit is a ceiling, not paging. `next` still needs following if any account ever
-            // exceeds this — see the handoff.
             "limit": "1000"
         ]
-        // Service change 2026-09-01: this endpoint returns UNIVERSAL eSIMs only; `show_legacy=true`
-        // is required to get everything. Sent EXPLICITLY either way rather than omitted when false,
-        // so the request always states its intent — and so it matches the URLs the owner verified:
-        //   ?show_legacy=false&is_primary=true  → the home widget's primary eSIM
-        //   (no params / show_legacy=false)     → universal only, for My plans and the device picker
         parameters["show_legacy"] = showLegacy ? "true" : "false"
 
-        // Returns exactly one eSIM. The whole list is what makes this endpoint slow — 13s on a
-        // large account, measured on device 2026-09-01 — so a caller that only needs the current
-        // device should ask for only the current device.
         if let isPrimary {
             parameters["is_primary"] = isPrimary ? "true" : "false"
         }
@@ -74,7 +56,6 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
         }
     }
 
-    /// Preserved signature. One code path with the `Result` variant above.
     func fetchEsims(
         archivedEsims: Bool,
         showLegacy: Bool = true,
@@ -111,7 +92,6 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
         }
     }
 
-    /// Preserved signature. One code path with the `Result` variant above.
     func fetchEsimDetails(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 300) async -> Esim? {
         await fetchEsimDetailsResult(iccid: iccid, forceRefresh: forceRefresh, cacheTTL: cacheTTL).value
     }
@@ -124,14 +104,11 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
             body: ["esim_name": customName],
             id: iccid
         )
-        // A 2xx with an unexpected message is a real failure, and a distinct one from a dead
-        // request — the Bool signature collapsed both into `false`.
         guard response.message == Self.updateSucceededMessage else {
             throw SdkError.serverError(response.message ?? "The update did not succeed")
         }
     }
 
-    /// Preserved signature. One code path with the throwing variant above.
     func updateEsimName(customName: String, iccid: String) async -> Bool {
         do {
             try await updateEsimNameOrThrow(customName: customName, iccid: iccid)
@@ -149,14 +126,11 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
             body: ["auto_top_up": status],
             id: iccid
         )
-        // A 2xx with an unexpected message is a real failure, and a distinct one from a dead
-        // request — the Bool signature collapsed both into `false`.
         guard response.message == Self.updateSucceededMessage else {
             throw SdkError.serverError(response.message ?? "The update did not succeed")
         }
     }
 
-    /// Preserved signature. One code path with the throwing variant above.
     func updateEsimAutoTopUpStatus(status: Bool, iccid: String) async -> Bool {
         do {
             try await updateEsimAutoTopUpStatusOrThrow(status: status, iccid: iccid)
@@ -174,14 +148,11 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
             body: ["archived": status],
             id: iccid
         )
-        // A 2xx with an unexpected message is a real failure, and a distinct one from a dead
-        // request — the Bool signature collapsed both into `false`.
         guard response.message == Self.updateSucceededMessage else {
             throw SdkError.serverError(response.message ?? "The update did not succeed")
         }
     }
 
-    /// Preserved signature. One code path with the throwing variant above.
     func updateEsimArchivedStatus(status: Bool, iccid: String) async -> Bool {
         do {
             try await updateEsimArchivedStatusOrThrow(status: status, iccid: iccid)
@@ -199,14 +170,11 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
             body: ["is_primary": status],
             id: iccid
         )
-        // A 2xx with an unexpected message is a real failure, and a distinct one from a dead
-        // request — the Bool signature collapsed both into `false`.
         guard response.message == Self.updateSucceededMessage else {
             throw SdkError.serverError(response.message ?? "The update did not succeed")
         }
     }
 
-    /// Preserved signature. One code path with the throwing variant above.
     func updateEsimPrimaryStatus(status: Bool, iccid: String) async -> Bool {
         do {
             try await updateEsimPrimaryStatusOrThrow(status: status, iccid: iccid)

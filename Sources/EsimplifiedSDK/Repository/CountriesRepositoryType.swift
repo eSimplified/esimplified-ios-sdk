@@ -11,7 +11,6 @@ public protocol CountriesRepositoryType {
     func searchCountries(searchTerm: String) async -> [Country]
     func invalidateCache() async
 
-    /// Cache-first read that also reports why a refresh failed. See `RepositoryResult`.
     func fetchAllCountriesResult(forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Country]>
 
 }
@@ -24,9 +23,6 @@ public extension CountriesRepositoryType {
 
 // MARK: - Result Defaults
 
-/// Defaults so existing conformers — the app's mock and its inline test stubs — keep compiling
-/// without change. A conformer that does not override these simply never reports a failure,
-/// which is the correct answer for a stub. Only the real implementation overrides them.
 public extension CountriesRepositoryType {
 
     func fetchAllCountriesResult(forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Country]> {

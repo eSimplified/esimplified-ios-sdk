@@ -15,8 +15,6 @@ actor HTTPClient {
     private var refreshTask: Task<Void, Error>?
 
     #if DEBUG
-    /// Reports the same request being issued twice in quick succession. Debug-only; see
-    /// `RequestAudit`. Never suppresses or coalesces — it only counts.
     private let audit = RequestAudit()
     #endif
 
@@ -31,9 +29,6 @@ actor HTTPClient {
         }
     }
 
-    /// `waitsForConnectivity` is deliberately **false**: with it on, an offline request hangs
-    /// until the resource timeout and then reports `.timedOut`, so the app could never tell
-    /// "you're offline" from "the server is slow". Offline must fail immediately.
     static func makeDefaultSessionConfiguration() -> URLSessionConfiguration {
         let sessionConfig = URLSessionConfiguration.default
         sessionConfig.timeoutIntervalForRequest = 60.0
@@ -142,11 +137,6 @@ actor HTTPClient {
         }
     }
 
-    /// Fetches a raw body without decoding — for endpoints that return a file rather than JSON.
-    ///
-    /// `fetch` always ends in `JSONDecoder().decode`, so it cannot express "give me the bytes".
-    /// The invoice endpoint returns a PDF on success and a JSON error otherwise, so the error path
-    /// here still decodes `ApiErrorResponse` exactly as `fetch` does.
     func fetchData(
         endpoint: Endpoints,
         method: HTTPMethod = .GET,
@@ -380,8 +370,6 @@ struct AnyEncodable: Encodable {
 
 private extension URLError {
 
-    /// The request never left the device, so there is nothing the server could have said.
-    /// A timeout is deliberately excluded — it is not the same as having no connection.
     var isOffline: Bool {
         [.notConnectedToInternet,
          .networkConnectionLost,

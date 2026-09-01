@@ -27,13 +27,6 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
         if !forceRefresh, let cached: PackageResponse = await cache.get(cacheKey) {
             return RepositoryResult(value: cached)
         }
-        // `country_name` lets a caller that only has the DISPLAY name — an eSIM's
-        // `package_country_name`, say — fetch without first resolving a slug. Home's top-up used to
-        // download the entire country catalogue purely to translate "Andorra" into "andorra", which
-        // is what made the button feel dead (owner-verified 2026-09-01).
-        //
-        // Sent only when supplied: the service treats an empty value as a filter that matches
-        // nothing, so an unconditional key would break every existing slug-based call.
         var parameters = [
             "country_code": countryCode ?? "",
             "country_name_slug": countryNameSlug,
@@ -58,7 +51,6 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
         }
     }
 
-    /// Preserved signature. One code path with the `Result` variant above.
     func fetchPackagesForCountry(
         countryCode: String?,
         countryNameSlug: String,
@@ -98,7 +90,6 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
         }
     }
 
-    /// Preserved signature. One code path with the `Result` variant above.
     func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 3600) async -> [Package] {
         await fetchPackagesForTopUpEsimResult(iccid: iccid, forceRefresh: forceRefresh, cacheTTL: cacheTTL).value
     }

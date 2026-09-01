@@ -49,10 +49,6 @@ public struct Esim: Codable, Identifiable, Hashable {
     public let esimName: String?
     public let autoTopUp: Bool
     public let isPrimary: Bool
-    /// Whether this eSIM can carry ANY country's package. Optional on purpose: `Esim` has no
-    /// custom decoder, so a non-optional `Bool` would make the whole response fail to decode on
-    /// any endpoint that omits the key — and a failed decode here silently empties the eSIM list.
-    /// Absent therefore means "not universal", which is also correct for older country-locked SIMs.
     public let isUniversal: Bool?
 
     public init(iccid: String, country: Country? = nil, orderUUID: String? = nil, androidSha: Bool, archived: Bool, orderNumber: String? = nil, assignedDate: String, packageDetails: [PackageDetail]? = nil, dataUsageRemainingBytes: Int, dataUsageRemainingGigabytes: Double, dateActivatedEpoch: Int? = nil, dateExpiryEpoch: Int? = nil, daysLeftToExpiry: Int? = nil, profile: EsimProfile? = nil, esimName: String? = nil, autoTopUp: Bool, isPrimary: Bool = false, isUniversal: Bool? = nil) {
@@ -76,7 +72,6 @@ public struct Esim: Codable, Identifiable, Hashable {
         self.isUniversal = isUniversal
     }
 
-    /// `true` only when the service explicitly says so — see `isUniversal`.
     public var carriesAnyCountry: Bool { isUniversal == true }
 
     public var hasUnlimitedPackage: Bool {

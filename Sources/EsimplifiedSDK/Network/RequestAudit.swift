@@ -6,19 +6,6 @@
 import Foundation
 import OSLog
 
-/// Flags the same request being issued twice in quick succession.
-///
-/// Duplicate fetches are the failure mode this codebase keeps hitting, and they are invisible in a
-/// normal log: the lines look correct, there are simply more of them than anyone counts. Home was
-/// found issuing **four** `customer/esims/` calls per launch only because someone read the console
-/// line by line. This does that counting automatically.
-///
-/// A duplicate here means *the same method and URL within `window` seconds*. That is deliberately
-/// narrow — two different query strings are two different questions, and one of the fixes this
-/// year was precisely to make two callers ask the SAME question so the second hits cache.
-///
-/// **Debug tooling.** Every entry point is `#if DEBUG`, so this type has no release footprint. It
-/// reports; it never changes behaviour, and it never coalesces or suppresses a request.
 actor RequestAudit {
 
     struct Entry: Sendable {
@@ -27,8 +14,6 @@ actor RequestAudit {
         let at: Date
     }
 
-    /// Two calls closer together than this are treated as one duplicate. Sized for a screen
-    /// appearing: independent taps are seconds apart, a redundant fetch is milliseconds.
     private let window: TimeInterval
     private var recent: [String: Entry] = [:]
     private var duplicates: [String: Int] = [:]
@@ -39,13 +24,6 @@ actor RequestAudit {
         self.window = window
     }
 
-    /// Normalises a URL so the same logical request always produces the same key.
-    ///
-    /// 🔴 Query parameters are built from a Swift `Dictionary`, whose order is NOT stable — the
-    /// SAME request serialises differently from one call to the next. Comparing raw URL strings
-    /// therefore MISSED real duplicates: two identical `customer/esims/?is_primary=true` calls
-    /// were observed on one launch, differing only in parameter order, and went unreported.
-    /// Sorting the query pairs is what makes the comparison mean anything.
     static func normalise(_ url: String) -> String {
         guard let components = URLComponents(string: url) else { return url }
         guard let items = components.queryItems, !items.isEmpty else { return url }
@@ -57,9 +35,6 @@ actor RequestAudit {
         return base + (components.host ?? "") + components.path + "?" + sorted
     }
 
-    /// Records a request and reports whether it duplicates a very recent one.
-    ///
-    /// `now` is injected so tests do not sleep.
     @discardableResult
     func record(method: String, url: String, now: Date = Date()) -> Bool {
         let key = "\(method) \(Self.normalise(url))"
@@ -76,8 +51,6 @@ actor RequestAudit {
         return true
     }
 
-    /// Every duplicated request seen so far, most-duplicated first. For a test, or for reading at
-    /// the end of a manual flow.
     func summary() -> [(request: String, extraCalls: Int)] {
         duplicates
             .sorted { ($0.value, $0.key) > ($1.value, $1.key) }

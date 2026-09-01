@@ -9,7 +9,6 @@ import Foundation
 
 extension NetworkSuite {
 
-    /// Local copy — `RepositoryTests`' version is `private` to that file.
     private func makeEsimsEnv() -> (HTTPClient, SdkCache) {
         let config = SdkConfig(
             environment: .staging,
@@ -38,12 +37,6 @@ extension NetworkSuite {
         }, uniquingKeysWith: { first, _ in first })
     }
 
-    /// 🔴 The service changed on 2026-09-01: `GET /customer/esims/` now returns **universal eSIMs
-    /// only**, and `?show_legacy=true` is required to get everything. Any screen listing a
-    /// customer's plans MUST send it, or their legacy eSIMs silently vanish from the app.
-    ///
-    /// The default is therefore `showLegacy: true` — it preserves exactly what every existing
-    /// caller already expects. Universal-only is opt-in, for callers that genuinely mean it.
     @Test("eSIMs: the default asks for legacy too, so nothing vanishes from a customer's list")
     func esimsDefaultIncludesLegacy() async throws {
         MockURLProtocol.reset()
@@ -68,8 +61,6 @@ extension NetworkSuite {
         #expect(esimsQuery()["show_legacy"] == "false")
     }
 
-    /// Filtering server-side is the point: the customer's whole eSIM list is what makes this
-    /// endpoint slow (13s on a large account, measured on device 2026-09-01).
     @Test("eSIMs: is_primary is sent when asked for")
     func esimsIsPrimarySent() async throws {
         MockURLProtocol.reset()
@@ -94,8 +85,6 @@ extension NetworkSuite {
         #expect(esimsQuery()["is_primary"] == nil)
     }
 
-    /// 🔴 The endpoint paginates at 25 by default. Owner-verified 2026-09-01: `?show_legacy=true`
-    /// returned `count: 296` with a `next` offset — so without a limit the app showed 25 of 296.
     @Test("eSIMs: asks for a high limit so a long list is not silently truncated")
     func esimsAsksForAHighLimit() async throws {
         MockURLProtocol.reset()
@@ -108,9 +97,6 @@ extension NetworkSuite {
         #expect(esimsQuery()["limit"] == "1000")
     }
 
-    /// 🔴 Different queries return different eSIMs. Sharing one cache key would let a
-    /// universal-only or primary-only response satisfy a later request for the FULL list, silently
-    /// hiding eSIMs the customer owns.
     @Test("eSIMs: each distinct query caches separately")
     func esimsDistinctQueriesCacheSeparately() async throws {
         MockURLProtocol.reset()

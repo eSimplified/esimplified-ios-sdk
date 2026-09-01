@@ -214,8 +214,6 @@ extension NetworkSuite {
         }
     }
 
-    /// The `Bool` signature returned `false` for BOTH a dead request and a 2xx carrying an
-    /// unexpected message. These must be distinguishable now.
     @Test("A 2xx with an unexpected message throws a server error, not offline")
     func renameUnexpectedMessageThrowsServerError() async {
         MockURLProtocol.reset()
