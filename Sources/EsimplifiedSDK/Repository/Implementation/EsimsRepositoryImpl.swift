@@ -16,18 +16,39 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
         self.cache = cache
     }
 
-    func fetchEsimsResult(archivedEsims: Bool, forceRefresh: Bool = false, cacheTTL: TimeInterval = 86400) async -> RepositoryResult<[Esim]> {
-        let cacheKey = "esims_\(archivedEsims)"
+    func fetchEsimsResult(
+        archivedEsims: Bool,
+        showLegacy: Bool = true,
+        isPrimary: Bool? = nil,
+        forceRefresh: Bool = false,
+        cacheTTL: TimeInterval = 86400
+    ) async -> RepositoryResult<[Esim]> {
+        // 🔴 The cache key carries every parameter that changes WHICH eSIMs come back. Sharing one
+        // key would let a universal-only or primary-only response satisfy a later request for the
+        // full list, silently hiding eSIMs the customer owns.
+        let cacheKey = "esims_\(archivedEsims)_legacy\(showLegacy)_primary\(isPrimary.map(String.init) ?? "any")"
         if !forceRefresh, let cached: [Esim] = await cache.get(cacheKey) {
             return RepositoryResult(value: cached)
         }
-        let parameters = [
+        var parameters = [
             "show_package_details": "true",
             "show_balance_remaining": "true",
             "show_esim_details": "true",
             "order_by": "-assigned_date",
             "show_archived_esims": archivedEsims ? "true" : "false"
         ]
+        // Service change 2026-09-01: this endpoint returns UNIVERSAL eSIMs only unless
+        // `show_legacy=true` is sent. Callers listing a customer's plans must send it or the
+        // customer's legacy eSIMs disappear from the app — hence the `true` default.
+        if showLegacy {
+            parameters["show_legacy"] = "true"
+        }
+        // Returns exactly one eSIM. The whole list is what makes this endpoint slow — 13s on a
+        // large account, measured on device 2026-09-01 — so a caller that only needs the current
+        // device should ask for only the current device.
+        if let isPrimary {
+            parameters["is_primary"] = isPrimary ? "true" : "false"
+        }
         do {
             let response: EsimsResponse = try await client.fetch(
                 endpoint: .esims,
@@ -45,8 +66,20 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
     }
 
     /// Preserved signature. One code path with the `Result` variant above.
-    func fetchEsims(archivedEsims: Bool, forceRefresh: Bool = false, cacheTTL: TimeInterval = 86400) async -> [Esim] {
-        await fetchEsimsResult(archivedEsims: archivedEsims, forceRefresh: forceRefresh, cacheTTL: cacheTTL).value
+    func fetchEsims(
+        archivedEsims: Bool,
+        showLegacy: Bool = true,
+        isPrimary: Bool? = nil,
+        forceRefresh: Bool = false,
+        cacheTTL: TimeInterval = 86400
+    ) async -> [Esim] {
+        await fetchEsimsResult(
+            archivedEsims: archivedEsims,
+            showLegacy: showLegacy,
+            isPrimary: isPrimary,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        ).value
     }
 
     func fetchEsimDetailsResult(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 300) async -> RepositoryResult<Esim?> {

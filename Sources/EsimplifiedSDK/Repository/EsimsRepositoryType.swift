@@ -7,7 +7,13 @@
 import Foundation
 
 public protocol EsimsRepositoryType {
-    func fetchEsims(archivedEsims: Bool, forceRefresh: Bool, cacheTTL: TimeInterval) async -> [Esim]
+    /// - Parameters:
+    ///   - showLegacy: `GET /customer/esims/` returns UNIVERSAL eSIMs only; `show_legacy=true` is
+    ///     required to get everything (service change, 2026-09-01). Defaults to `true` so a caller
+    ///     listing a customer's plans cannot accidentally hide their legacy eSIMs.
+    ///   - isPrimary: filters server-side to the single primary eSIM. The full list is what makes
+    ///     this endpoint slow, so ask for one when one is all you need.
+    func fetchEsims(archivedEsims: Bool, showLegacy: Bool, isPrimary: Bool?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> [Esim]
     func fetchEsimDetails(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> Esim?
     func updateEsimName(customName: String, iccid: String) async -> Bool
     func updateEsimAutoTopUpStatus(status: Bool, iccid: String) async -> Bool
@@ -18,7 +24,7 @@ public protocol EsimsRepositoryType {
     func invalidateCache() async
 
     /// Cache-first read that also reports why a refresh failed. See `RepositoryResult`.
-    func fetchEsimsResult(archivedEsims: Bool, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Esim]>
+    func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool, isPrimary: Bool?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Esim]>
     func fetchEsimDetailsResult(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<Esim?>
     /// Throwing mutations. The `Bool` variants cannot distinguish a dead request from a server
     /// that answered with an unexpected message, so nothing downstream can show a real error.
@@ -30,8 +36,34 @@ public protocol EsimsRepositoryType {
 }
 
 public extension EsimsRepositoryType {
-    func fetchEsims(archivedEsims: Bool, forceRefresh: Bool = false) async -> [Esim] {
-        await fetchEsims(archivedEsims: archivedEsims, forceRefresh: forceRefresh, cacheTTL: 86400)
+    func fetchEsims(
+        archivedEsims: Bool,
+        showLegacy: Bool = true,
+        isPrimary: Bool? = nil,
+        forceRefresh: Bool = false
+    ) async -> [Esim] {
+        await fetchEsims(
+            archivedEsims: archivedEsims,
+            showLegacy: showLegacy,
+            isPrimary: isPrimary,
+            forceRefresh: forceRefresh,
+            cacheTTL: 86400
+        )
+    }
+
+    func fetchEsimsResult(
+        archivedEsims: Bool,
+        showLegacy: Bool = true,
+        isPrimary: Bool? = nil,
+        forceRefresh: Bool = false
+    ) async -> RepositoryResult<[Esim]> {
+        await fetchEsimsResult(
+            archivedEsims: archivedEsims,
+            showLegacy: showLegacy,
+            isPrimary: isPrimary,
+            forceRefresh: forceRefresh,
+            cacheTTL: 86400
+        )
     }
     func fetchEsimDetails(iccid: String, forceRefresh: Bool = false) async -> Esim? {
         await fetchEsimDetails(iccid: iccid, forceRefresh: forceRefresh, cacheTTL: 300)
@@ -44,12 +76,14 @@ public extension EsimsRepositoryType {
 /// without change. Only the real implementation overrides them.
 public extension EsimsRepositoryType {
 
-    func fetchEsimsResult(archivedEsims: Bool, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Esim]> {
-        RepositoryResult(value: await fetchEsims(archivedEsims: archivedEsims, forceRefresh: forceRefresh, cacheTTL: cacheTTL))
-    }
-
-    func fetchEsimsResult(archivedEsims: Bool, forceRefresh: Bool = false) async -> RepositoryResult<[Esim]> {
-        await fetchEsimsResult(archivedEsims: archivedEsims, forceRefresh: forceRefresh, cacheTTL: 86400)
+    func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool, isPrimary: Bool?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Esim]> {
+        RepositoryResult(value: await fetchEsims(
+            archivedEsims: archivedEsims,
+            showLegacy: showLegacy,
+            isPrimary: isPrimary,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        ))
     }
 
     func fetchEsimDetailsResult(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<Esim?> {
