@@ -37,12 +37,13 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
             "order_by": "-assigned_date",
             "show_archived_esims": archivedEsims ? "true" : "false"
         ]
-        // Service change 2026-09-01: this endpoint returns UNIVERSAL eSIMs only unless
-        // `show_legacy=true` is sent. Callers listing a customer's plans must send it or the
-        // customer's legacy eSIMs disappear from the app — hence the `true` default.
-        if showLegacy {
-            parameters["show_legacy"] = "true"
-        }
+        // Service change 2026-09-01: this endpoint returns UNIVERSAL eSIMs only; `show_legacy=true`
+        // is required to get everything. Sent EXPLICITLY either way rather than omitted when false,
+        // so the request always states its intent — and so it matches the URLs the owner verified:
+        //   ?show_legacy=false&is_primary=true  → the home widget's primary eSIM
+        //   (no params / show_legacy=false)     → universal only, for My plans and the device picker
+        parameters["show_legacy"] = showLegacy ? "true" : "false"
+
         // Returns exactly one eSIM. The whole list is what makes this endpoint slow — 13s on a
         // large account, measured on device 2026-09-01 — so a caller that only needs the current
         // device should ask for only the current device.

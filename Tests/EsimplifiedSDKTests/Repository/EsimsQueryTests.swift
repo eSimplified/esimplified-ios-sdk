@@ -56,8 +56,8 @@ extension NetworkSuite {
         #expect(esimsQuery()["show_legacy"] == "true")
     }
 
-    @Test("eSIMs: universal-only is opt-in and omits show_legacy")
-    func esimsUniversalOnlyOmitsLegacy() async throws {
+    @Test("eSIMs: universal-only sends show_legacy=false explicitly")
+    func esimsUniversalOnlySendsFalse() async throws {
         MockURLProtocol.reset()
         MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"esims": []}"#)
         let (client, cache) = makeEsimsEnv()
@@ -65,7 +65,7 @@ extension NetworkSuite {
 
         _ = await repo.fetchEsims(archivedEsims: false, showLegacy: false)
 
-        #expect(esimsQuery()["show_legacy"] == nil)
+        #expect(esimsQuery()["show_legacy"] == "false")
     }
 
     /// Filtering server-side is the point: the customer's whole eSIM list is what makes this
