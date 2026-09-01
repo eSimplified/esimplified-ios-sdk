@@ -7,20 +7,31 @@
 import Foundation
 
 public protocol PackagesRepositoryType {
-    func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> PackageResponse?
+    func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, countryName: String?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> PackageResponse?
     func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> [Package]
     func fetchCheckStockForPackage(packageTypeId: Int, forceRefresh: Bool, cacheTTL: TimeInterval) async -> CheckStockResponse?
     func invalidateCache() async
 
     /// Cache-first reads that also report why a refresh failed. See `RepositoryResult`.
-    func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?>
+    func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, countryName: String?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?>
     func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Package]>
 
 }
 
 public extension PackagesRepositoryType {
-    func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, forceRefresh: Bool = false) async -> PackageResponse? {
-        await fetchPackagesForCountry(countryCode: countryCode, countryNameSlug: countryNameSlug, forceRefresh: forceRefresh, cacheTTL: 3600)
+    func fetchPackagesForCountry(
+        countryCode: String?,
+        countryNameSlug: String,
+        countryName: String? = nil,
+        forceRefresh: Bool = false
+    ) async -> PackageResponse? {
+        await fetchPackagesForCountry(
+            countryCode: countryCode,
+            countryNameSlug: countryNameSlug,
+            countryName: countryName,
+            forceRefresh: forceRefresh,
+            cacheTTL: 3600
+        )
     }
     func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool = false) async -> [Package] {
         await fetchPackagesForTopUpEsim(iccid: iccid, forceRefresh: forceRefresh, cacheTTL: 3600)
@@ -36,12 +47,29 @@ public extension PackagesRepositoryType {
 /// without change. Only the real implementation overrides them.
 public extension PackagesRepositoryType {
 
-    func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?> {
-        RepositoryResult(value: await fetchPackagesForCountry(countryCode: countryCode, countryNameSlug: countryNameSlug, forceRefresh: forceRefresh, cacheTTL: cacheTTL))
+    func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, countryName: String?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?> {
+        RepositoryResult(value: await fetchPackagesForCountry(
+            countryCode: countryCode,
+            countryNameSlug: countryNameSlug,
+            countryName: countryName,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        ))
     }
 
-    func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, forceRefresh: Bool = false) async -> RepositoryResult<PackageResponse?> {
-        await fetchPackagesForCountryResult(countryCode: countryCode, countryNameSlug: countryNameSlug, forceRefresh: forceRefresh, cacheTTL: 3600)
+    func fetchPackagesForCountryResult(
+        countryCode: String?,
+        countryNameSlug: String,
+        countryName: String? = nil,
+        forceRefresh: Bool = false
+    ) async -> RepositoryResult<PackageResponse?> {
+        await fetchPackagesForCountryResult(
+            countryCode: countryCode,
+            countryNameSlug: countryNameSlug,
+            countryName: countryName,
+            forceRefresh: forceRefresh,
+            cacheTTL: 3600
+        )
     }
 
     func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Package]> {
