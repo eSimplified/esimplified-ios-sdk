@@ -19,6 +19,8 @@ enum Endpoints: String {
     case userLocation = "get_country"
     case search = "search"
     case customerOrders = "customer/orders"
+    /// The invoice PDF. Note the root is `orders/`, NOT `customer/orders/` — the latter 404s.
+    case orderInvoice = "orders/placeholder/invoice"
     case customerPreferences = "customer/preferences"
     case changePassword = "customer/reset-password"
     case topUpEsim = "customer/esims/placeholder/top-up/packages"

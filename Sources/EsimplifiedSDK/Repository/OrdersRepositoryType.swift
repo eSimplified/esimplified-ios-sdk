@@ -15,6 +15,10 @@ public protocol OrdersRepositoryType {
     /// Cache-first read that also reports why a refresh failed. See `RepositoryResult`.
     func fetchOrdersResult(forceRefresh: Bool, withLoyaltyPoints: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Order]>
 
+    /// The order's invoice as PDF bytes. Deliberately NOT cached — an invoice is fetched on demand,
+    /// it is large relative to the JSON this cache holds, and a stale one is worse than none.
+    func fetchInvoice(orderUUID: String) async throws -> Data
+
 }
 
 public extension OrdersRepositoryType {
@@ -31,6 +35,11 @@ public extension OrdersRepositoryType {
 /// Defaults so existing conformers — the app's mock and its inline test stubs — keep compiling
 /// without change. Only the real implementation overrides them.
 public extension OrdersRepositoryType {
+
+    /// Default so existing conformers keep compiling. Only the real implementation fetches.
+    func fetchInvoice(orderUUID: String) async throws -> Data {
+        throw SdkError.networkError(statusCode: 501, message: "Invoice download is not implemented by this repository")
+    }
 
     func fetchOrdersResult(forceRefresh: Bool, withLoyaltyPoints: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Order]> {
         RepositoryResult(value: await fetchOrders(forceRefresh: forceRefresh, withLoyaltyPoints: withLoyaltyPoints, cacheTTL: cacheTTL))

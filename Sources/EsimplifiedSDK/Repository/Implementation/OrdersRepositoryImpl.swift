@@ -43,6 +43,10 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
         await fetchOrdersResult(forceRefresh: forceRefresh, withLoyaltyPoints: withLoyaltyPoints, cacheTTL: cacheTTL).value
     }
 
+    func fetchInvoice(orderUUID: String) async throws -> Data {
+        try await client.fetchData(endpoint: .orderInvoice, method: .GET, id: orderUUID)
+    }
+
     func fetchOrder(orderUUID: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 300) async throws -> OrderDetail {
         let cacheKey = "order_\(orderUUID)"
         if !forceRefresh, let cached: OrderDetail = await cache.get(cacheKey) {

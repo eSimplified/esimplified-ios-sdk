@@ -133,6 +133,77 @@ actor HTTPClient {
         }
     }
 
+    /// Fetches a raw body without decoding — for endpoints that return a file rather than JSON.
+    ///
+    /// `fetch` always ends in `JSONDecoder().decode`, so it cannot express "give me the bytes".
+    /// The invoice endpoint returns a PDF on success and a JSON error otherwise, so the error path
+    /// here still decodes `ApiErrorResponse` exactly as `fetch` does.
+    func fetchData(
+        endpoint: Endpoints,
+        method: HTTPMethod = .GET,
+        parameters: [String: String]? = nil,
+        id: String? = nil,
+        requiresAuth: Bool = true,
+        isRetry: Bool = false
+    ) async throws -> Data {
+        let url = try constructURL(endpoint: endpoint, id: id, parameters: parameters)
+        var request = URLRequest(url: url)
+        request.httpMethod = method.rawValue
+        try await addHeaders(to: &request, requiresAuth: requiresAuth)
+
+        logger.logRequest(method: method.rawValue, url: url.absoluteString, headers: request.allHTTPHeaderFields, body: nil)
+        let start = Date()
+
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw SdkError.unknown(URLError(.badServerResponse))
+            }
+
+            logger.logResponse(
+                method: method.rawValue,
+                url: url.absoluteString,
+                statusCode: httpResponse.statusCode,
+                duration: Date().timeIntervalSince(start),
+                body: nil
+            )
+
+            if (httpResponse.statusCode == 401 || httpResponse.statusCode == 403), requiresAuth, !isRetry {
+                let staleAccessToken = request.value(forHTTPHeaderField: "Authorization")
+                    .flatMap { $0.hasPrefix("Bearer ") ? String($0.dropFirst("Bearer ".count)) : nil }
+                try await serializedRefresh(staleAccessToken: staleAccessToken)
+                return try await fetchData(
+                    endpoint: endpoint, method: method, parameters: parameters,
+                    id: id, requiresAuth: true, isRetry: true
+                )
+            }
+
+            guard (200..<300).contains(httpResponse.statusCode) else {
+                if let apiError = try? JSONDecoder().decode(ApiErrorResponse.self, from: data) {
+                    throw SdkError.networkError(
+                        statusCode: httpResponse.statusCode,
+                        message: apiError.message ?? apiError.detail ?? apiError.error ?? "Unknown error"
+                    )
+                }
+                let message = String(data: data, encoding: .utf8) ?? "Unknown error"
+                throw SdkError.networkError(statusCode: httpResponse.statusCode, message: message)
+            }
+
+            guard !data.isEmpty else {
+                throw SdkError.networkError(statusCode: httpResponse.statusCode, message: "Empty response")
+            }
+            return data
+        } catch let error as SdkError {
+            throw error
+        } catch {
+            logger.logError(method: method.rawValue, url: url.absoluteString, error: error)
+            if let urlError = error as? URLError, urlError.isOffline {
+                throw SdkError.noInternetConnection
+            }
+            throw SdkError.unknown(error)
+        }
+    }
+
     // MARK: - Private
 
     private func constructURL(

@@ -5,10 +5,23 @@
 //
 
 import Foundation
+import OSLog
 
 struct NetworkLogger {
 
     let isEnabled: Bool
+
+    /// Timing goes to the UNIFIED LOG as well as stdout.
+    ///
+    /// 🔴 `print` writes to stdout, which is reachable only by attaching a console —
+    /// `xcrun simctl launch --console-pty` on a simulator, or Xcode on a device. It never reaches
+    /// `log stream` / `log show`, so ON A PHYSICAL DEVICE there was no way to see request timings
+    /// at all. That cost a whole measuring session: `log show` was showing generic system network
+    /// activity and none of ours, which looked like data but was not.
+    ///
+    /// Only the timing line is mirrored here, and only fields that are safe to persist — the
+    /// unified log is durable and readable off-device. Headers and bodies stay on stdout.
+    private static let signpost = Logger(subsystem: "io.esimplified.sdk", category: "network")
 
     func logRequest(method: String, url: String, headers: [String: String]?, body: Data?) {
         guard isEnabled else { return }
@@ -27,7 +40,9 @@ struct NetworkLogger {
     func logResponse(method: String, url: String, statusCode: Int, duration: TimeInterval, body: Data?) {
         guard isEnabled else { return }
         let emoji = (200...299).contains(statusCode) ? "✅" : "⚠️"
-        print("\(emoji) RESPONSE: \(url) - Status: \(statusCode) (\(String(format: "%.0f", duration * 1000))ms)")
+        let milliseconds = String(format: "%.0f", duration * 1000)
+        print("\(emoji) RESPONSE: \(url) - Status: \(statusCode) (\(milliseconds)ms)")
+        Self.signpost.info("RESPONSE \(url, privacy: .public) status=\(statusCode, privacy: .public) duration=\(milliseconds, privacy: .public)ms")
         if let body, let bodyString = String(data: body, encoding: .utf8) {
             let redacted = Self.redactBody(raw: bodyString, contentType: "application/json")
             let truncated = redacted.count > 1024 ? String(redacted.prefix(1024)) + "... (truncated)" : redacted
