@@ -21,7 +21,12 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
         if !forceRefresh, let cached: [Order] = await cache.get(cacheKey) {
             return RepositoryResult(value: cached)
         }
-        let parameters: [String: String] = withLoyaltyPoints ? ["used_points": "true"] : [:]
+        var parameters: [String: String] = withLoyaltyPoints ? ["used_points": "true"] : [:]
+        // 🔴 `customer/orders/` paginates at **25** when no `limit` is sent, and none was sent —
+        // an account with 325 orders showed the newest 25 and stopped, with no indication that
+        // anything was missing. Same shape as the eSIM list truncation. A limit is a CEILING, not
+        // paging: `fetchOrdersPageResult` is the paging read.
+        parameters["limit"] = "\(Self.unpagedLimit)"
         do {
             let response: OrdersResponse = try await client.fetch(
                 endpoint: .customerOrders,
@@ -39,6 +44,49 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
     }
 
     /// Preserved signature. One code path with the `Result` variant above.
+    /// A ceiling for the callers that do not page (the Kreds screens). High enough to cover any
+    /// real account, low enough not to be the 13-second mistake the eSIM list made.
+    private static let unpagedLimit = 500
+
+    func fetchOrdersPageResult(
+        limit: Int,
+        offset: Int,
+        withLoyaltyPoints: Bool,
+        forceRefresh: Bool,
+        cacheTTL: TimeInterval
+    ) async -> RepositoryResult<OrdersPage> {
+        // Offset and limit both discriminate the response, so both belong in the key. Without
+        // them page 2 would be served page 1's cache.
+        let cacheKey = "orders_page_\(withLoyaltyPoints)_\(limit)_\(offset)"
+        if !forceRefresh, let cached: OrdersPage = await cache.get(cacheKey) {
+            return RepositoryResult(value: cached)
+        }
+        var parameters: [String: String] = withLoyaltyPoints ? ["used_points": "true"] : [:]
+        parameters["limit"] = "\(limit)"
+        parameters["offset"] = "\(offset)"
+        do {
+            let response: OrdersResponse = try await client.fetch(
+                endpoint: .customerOrders,
+                method: .GET,
+                parameters: parameters
+            )
+            // `next` is the URL of the following page. Its presence is the only reliable signal
+            // that more exist — comparing counts breaks if orders are added while paging.
+            let page = OrdersPage(
+                orders: response.orders,
+                totalCount: response.count,
+                hasMore: response.next?.isEmpty == false
+            )
+            await cache.set(cacheKey, value: page, ttl: cacheTTL)
+            return RepositoryResult(value: page)
+        } catch {
+            let failure = error as? SdkError ?? .unknown(error)
+            let expired: OrdersPage? = await cache.getExpired(cacheKey)
+            let fallback = expired ?? OrdersPage(orders: [], totalCount: 0, hasMore: false)
+            return RepositoryResult(value: fallback, isStale: expired != nil, failure: failure)
+        }
+    }
+
     func fetchOrders(forceRefresh: Bool = false, withLoyaltyPoints: Bool, cacheTTL: TimeInterval = 600) async -> [Order] {
         await fetchOrdersResult(forceRefresh: forceRefresh, withLoyaltyPoints: withLoyaltyPoints, cacheTTL: cacheTTL).value
     }
