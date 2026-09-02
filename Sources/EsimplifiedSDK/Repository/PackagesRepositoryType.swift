@@ -7,12 +7,12 @@
 import Foundation
 
 public protocol PackagesRepositoryType {
-    func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, countryName: String?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> PackageResponse?
+    func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> PackageResponse?
     func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> [Package]
     func fetchCheckStockForPackage(packageTypeId: Int, forceRefresh: Bool, cacheTTL: TimeInterval) async -> CheckStockResponse?
     func invalidateCache() async
 
-    func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, countryName: String?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?>
+    func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?>
     func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Package]>
 
 }
@@ -21,13 +21,11 @@ public extension PackagesRepositoryType {
     func fetchPackagesForCountry(
         countryCode: String?,
         countryNameSlug: String,
-        countryName: String? = nil,
         forceRefresh: Bool = false
     ) async -> PackageResponse? {
         await fetchPackagesForCountry(
             countryCode: countryCode,
             countryNameSlug: countryNameSlug,
-            countryName: countryName,
             forceRefresh: forceRefresh,
             cacheTTL: 3600
         )
@@ -44,11 +42,10 @@ public extension PackagesRepositoryType {
 
 public extension PackagesRepositoryType {
 
-    func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, countryName: String?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?> {
+    func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?> {
         RepositoryResult(value: await fetchPackagesForCountry(
             countryCode: countryCode,
             countryNameSlug: countryNameSlug,
-            countryName: countryName,
             forceRefresh: forceRefresh,
             cacheTTL: cacheTTL
         ))
@@ -57,13 +54,11 @@ public extension PackagesRepositoryType {
     func fetchPackagesForCountryResult(
         countryCode: String?,
         countryNameSlug: String,
-        countryName: String? = nil,
         forceRefresh: Bool = false
     ) async -> RepositoryResult<PackageResponse?> {
         await fetchPackagesForCountryResult(
             countryCode: countryCode,
             countryNameSlug: countryNameSlug,
-            countryName: countryName,
             forceRefresh: forceRefresh,
             cacheTTL: 3600
         )

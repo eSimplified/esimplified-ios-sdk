@@ -19,22 +19,18 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
     func fetchPackagesForCountryResult(
         countryCode: String?,
         countryNameSlug: String,
-        countryName: String? = nil,
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 3600
     ) async -> RepositoryResult<PackageResponse?> {
-        let cacheKey = "packages_\(countryCode ?? "")_\(countryNameSlug)_\(countryName ?? "")"
+        let cacheKey = "packages_\(countryCode ?? "")_\(countryNameSlug)"
         if !forceRefresh, let cached: PackageResponse = await cache.get(cacheKey) {
             return RepositoryResult(value: cached)
         }
-        var parameters = [
+        let parameters = [
             "country_code": countryCode ?? "",
             "country_name_slug": countryNameSlug,
             "reverse_order": "true"
         ]
-        if let countryName, !countryName.isEmpty {
-            parameters["country_name"] = countryName
-        }
         do {
             let response: PackageResponse = try await client.fetch(
                 endpoint: .packages,
@@ -54,14 +50,12 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
     func fetchPackagesForCountry(
         countryCode: String?,
         countryNameSlug: String,
-        countryName: String? = nil,
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 3600
     ) async -> PackageResponse? {
         await fetchPackagesForCountryResult(
             countryCode: countryCode,
             countryNameSlug: countryNameSlug,
-            countryName: countryName,
             forceRefresh: forceRefresh,
             cacheTTL: cacheTTL
         ).value
