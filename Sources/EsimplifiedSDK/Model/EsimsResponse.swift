@@ -72,8 +72,6 @@ public struct Esim: Codable, Identifiable, Hashable {
         self.isUniversal = isUniversal
     }
 
-    public var carriesAnyCountry: Bool { isUniversal == true }
-
     public var hasUnlimitedPackage: Bool {
         dataUsageRemainingGigabytes == -1
     }

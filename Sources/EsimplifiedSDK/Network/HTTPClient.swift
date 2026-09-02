@@ -14,10 +14,6 @@ actor HTTPClient {
     private let session: URLSession
     private var refreshTask: Task<Void, Error>?
 
-    #if DEBUG
-    private let audit = RequestAudit()
-    #endif
-
     init(config: SdkConfig, sessionProvider: SessionProvider, session: URLSession? = nil) {
         self.config = config
         self.sessionProvider = sessionProvider
@@ -72,9 +68,6 @@ actor HTTPClient {
         try await addHeaders(to: &request, requiresAuth: requiresAuth, forceBasicAuth: endpoint == .auth)
 
         logger.logRequest(method: method.rawValue, url: url.absoluteString, headers: request.allHTTPHeaderFields, body: request.httpBody)
-        #if DEBUG
-        await audit.record(method: method.rawValue, url: url.absoluteString)
-        #endif
         let start = Date()
 
         do {
@@ -151,9 +144,6 @@ actor HTTPClient {
         try await addHeaders(to: &request, requiresAuth: requiresAuth)
 
         logger.logRequest(method: method.rawValue, url: url.absoluteString, headers: request.allHTTPHeaderFields, body: nil)
-        #if DEBUG
-        await audit.record(method: method.rawValue, url: url.absoluteString)
-        #endif
         let start = Date()
 
         do {
