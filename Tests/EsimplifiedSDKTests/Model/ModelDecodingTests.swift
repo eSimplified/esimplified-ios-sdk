@@ -27,6 +27,36 @@ struct ModelDecodingTests {
         #expect(country.countryCode == "CA")
     }
 
+    @Test("PackageDetail decodes package_country_code")
+    func packageDetailCountryCode() throws {
+        let json = """
+        {"package_id":"d34ae82f","status":"ACTIVE","date_created_epoch":1787740202276,\
+        "window_activation_start_epoch":1787740202276,"window_activation_end_epoch":1790332202276,\
+        "voice_usage_remaining_seconds":0,"sms_usage_remaining_nums":0,"time_allowance_seconds":2592000,\
+        "time_allowance_days":30,"package_country_name":"USA","package_country_code":"US",\
+        "package_type_id":231551,"date_expiry_epoch":1790332202276,"date_activated_epoch":1787740202276,\
+        "data_allowance_bytes":12884901888,"data_usage_bytes":0,"data_usage_remaining_bytes":12884901888,\
+        "data_allowance_gigabytes":12,"status_message":"Active"}
+        """
+        let package: PackageDetail = try decode(json)
+        #expect(package.packageCountryCode == "US")
+        #expect(package.packageCountryName == "USA")
+    }
+
+    @Test("PackageDetail decodes without package_country_code")
+    func packageDetailMissingCountryCode() throws {
+        let json = """
+        {"status":"ACTIVE","date_created_epoch":1787740202276,\
+        "window_activation_start_epoch":1787740202276,"window_activation_end_epoch":1790332202276,\
+        "voice_usage_remaining_seconds":0,"sms_usage_remaining_nums":0,"time_allowance_seconds":2592000,\
+        "time_allowance_days":30,"package_country_name":"USA","package_type_id":231551,\
+        "data_allowance_bytes":12884901888,"data_usage_remaining_bytes":12884901888,\
+        "data_allowance_gigabytes":12,"status_message":"Active"}
+        """
+        let package: PackageDetail = try decode(json)
+        #expect(package.packageCountryCode == nil)
+    }
+
     @Test("RegisterCustomerResponse handles null referral_code")
     func registerNullReferral() throws {
         let json = """

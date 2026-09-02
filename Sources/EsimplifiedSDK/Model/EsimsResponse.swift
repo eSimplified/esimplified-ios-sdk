@@ -108,6 +108,7 @@ public struct PackageDetail: Codable, Identifiable, Hashable {
     public let timeAllowanceSeconds: Int
     public let timeAllowanceDays: Int
     public let packageCountryName: String?
+    public let packageCountryCode: String?
     public let packageTypeID: Int
     public let dateExpiryEpoch: Int?
     public let dateTerminatedEpoch: Int?
@@ -118,7 +119,7 @@ public struct PackageDetail: Codable, Identifiable, Hashable {
     public var dataUsedBytes: Int?
     public let statusMessage: String
 
-    public init(status: String, dateCreatedEpoch: Int, windowActivationStartEpoch: Int, windowActivationEndEpoch: Int, voiceUsageRemainingSeconds: Int, smsUsageRemainingNums: Int, timeAllowanceSeconds: Int, timeAllowanceDays: Int, packageCountryName: String? = nil, packageTypeID: Int, dateExpiryEpoch: Int? = nil, dateTerminatedEpoch: Int? = nil, dateActivatedEpoch: Int? = nil, dataAllowanceBytes: Int, dataUsageRemainingBytes: Int, dataAllowanceGigabytes: Int, dataUsedBytes: Int? = nil, statusMessage: String) {
+    public init(status: String, dateCreatedEpoch: Int, windowActivationStartEpoch: Int, windowActivationEndEpoch: Int, voiceUsageRemainingSeconds: Int, smsUsageRemainingNums: Int, timeAllowanceSeconds: Int, timeAllowanceDays: Int, packageCountryName: String? = nil, packageCountryCode: String? = nil, packageTypeID: Int, dateExpiryEpoch: Int? = nil, dateTerminatedEpoch: Int? = nil, dateActivatedEpoch: Int? = nil, dataAllowanceBytes: Int, dataUsageRemainingBytes: Int, dataAllowanceGigabytes: Int, dataUsedBytes: Int? = nil, statusMessage: String) {
         self.status = status
         self.dateCreatedEpoch = dateCreatedEpoch
         self.windowActivationStartEpoch = windowActivationStartEpoch
@@ -128,6 +129,7 @@ public struct PackageDetail: Codable, Identifiable, Hashable {
         self.timeAllowanceSeconds = timeAllowanceSeconds
         self.timeAllowanceDays = timeAllowanceDays
         self.packageCountryName = packageCountryName
+        self.packageCountryCode = packageCountryCode
         self.packageTypeID = packageTypeID
         self.dateExpiryEpoch = dateExpiryEpoch
         self.dateTerminatedEpoch = dateTerminatedEpoch
@@ -199,6 +201,7 @@ public struct PackageDetail: Codable, Identifiable, Hashable {
         case timeAllowanceSeconds = "time_allowance_seconds"
         case timeAllowanceDays = "time_allowance_days"
         case packageCountryName = "package_country_name"
+        case packageCountryCode = "package_country_code"
         case packageTypeID = "package_type_id"
         case dateExpiryEpoch = "date_expiry_epoch"
         case dateTerminatedEpoch = "date_terminated_epoch"
