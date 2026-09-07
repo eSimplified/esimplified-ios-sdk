@@ -65,7 +65,7 @@ actor HTTPClient {
             }
         }
 
-        try await addHeaders(to: &request, requiresAuth: requiresAuth, forceBasicAuth: endpoint == .auth)
+        try await addHeaders(to: &request, requiresAuth: requiresAuth, forceBasicAuth: endpoint == .auth || endpoint == .theme)
 
         logger.logRequest(method: method.rawValue, url: url.absoluteString, headers: request.allHTTPHeaderFields, body: request.httpBody)
         let start = Date()
@@ -216,7 +216,14 @@ actor HTTPClient {
         }
 
         if let parameters, !parameters.isEmpty {
-            components.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
+            var allowed = CharacterSet.urlQueryAllowed
+            allowed.remove(charactersIn: "/+&=?")
+            components.percentEncodedQueryItems = parameters.map {
+                URLQueryItem(
+                    name: $0.key.addingPercentEncoding(withAllowedCharacters: allowed) ?? $0.key,
+                    value: $0.value.addingPercentEncoding(withAllowedCharacters: allowed) ?? $0.value
+                )
+            }
         }
 
         guard let url = components.url else {
