@@ -188,8 +188,7 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
 
     private func invalidateEsimCaches(iccid: String) async {
         await cache.remove("esim_details_\(iccid)")
-        await cache.remove("esims_true")
-        await cache.remove("esims_false")
+        await cache.removeWithPrefix("esims_")
     }
 
     func invalidateCache() async {

@@ -110,4 +110,29 @@ extension NetworkSuite {
 
         #expect(MockURLProtocol.capturedRequests.count == 3)
     }
+
+    @Test("eSIMs: changing the default device throws away every cached eSIM list, whatever its filters")
+    func primaryChangeInvalidatesEveryListCache() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = { request in
+            let url = request.url!
+            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": "application/json"])!
+            let json = request.httpMethod == "PUT" ? #"{"message": "eSIM updated successfully"}"# : #"{"esims": []}"#
+            return (response, Data(json.utf8))
+        }
+        let (client, cache) = makeEsimsEnv()
+        let repo = EsimsRepositoryImpl(client: client, cache: cache)
+
+        _ = await repo.fetchEsims(archivedEsims: false, showLegacy: false)
+        _ = await repo.fetchEsims(archivedEsims: false, showLegacy: false, isPrimary: true)
+        let requestsBeforeUpdate = MockURLProtocol.capturedRequests.count
+
+        let didUpdate = await repo.updateEsimPrimaryStatus(status: true, iccid: "8900")
+        _ = await repo.fetchEsims(archivedEsims: false, showLegacy: false)
+        _ = await repo.fetchEsims(archivedEsims: false, showLegacy: false, isPrimary: true)
+
+        #expect(didUpdate)
+        #expect(requestsBeforeUpdate == 2)
+        #expect(MockURLProtocol.capturedRequests.count == 5)
+    }
 }
