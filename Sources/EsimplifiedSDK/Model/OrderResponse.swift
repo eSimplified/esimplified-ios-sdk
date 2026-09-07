@@ -168,7 +168,7 @@ public struct EsimInfo: Codable {
     public let assignedDate: String
     public let premium: Bool
     public let esimName: String?
-    public let isUniversal: Bool?
+    @DefaultFalse public var isUniversal: Bool
 
     public init(
         iccid: String,
@@ -179,7 +179,7 @@ public struct EsimInfo: Codable {
         assignedDate: String,
         premium: Bool,
         esimName: String? = nil,
-        isUniversal: Bool? = nil
+        isUniversal: Bool = false
     ) {
         self.iccid = iccid
         self.country = country

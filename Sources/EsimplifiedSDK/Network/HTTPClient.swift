@@ -103,14 +103,10 @@ actor HTTPClient {
                         message: serverError.errorDescription ?? serverError.error ?? "Authentication failed"
                     )
                 }
-                if let apiError = try? JSONDecoder().decode(ApiErrorResponse.self, from: data) {
-                    throw SdkError.networkError(
-                        statusCode: httpResponse.statusCode,
-                        message: apiError.message ?? apiError.detail ?? apiError.error ?? "Unknown error"
-                    )
-                }
-                let message = String(data: data, encoding: .utf8) ?? "Unknown error"
-                throw SdkError.networkError(statusCode: httpResponse.statusCode, message: message)
+                throw SdkError.networkError(
+                    statusCode: httpResponse.statusCode,
+                    message: ApiErrorMessage.parse(data)
+                )
             }
 
             do {
@@ -171,14 +167,10 @@ actor HTTPClient {
             }
 
             guard (200..<300).contains(httpResponse.statusCode) else {
-                if let apiError = try? JSONDecoder().decode(ApiErrorResponse.self, from: data) {
-                    throw SdkError.networkError(
-                        statusCode: httpResponse.statusCode,
-                        message: apiError.message ?? apiError.detail ?? apiError.error ?? "Unknown error"
-                    )
-                }
-                let message = String(data: data, encoding: .utf8) ?? "Unknown error"
-                throw SdkError.networkError(statusCode: httpResponse.statusCode, message: message)
+                throw SdkError.networkError(
+                    statusCode: httpResponse.statusCode,
+                    message: ApiErrorMessage.parse(data)
+                )
             }
 
             guard !data.isEmpty else {

@@ -165,6 +165,6 @@ struct OrderEsimInfoDecodingTests {
         """)
 
         #expect(esim.esimName == nil)
-        #expect(esim.isUniversal == nil)
+        #expect(esim.isUniversal == false)
     }
 }

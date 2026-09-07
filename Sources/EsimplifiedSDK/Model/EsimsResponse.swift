@@ -49,9 +49,9 @@ public struct Esim: Codable, Identifiable, Hashable {
     public let esimName: String?
     public let autoTopUp: Bool
     public let isPrimary: Bool
-    public let isUniversal: Bool?
+    @DefaultFalse public var isUniversal: Bool
 
-    public init(iccid: String, country: Country? = nil, orderUUID: String? = nil, androidSha: Bool, archived: Bool, orderNumber: String? = nil, assignedDate: String, packageDetails: [PackageDetail]? = nil, dataUsageRemainingBytes: Int, dataUsageRemainingGigabytes: Double, dateActivatedEpoch: Int? = nil, dateExpiryEpoch: Int? = nil, daysLeftToExpiry: Int? = nil, profile: EsimProfile? = nil, esimName: String? = nil, autoTopUp: Bool, isPrimary: Bool = false, isUniversal: Bool? = nil) {
+    public init(iccid: String, country: Country? = nil, orderUUID: String? = nil, androidSha: Bool, archived: Bool, orderNumber: String? = nil, assignedDate: String, packageDetails: [PackageDetail]? = nil, dataUsageRemainingBytes: Int, dataUsageRemainingGigabytes: Double, dateActivatedEpoch: Int? = nil, dateExpiryEpoch: Int? = nil, daysLeftToExpiry: Int? = nil, profile: EsimProfile? = nil, esimName: String? = nil, autoTopUp: Bool, isPrimary: Bool = false, isUniversal: Bool = false) {
         self.iccid = iccid
         self.country = country
         self.orderUUID = orderUUID
