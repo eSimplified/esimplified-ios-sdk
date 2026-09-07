@@ -29,7 +29,7 @@ final class ThemeRepositoryImpl: ThemeRepositoryType {
                 parameters: ["url": "/" + page],
                 requiresAuth: false
             )
-            let theme = response.pages[page] ?? response.pages.values.first
+            let theme = response.pages[page]
             if let theme {
                 await cache.set(cacheKey, value: theme, ttl: cacheTTL)
             }
@@ -56,7 +56,6 @@ final class ThemeRepositoryImpl: ThemeRepositoryType {
                 requiresAuth: false
             )
             let theme = response.destinations.values.first { $0.countryCode?.lowercased() == code }
-                ?? response.destinations.values.first
             if let theme {
                 await cache.set(cacheKey, value: theme, ttl: cacheTTL)
             }
