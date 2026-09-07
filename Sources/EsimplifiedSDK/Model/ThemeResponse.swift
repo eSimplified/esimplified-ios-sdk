@@ -6,40 +6,24 @@
 
 import Foundation
 
-// MARK: Page Theme
+// MARK: Theme Response
 
-public struct PageTheme: Codable, Hashable, Sendable {
-    public let version: String?
-    public let cdnBase: String?
-    public let pages: [String: ThemePage]
-    public let destinations: [String: ThemeDestination]
+struct ThemeResponse: Decodable {
+    let version: String?
+    let cdnBase: String?
+    let pages: [String: ThemePage]
+    let destinations: [String: ThemeDestination]
 
-    public init(
-        version: String? = nil,
-        cdnBase: String? = nil,
-        pages: [String: ThemePage] = [:],
-        destinations: [String: ThemeDestination] = [:]
-    ) {
-        self.version = version
-        self.cdnBase = cdnBase
-        self.pages = pages
-        self.destinations = destinations
+    private enum CodingKeys: String, CodingKey {
+        case version, cdnBase, pages, destinations
     }
 
-    public init(from decoder: Decoder) throws {
+    init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         version = try container.decodeIfPresent(String.self, forKey: .version)
         cdnBase = try container.decodeIfPresent(String.self, forKey: .cdnBase)
         pages = try container.decodeIfPresent([String: ThemePage].self, forKey: .pages) ?? [:]
         destinations = try container.decodeIfPresent([String: ThemeDestination].self, forKey: .destinations) ?? [:]
-    }
-
-    public func page(_ name: String) -> ThemePage? {
-        pages[name]
-    }
-
-    public func destination(_ slug: String) -> ThemeDestination? {
-        destinations[slug]
     }
 }
 

@@ -17,22 +17,52 @@ final class ThemeRepositoryImpl: ThemeRepositoryType {
         self.cache = cache
     }
 
-    func fetchTheme(page: String, forceRefresh: Bool, cacheTTL: TimeInterval) async throws -> PageTheme {
-        let cacheKey = Self.cacheKeyPrefix + page
-        if !forceRefresh, let cached: PageTheme = await cache.get(cacheKey) {
+    func fetchPageTheme(page: String, forceRefresh: Bool, cacheTTL: TimeInterval) async throws -> ThemePage? {
+        let cacheKey = Self.cacheKeyPrefix + "page_" + page
+        if !forceRefresh, let cached: ThemePage = await cache.get(cacheKey) {
             return cached
         }
         do {
-            let theme: PageTheme = try await client.fetch(
+            let response: ThemeResponse = try await client.fetch(
                 endpoint: .theme,
                 method: .GET,
-                parameters: ["page": page],
+                parameters: ["url": "/" + page],
                 requiresAuth: false
             )
-            await cache.set(cacheKey, value: theme, ttl: cacheTTL)
+            let theme = response.pages[page] ?? response.pages.values.first
+            if let theme {
+                await cache.set(cacheKey, value: theme, ttl: cacheTTL)
+            }
             return theme
         } catch {
-            if let expired: PageTheme = await cache.getExpired(cacheKey) {
+            if let expired: ThemePage = await cache.getExpired(cacheKey) {
+                return expired
+            }
+            throw error
+        }
+    }
+
+    func fetchDestinationTheme(countryCode: String, forceRefresh: Bool, cacheTTL: TimeInterval) async throws -> ThemeDestination? {
+        let code = countryCode.lowercased()
+        let cacheKey = Self.cacheKeyPrefix + "destination_" + code
+        if !forceRefresh, let cached: ThemeDestination = await cache.get(cacheKey) {
+            return cached
+        }
+        do {
+            let response: ThemeResponse = try await client.fetch(
+                endpoint: .theme,
+                method: .GET,
+                parameters: ["url": "/destinations/" + code],
+                requiresAuth: false
+            )
+            let theme = response.destinations.values.first { $0.countryCode?.lowercased() == code }
+                ?? response.destinations.values.first
+            if let theme {
+                await cache.set(cacheKey, value: theme, ttl: cacheTTL)
+            }
+            return theme
+        } catch {
+            if let expired: ThemeDestination = await cache.getExpired(cacheKey) {
                 return expired
             }
             throw error

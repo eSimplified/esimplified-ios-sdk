@@ -7,12 +7,17 @@
 import Foundation
 
 public protocol ThemeRepositoryType {
-    func fetchTheme(page: String, forceRefresh: Bool, cacheTTL: TimeInterval) async throws -> PageTheme
+    func fetchPageTheme(page: String, forceRefresh: Bool, cacheTTL: TimeInterval) async throws -> ThemePage?
+    func fetchDestinationTheme(countryCode: String, forceRefresh: Bool, cacheTTL: TimeInterval) async throws -> ThemeDestination?
     func invalidateCache() async
 }
 
 public extension ThemeRepositoryType {
-    func fetchTheme(page: String, forceRefresh: Bool = false) async throws -> PageTheme {
-        try await fetchTheme(page: page, forceRefresh: forceRefresh, cacheTTL: 3600)
+    func fetchPageTheme(page: String, forceRefresh: Bool = false) async throws -> ThemePage? {
+        try await fetchPageTheme(page: page, forceRefresh: forceRefresh, cacheTTL: 3600)
+    }
+
+    func fetchDestinationTheme(countryCode: String, forceRefresh: Bool = false) async throws -> ThemeDestination? {
+        try await fetchDestinationTheme(countryCode: countryCode, forceRefresh: forceRefresh, cacheTTL: 3600)
     }
 }
