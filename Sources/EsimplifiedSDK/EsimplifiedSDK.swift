@@ -24,6 +24,7 @@ public final class EsimplifiedSdk {
     public let vouchersRepository: VouchersRepositoryType
     public let storeReviewRepository: StoreReviewRepositoryType
     public let faqAndSupportRepository: FaqAndSupportRepositoryType
+    public let themeRepository: ThemeRepositoryType
 
     public let sessionProvider: SessionProvider
     public let config: SdkConfig
@@ -75,6 +76,7 @@ public final class EsimplifiedSdk {
         self.vouchersRepository = VouchersRepositoryImpl(client: client)
         self.storeReviewRepository = StoreReviewRepositoryImpl(client: client, cache: cache)
         self.faqAndSupportRepository = FaqAndSupportRepositoryImpl(client: client, cache: cache)
+        self.themeRepository = ThemeRepositoryImpl(client: client, cache: cache)
     }
 
     public func clearAllCaches() async {
@@ -85,5 +87,6 @@ public final class EsimplifiedSdk {
         await loyaltyRepository.invalidateCache()
         await storeReviewRepository.invalidateCache()
         await faqAndSupportRepository.invalidateCache()
+        await themeRepository.invalidateCache()
     }
 }
