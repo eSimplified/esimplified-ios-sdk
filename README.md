@@ -33,13 +33,13 @@ Add via Swift Package Manager in Xcode:
 
 1. **File → Add Package Dependencies**
 2. Enter: `https://github.com/eSimplified/esimplified-ios-sdk.git`
-3. Select version rule: **Up to Next Major Version** from `1.0.9`
+3. Select version rule: **Up to Next Major Version** from `1.1.0`
 
 Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.0.9")
+    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.1.0")
 ]
 ```
 
@@ -245,6 +245,12 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `ServerErrorResponse` | OAuth2 error response (error, error_description) — used for auth endpoint |
 | `TrackedOrderResponse` | Order tracking result (conversion tracked) |
 | `UpdateEsimResponse` | eSIM update result (message) |
+| `OrdersPage` | One page of orders (orders, total count, next offset) |
+| `DestinationFaqResponse` | Destination FAQ payload (slug, name, language, faqs) |
+| `Faq` | A single FAQ (question, answer) |
+| `ThemePage` | Page theme from `/theme/?page=` (url path, featured image, colour) |
+| `ThemeDestination` | Destination theme from `/theme/?url=` (image, gallery, country code) |
+| `ThemeImage` | Themed image (url, accent colour) |
 
 ## All Repository Methods
 
@@ -292,11 +298,12 @@ eSIM lifecycle management for authenticated users.
 
 | Method | Signature | Description |
 |---|---|---|
-| `fetchEsims` | `func fetchEsims(archivedEsims: Bool, forceRefresh: Bool = false) async -> [Esim]` | Fetch all eSIMs assigned to the customer |
+| `fetchEsims` | `func fetchEsims(archivedEsims: Bool, showLegacy: Bool = false, isPrimary: Bool? = nil, forceRefresh: Bool = false) async -> [Esim]` | Fetch the customer's eSIMs; `showLegacy` includes legacy (non-universal) eSIMs, `isPrimary` filters to the default device |
 | `fetchEsimDetails` | `func fetchEsimDetails(iccid: String, forceRefresh: Bool = false) async -> Esim?` | Fetch a specific eSIM by ICCID |
 | `updateEsimName` | `func updateEsimName(customName: String, iccid: String) async -> Bool` | Update eSIM display name |
 | `updateEsimAutoTopUpStatus` | `func updateEsimAutoTopUpStatus(status: Bool, iccid: String) async -> Bool` | Toggle eSIM auto top-up |
 | `updateEsimArchivedStatus` | `func updateEsimArchivedStatus(status: Bool, iccid: String) async -> Bool` | Archive/unarchive an eSIM |
+| `updateEsimPrimaryStatus` | `func updateEsimPrimaryStatus(status: Bool, iccid: String) async -> Bool` | Make an eSIM the customer's default device (invalidates every cached eSIM list) |
 
 ### OrdersRepository
 
@@ -307,6 +314,8 @@ Order history and tracking.
 | `fetchOrders` | `func fetchOrders(forceRefresh: Bool = false, withLoyaltyPoints: Bool) async -> [Order]` | Fetch all past orders |
 | `fetchOrder` | `func fetchOrder(orderUUID: String, forceRefresh: Bool = false) async throws -> OrderDetail` | Fetch full order details (polls pending orders) |
 | `trackedOrder` | `func trackedOrder(orderUUID: String) async` | Mark an order's conversion as tracked |
+| `fetchOrdersPageResult` | `func fetchOrdersPageResult(limit: Int, offset: Int, withLoyaltyPoints: Bool, forceRefresh: Bool = false) async -> RepositoryResult<OrdersPage>` | Fetch one page of orders |
+| `fetchInvoice` | `func fetchInvoice(orderUUID: String) async throws -> Data` | Download an order's invoice PDF |
 
 ### PaymentsRepository
 
@@ -382,6 +391,28 @@ Voucher code redemption.
 | Method | Signature | Description |
 |---|---|---|
 | `redeemVoucher` | `func redeemVoucher(code: String) async throws -> VoucherRedeemResponse` | Redeem a voucher code |
+
+### FaqAndSupportRepository
+
+Destination FAQs.
+
+| Method | Signature | Description |
+|---|---|---|
+| `fetchDestinationFaqs` | `func fetchDestinationFaqs(countryNameSlug: String, forceRefresh: Bool = false) async -> [Faq]` | Fetch the FAQs for a destination (empty on failure) |
+| `fetchDestinationFaqsResult` | `func fetchDestinationFaqsResult(countryNameSlug: String, forceRefresh: Bool = false) async -> RepositoryResult<[Faq]>` | Same, with the failure reported |
+
+### ThemeRepository
+
+Brand theme assets (images and colours) served by the platform.
+
+| Method | Signature | Description |
+|---|---|---|
+| `fetchPageTheme` | `func fetchPageTheme(page: String, forceRefresh: Bool = false) async throws -> ThemePage?` | Theme for a page key, e.g. `homepage` |
+| `fetchDestinationTheme` | `func fetchDestinationTheme(countryCode: String, forceRefresh: Bool = false) async throws -> ThemeDestination?` | Theme for a destination by ISO country code |
+
+### Result variants
+
+Every cached fetch also has a `…Result` variant (for example `fetchEsimsResult`, `fetchPackagesForCountryResult`) returning `RepositoryResult<T>`, which carries the value together with whether it came from a stale cache and the failure that caused that, so the app can show data and an error at the same time.
 
 ## Authentication Flow
 
@@ -486,7 +517,7 @@ let sdk = EsimplifiedSdk.initialize(
 
 ## Caching
 
-The SDK caches GET responses in-memory by default to reduce network traffic. Cacheable repositories (`countriesRepository`, `packagesRepository`, `esimsRepository`, `ordersRepository`, `loyaltyRepository`, `storeReviewRepository`) accept `forceRefresh: Bool` and `cacheTTL: TimeInterval` parameters on their fetch methods.
+The SDK caches GET responses in-memory by default to reduce network traffic. Cacheable repositories (`countriesRepository`, `packagesRepository`, `esimsRepository`, `ordersRepository`, `loyaltyRepository`, `storeReviewRepository`, `faqAndSupportRepository`, `themeRepository`) accept `forceRefresh: Bool` and `cacheTTL: TimeInterval` parameters on their fetch methods.
 
 **Per-repository invalidation:**
 
