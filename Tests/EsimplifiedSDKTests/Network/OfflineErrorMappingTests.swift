@@ -1,6 +1,7 @@
 //
 //  OfflineErrorMappingTests.swift
 //  EsimplifiedSDK
+//  Created by Kieran on 2026/08/31.
 //
 //  A request that never leaves the device must surface as `SdkError.noInternetConnection`,
 //  not as `.unknown`. The app decides between the offline sheet and the error sheet from
