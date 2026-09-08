@@ -16,10 +16,15 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
         self.cache = cache
     }
 
-    func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 3600) async -> PackageResponse? {
+    func fetchPackagesForCountryResult(
+        countryCode: String?,
+        countryNameSlug: String,
+        forceRefresh: Bool = false,
+        cacheTTL: TimeInterval = 3600
+    ) async -> RepositoryResult<PackageResponse?> {
         let cacheKey = "packages_\(countryCode ?? "")_\(countryNameSlug)"
         if !forceRefresh, let cached: PackageResponse = await cache.get(cacheKey) {
-            return cached
+            return RepositoryResult(value: cached)
         }
         let parameters = [
             "country_code": countryCode ?? "",
@@ -34,16 +39,32 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
                 requiresAuth: false
             )
             await cache.set(cacheKey, value: response, ttl: cacheTTL)
-            return response
+            return RepositoryResult(value: response)
         } catch {
-            return await cache.getExpired(cacheKey)
+            let failure = error as? SdkError ?? .unknown(error)
+            let expired: PackageResponse? = await cache.getExpired(cacheKey)
+            return RepositoryResult(value: expired, isStale: expired != nil, failure: failure)
         }
     }
 
-    func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 3600) async -> [Package] {
+    func fetchPackagesForCountry(
+        countryCode: String?,
+        countryNameSlug: String,
+        forceRefresh: Bool = false,
+        cacheTTL: TimeInterval = 3600
+    ) async -> PackageResponse? {
+        await fetchPackagesForCountryResult(
+            countryCode: countryCode,
+            countryNameSlug: countryNameSlug,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        ).value
+    }
+
+    func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 3600) async -> RepositoryResult<[Package]> {
         let cacheKey = "packages_topup_\(iccid)"
         if !forceRefresh, let cached: [Package] = await cache.get(cacheKey) {
-            return cached
+            return RepositoryResult(value: cached)
         }
         let parameters = ["reverse_order": "true"]
         do {
@@ -55,10 +76,16 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
             )
             let packages = response.packages
             await cache.set(cacheKey, value: packages, ttl: cacheTTL)
-            return packages
+            return RepositoryResult(value: packages)
         } catch {
-            return await cache.getExpired(cacheKey) ?? []
+            let failure = error as? SdkError ?? .unknown(error)
+            let expired: [Package] = await cache.getExpired(cacheKey) ?? []
+            return RepositoryResult(value: expired, isStale: !expired.isEmpty, failure: failure)
         }
+    }
+
+    func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 3600) async -> [Package] {
+        await fetchPackagesForTopUpEsimResult(iccid: iccid, forceRefresh: forceRefresh, cacheTTL: cacheTTL).value
     }
 
     func fetchCheckStockForPackage(packageTypeId: Int, forceRefresh: Bool = false, cacheTTL: TimeInterval = 3600) async -> CheckStockResponse? {

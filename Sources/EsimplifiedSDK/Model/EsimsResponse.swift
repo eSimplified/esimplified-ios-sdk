@@ -48,8 +48,10 @@ public struct Esim: Codable, Identifiable, Hashable {
     public var profile: EsimProfile?
     public let esimName: String?
     public let autoTopUp: Bool
+    public let isPrimary: Bool
+    @DefaultFalse public var isUniversal: Bool
 
-    public init(iccid: String, country: Country? = nil, orderUUID: String? = nil, androidSha: Bool, archived: Bool, orderNumber: String? = nil, assignedDate: String, packageDetails: [PackageDetail]? = nil, dataUsageRemainingBytes: Int, dataUsageRemainingGigabytes: Double, dateActivatedEpoch: Int? = nil, dateExpiryEpoch: Int? = nil, daysLeftToExpiry: Int? = nil, profile: EsimProfile? = nil, esimName: String? = nil, autoTopUp: Bool) {
+    public init(iccid: String, country: Country? = nil, orderUUID: String? = nil, androidSha: Bool, archived: Bool, orderNumber: String? = nil, assignedDate: String, packageDetails: [PackageDetail]? = nil, dataUsageRemainingBytes: Int, dataUsageRemainingGigabytes: Double, dateActivatedEpoch: Int? = nil, dateExpiryEpoch: Int? = nil, daysLeftToExpiry: Int? = nil, profile: EsimProfile? = nil, esimName: String? = nil, autoTopUp: Bool, isPrimary: Bool = false, isUniversal: Bool = false) {
         self.iccid = iccid
         self.country = country
         self.orderUUID = orderUUID
@@ -66,6 +68,8 @@ public struct Esim: Codable, Identifiable, Hashable {
         self.profile = profile
         self.esimName = esimName
         self.autoTopUp = autoTopUp
+        self.isPrimary = isPrimary
+        self.isUniversal = isUniversal
     }
 
     public var hasUnlimitedPackage: Bool {
@@ -86,6 +90,8 @@ public struct Esim: Codable, Identifiable, Hashable {
         case daysLeftToExpiry = "days_left_to_expiry"
         case esimName = "esim_name"
         case autoTopUp = "auto_top_up"
+        case isPrimary = "is_primary"
+        case isUniversal = "is_universal"
     }
 }
 
@@ -102,6 +108,7 @@ public struct PackageDetail: Codable, Identifiable, Hashable {
     public let timeAllowanceSeconds: Int
     public let timeAllowanceDays: Int
     public let packageCountryName: String?
+    public let packageCountryCode: String?
     public let packageTypeID: Int
     public let dateExpiryEpoch: Int?
     public let dateTerminatedEpoch: Int?
@@ -112,7 +119,7 @@ public struct PackageDetail: Codable, Identifiable, Hashable {
     public var dataUsedBytes: Int?
     public let statusMessage: String
 
-    public init(status: String, dateCreatedEpoch: Int, windowActivationStartEpoch: Int, windowActivationEndEpoch: Int, voiceUsageRemainingSeconds: Int, smsUsageRemainingNums: Int, timeAllowanceSeconds: Int, timeAllowanceDays: Int, packageCountryName: String? = nil, packageTypeID: Int, dateExpiryEpoch: Int? = nil, dateTerminatedEpoch: Int? = nil, dateActivatedEpoch: Int? = nil, dataAllowanceBytes: Int, dataUsageRemainingBytes: Int, dataAllowanceGigabytes: Int, dataUsedBytes: Int? = nil, statusMessage: String) {
+    public init(status: String, dateCreatedEpoch: Int, windowActivationStartEpoch: Int, windowActivationEndEpoch: Int, voiceUsageRemainingSeconds: Int, smsUsageRemainingNums: Int, timeAllowanceSeconds: Int, timeAllowanceDays: Int, packageCountryName: String? = nil, packageCountryCode: String? = nil, packageTypeID: Int, dateExpiryEpoch: Int? = nil, dateTerminatedEpoch: Int? = nil, dateActivatedEpoch: Int? = nil, dataAllowanceBytes: Int, dataUsageRemainingBytes: Int, dataAllowanceGigabytes: Int, dataUsedBytes: Int? = nil, statusMessage: String) {
         self.status = status
         self.dateCreatedEpoch = dateCreatedEpoch
         self.windowActivationStartEpoch = windowActivationStartEpoch
@@ -122,6 +129,7 @@ public struct PackageDetail: Codable, Identifiable, Hashable {
         self.timeAllowanceSeconds = timeAllowanceSeconds
         self.timeAllowanceDays = timeAllowanceDays
         self.packageCountryName = packageCountryName
+        self.packageCountryCode = packageCountryCode
         self.packageTypeID = packageTypeID
         self.dateExpiryEpoch = dateExpiryEpoch
         self.dateTerminatedEpoch = dateTerminatedEpoch
@@ -193,6 +201,7 @@ public struct PackageDetail: Codable, Identifiable, Hashable {
         case timeAllowanceSeconds = "time_allowance_seconds"
         case timeAllowanceDays = "time_allowance_days"
         case packageCountryName = "package_country_name"
+        case packageCountryCode = "package_country_code"
         case packageTypeID = "package_type_id"
         case dateExpiryEpoch = "date_expiry_epoch"
         case dateTerminatedEpoch = "date_terminated_epoch"

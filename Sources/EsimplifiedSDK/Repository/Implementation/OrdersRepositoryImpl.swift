@@ -16,12 +16,13 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
         self.cache = cache
     }
 
-    func fetchOrders(forceRefresh: Bool = false, withLoyaltyPoints: Bool, cacheTTL: TimeInterval = 600) async -> [Order] {
+    func fetchOrdersResult(forceRefresh: Bool = false, withLoyaltyPoints: Bool, cacheTTL: TimeInterval = 600) async -> RepositoryResult<[Order]> {
         let cacheKey = "orders_\(withLoyaltyPoints)"
         if !forceRefresh, let cached: [Order] = await cache.get(cacheKey) {
-            return cached
+            return RepositoryResult(value: cached)
         }
-        let parameters: [String: String] = withLoyaltyPoints ? ["used_points": "true"] : [:]
+        var parameters: [String: String] = withLoyaltyPoints ? ["used_points": "true"] : [:]
+        parameters["limit"] = "\(Self.unpagedLimit)"
         do {
             let response: OrdersResponse = try await client.fetch(
                 endpoint: .customerOrders,
@@ -30,10 +31,57 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
             )
             let orders = response.orders
             await cache.set(cacheKey, value: orders, ttl: cacheTTL)
-            return orders
+            return RepositoryResult(value: orders)
         } catch {
-            return await cache.getExpired(cacheKey) ?? []
+            let failure = error as? SdkError ?? .unknown(error)
+            let expired: [Order] = await cache.getExpired(cacheKey) ?? []
+            return RepositoryResult(value: expired, isStale: !expired.isEmpty, failure: failure)
         }
+    }
+
+    private static let unpagedLimit = 500
+
+    func fetchOrdersPageResult(
+        limit: Int,
+        offset: Int,
+        withLoyaltyPoints: Bool,
+        forceRefresh: Bool,
+        cacheTTL: TimeInterval
+    ) async -> RepositoryResult<OrdersPage> {
+        let cacheKey = "orders_page_\(withLoyaltyPoints)_\(limit)_\(offset)"
+        if !forceRefresh, let cached: OrdersPage = await cache.get(cacheKey) {
+            return RepositoryResult(value: cached)
+        }
+        var parameters: [String: String] = withLoyaltyPoints ? ["used_points": "true"] : [:]
+        parameters["limit"] = "\(limit)"
+        parameters["offset"] = "\(offset)"
+        do {
+            let response: OrdersResponse = try await client.fetch(
+                endpoint: .customerOrders,
+                method: .GET,
+                parameters: parameters
+            )
+            let page = OrdersPage(
+                orders: response.orders,
+                totalCount: response.count,
+                hasMore: response.next?.isEmpty == false
+            )
+            await cache.set(cacheKey, value: page, ttl: cacheTTL)
+            return RepositoryResult(value: page)
+        } catch {
+            let failure = error as? SdkError ?? .unknown(error)
+            let expired: OrdersPage? = await cache.getExpired(cacheKey)
+            let fallback = expired ?? OrdersPage(orders: [], totalCount: 0, hasMore: false)
+            return RepositoryResult(value: fallback, isStale: expired != nil, failure: failure)
+        }
+    }
+
+    func fetchOrders(forceRefresh: Bool = false, withLoyaltyPoints: Bool, cacheTTL: TimeInterval = 600) async -> [Order] {
+        await fetchOrdersResult(forceRefresh: forceRefresh, withLoyaltyPoints: withLoyaltyPoints, cacheTTL: cacheTTL).value
+    }
+
+    func fetchInvoice(orderUUID: String) async throws -> Data {
+        try await client.fetchData(endpoint: .orderInvoice, method: .GET, id: orderUUID)
     }
 
     func fetchOrder(orderUUID: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 300) async throws -> OrderDetail {

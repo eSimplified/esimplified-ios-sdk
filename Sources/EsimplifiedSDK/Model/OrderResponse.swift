@@ -51,7 +51,7 @@ public struct Order: Codable, Identifiable {
     public let purchaseCountry: PurchaseCountry?
     public let packageTypeID: Int
     public let paymentStatus: String
-    public let country: Country
+    public let country: Country?
     public let loyaltyPointsEarned: LoyaltyPointsDetail?
     public let loyaltyPointsSpent: LoyaltyPointsDetail?
 
@@ -102,7 +102,7 @@ public struct Order: Codable, Identifiable {
         purchaseCountry: PurchaseCountry? = nil,
         packageTypeID: Int,
         paymentStatus: String,
-        country: Country,
+        country: Country?,
         loyaltyPointsEarned: LoyaltyPointsDetail? = nil,
         loyaltyPointsSpent: LoyaltyPointsDetail? = nil
     ) {
@@ -151,7 +151,7 @@ public struct Order: Codable, Identifiable {
         purchaseCountry = try container.decodeIfPresent(PurchaseCountry.self, forKey: .purchaseCountry)
         packageTypeID = try container.decode(Int.self, forKey: .packageTypeID)
         paymentStatus = try container.decode(String.self, forKey: .paymentStatus)
-        country = try container.decode(Country.self, forKey: .country)
+        country = try container.decodeIfPresent(Country.self, forKey: .country)
         loyaltyPointsEarned = try container.decodeIfPresent(LoyaltyPointsDetail.self, forKey: .loyaltyPointsEarned)
         loyaltyPointsSpent = try container.decodeIfPresent(LoyaltyPointsDetail.self, forKey: .loyaltyPointsSpent)
     }
@@ -167,8 +167,20 @@ public struct EsimInfo: Codable {
     public let smDpAddress: String
     public let assignedDate: String
     public let premium: Bool
+    public let esimName: String?
+    @DefaultFalse public var isUniversal: Bool
 
-    public init(iccid: String, country: String, matchingID: String, androidSha: Bool, smDpAddress: String, assignedDate: String, premium: Bool) {
+    public init(
+        iccid: String,
+        country: String,
+        matchingID: String,
+        androidSha: Bool,
+        smDpAddress: String,
+        assignedDate: String,
+        premium: Bool,
+        esimName: String? = nil,
+        isUniversal: Bool = false
+    ) {
         self.iccid = iccid
         self.country = country
         self.matchingID = matchingID
@@ -176,6 +188,8 @@ public struct EsimInfo: Codable {
         self.smDpAddress = smDpAddress
         self.assignedDate = assignedDate
         self.premium = premium
+        self.esimName = esimName
+        self.isUniversal = isUniversal
     }
 
     enum CodingKeys: String, CodingKey {
@@ -184,6 +198,8 @@ public struct EsimInfo: Codable {
         case androidSha = "android_sha"
         case smDpAddress = "sm_dp_address"
         case assignedDate = "assigned_date"
+        case esimName = "esim_name"
+        case isUniversal = "is_universal"
     }
 }
 

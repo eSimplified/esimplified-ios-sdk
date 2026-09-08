@@ -19,6 +19,7 @@ enum Endpoints: String {
     case userLocation = "get_country"
     case search = "search"
     case customerOrders = "customer/orders"
+    case orderInvoice = "orders/placeholder/invoice"
     case customerPreferences = "customer/preferences"
     case changePassword = "customer/reset-password"
     case topUpEsim = "customer/esims/placeholder/top-up/packages"
@@ -28,6 +29,7 @@ enum Endpoints: String {
     case visaIframe = "customer/promotions/iframe"
     case validateVisa = "customer/promotions/validate"
     case storeReview = "reviews"
+    case destinationFaqs = "faqs/destinations/placeholder"
     case deleteAccount = "customer/delete"
     case updateEsim = "customer/esims/placeholder"
     case verifyEmail = "verify-email"
@@ -36,4 +38,5 @@ enum Endpoints: String {
     case loyaltyPoints = "customer/loyalty"
     case initiateMokafaaOtp = "loyalty/mokafaa/otp/initiate"
     case validateMokafaaOtp = "loyalty/mokafaa/otp/validate"
+    case theme = "theme"
 }

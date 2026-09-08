@@ -16,6 +16,11 @@ public enum SdkError: Error, LocalizedError {
     case invalidURL
     case unknown(Error)
 
+    public var isOffline: Bool {
+        if case .noInternetConnection = self { return true }
+        return false
+    }
+
     public var errorDescription: String? {
         switch self {
         case .networkError(_, let message): return message

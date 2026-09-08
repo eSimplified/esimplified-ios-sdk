@@ -21,14 +21,18 @@ actor HTTPClient {
         if let session {
             self.session = session
         } else {
-            let sessionConfig = URLSessionConfiguration.default
-            sessionConfig.timeoutIntervalForRequest = 60.0
-            sessionConfig.timeoutIntervalForResource = 60.0
-            sessionConfig.waitsForConnectivity = true
-            sessionConfig.httpMaximumConnectionsPerHost = 5
-            sessionConfig.requestCachePolicy = .useProtocolCachePolicy
-            self.session = URLSession(configuration: sessionConfig)
+            self.session = URLSession(configuration: Self.makeDefaultSessionConfiguration())
         }
+    }
+
+    static func makeDefaultSessionConfiguration() -> URLSessionConfiguration {
+        let sessionConfig = URLSessionConfiguration.default
+        sessionConfig.timeoutIntervalForRequest = 60.0
+        sessionConfig.timeoutIntervalForResource = 60.0
+        sessionConfig.waitsForConnectivity = false
+        sessionConfig.httpMaximumConnectionsPerHost = 5
+        sessionConfig.requestCachePolicy = .useProtocolCachePolicy
+        return sessionConfig
     }
 
     func fetch<T: Decodable>(
@@ -61,7 +65,7 @@ actor HTTPClient {
             }
         }
 
-        try await addHeaders(to: &request, requiresAuth: requiresAuth, forceBasicAuth: endpoint == .auth)
+        try await addHeaders(to: &request, requiresAuth: requiresAuth, forceBasicAuth: endpoint == .auth || endpoint == .theme)
 
         logger.logRequest(method: method.rawValue, url: url.absoluteString, headers: request.allHTTPHeaderFields, body: request.httpBody)
         let start = Date()
@@ -99,14 +103,10 @@ actor HTTPClient {
                         message: serverError.errorDescription ?? serverError.error ?? "Authentication failed"
                     )
                 }
-                if let apiError = try? JSONDecoder().decode(ApiErrorResponse.self, from: data) {
-                    throw SdkError.networkError(
-                        statusCode: httpResponse.statusCode,
-                        message: apiError.message ?? apiError.detail ?? apiError.error ?? "Unknown error"
-                    )
-                }
-                let message = String(data: data, encoding: .utf8) ?? "Unknown error"
-                throw SdkError.networkError(statusCode: httpResponse.statusCode, message: message)
+                throw SdkError.networkError(
+                    statusCode: httpResponse.statusCode,
+                    message: ApiErrorMessage.parse(data)
+                )
             }
 
             do {
@@ -119,6 +119,71 @@ actor HTTPClient {
             throw error
         } catch {
             logger.logError(method: method.rawValue, url: url.absoluteString, error: error)
+            if let urlError = error as? URLError, urlError.isOffline {
+                throw SdkError.noInternetConnection
+            }
+            throw SdkError.unknown(error)
+        }
+    }
+
+    func fetchData(
+        endpoint: Endpoints,
+        method: HTTPMethod = .GET,
+        parameters: [String: String]? = nil,
+        id: String? = nil,
+        requiresAuth: Bool = true,
+        isRetry: Bool = false
+    ) async throws -> Data {
+        let url = try constructURL(endpoint: endpoint, id: id, parameters: parameters)
+        var request = URLRequest(url: url)
+        request.httpMethod = method.rawValue
+        try await addHeaders(to: &request, requiresAuth: requiresAuth)
+
+        logger.logRequest(method: method.rawValue, url: url.absoluteString, headers: request.allHTTPHeaderFields, body: nil)
+        let start = Date()
+
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw SdkError.unknown(URLError(.badServerResponse))
+            }
+
+            logger.logResponse(
+                method: method.rawValue,
+                url: url.absoluteString,
+                statusCode: httpResponse.statusCode,
+                duration: Date().timeIntervalSince(start),
+                body: nil
+            )
+
+            if (httpResponse.statusCode == 401 || httpResponse.statusCode == 403), requiresAuth, !isRetry {
+                let staleAccessToken = request.value(forHTTPHeaderField: "Authorization")
+                    .flatMap { $0.hasPrefix("Bearer ") ? String($0.dropFirst("Bearer ".count)) : nil }
+                try await serializedRefresh(staleAccessToken: staleAccessToken)
+                return try await fetchData(
+                    endpoint: endpoint, method: method, parameters: parameters,
+                    id: id, requiresAuth: true, isRetry: true
+                )
+            }
+
+            guard (200..<300).contains(httpResponse.statusCode) else {
+                throw SdkError.networkError(
+                    statusCode: httpResponse.statusCode,
+                    message: ApiErrorMessage.parse(data)
+                )
+            }
+
+            guard !data.isEmpty else {
+                throw SdkError.networkError(statusCode: httpResponse.statusCode, message: "Empty response")
+            }
+            return data
+        } catch let error as SdkError {
+            throw error
+        } catch {
+            logger.logError(method: method.rawValue, url: url.absoluteString, error: error)
+            if let urlError = error as? URLError, urlError.isOffline {
+                throw SdkError.noInternetConnection
+            }
             throw SdkError.unknown(error)
         }
     }
@@ -151,7 +216,14 @@ actor HTTPClient {
         }
 
         if let parameters, !parameters.isEmpty {
-            components.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
+            var allowed = CharacterSet.urlQueryAllowed
+            allowed.remove(charactersIn: "/+&=?")
+            components.percentEncodedQueryItems = parameters.map {
+                URLQueryItem(
+                    name: $0.key.addingPercentEncoding(withAllowedCharacters: allowed) ?? $0.key,
+                    value: $0.value.addingPercentEncoding(withAllowedCharacters: allowed) ?? $0.value
+                )
+            }
         }
 
         guard let url = components.url else {
@@ -280,5 +352,17 @@ struct AnyEncodable: Encodable {
 
     func encode(to encoder: Encoder) throws {
         try encode(encoder)
+    }
+}
+
+// MARK: - Offline Detection
+
+private extension URLError {
+
+    var isOffline: Bool {
+        [.notConnectedToInternet,
+         .networkConnectionLost,
+         .dataNotAllowed,
+         .internationalRoamingOff].contains(code)
     }
 }
