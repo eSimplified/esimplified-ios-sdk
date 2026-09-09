@@ -23,7 +23,25 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 86400
     ) async -> RepositoryResult<[Esim]> {
-        let cacheKey = "esims_\(archivedEsims)_legacy\(showLegacy)_primary\(isPrimary.map(String.init) ?? "any")"
+        await fetchEsimsResult(
+            archivedEsims: archivedEsims,
+            showLegacy: showLegacy,
+            isPrimary: isPrimary,
+            includeBase64QrCode: false,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        )
+    }
+
+    func fetchEsimsResult(
+        archivedEsims: Bool,
+        showLegacy: Bool,
+        isPrimary: Bool?,
+        includeBase64QrCode: Bool,
+        forceRefresh: Bool,
+        cacheTTL: TimeInterval
+    ) async -> RepositoryResult<[Esim]> {
+        let cacheKey = "esims_\(archivedEsims)_legacy\(showLegacy)_primary\(isPrimary.map(String.init) ?? "any")_qr\(includeBase64QrCode)"
         if !forceRefresh, let cached: [Esim] = await cache.get(cacheKey) {
             return RepositoryResult(value: cached)
         }
@@ -39,6 +57,9 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
 
         if let isPrimary {
             parameters["is_primary"] = isPrimary ? "true" : "false"
+        }
+        if includeBase64QrCode {
+            parameters["include_base64_qr_code"] = "true"
         }
         do {
             let response: EsimsResponse = try await client.fetch(
@@ -73,7 +94,21 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
     }
 
     func fetchEsimDetailsResult(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 300) async -> RepositoryResult<Esim?> {
-        let cacheKey = "esim_details_\(iccid)"
+        await fetchEsimDetailsResult(
+            iccid: iccid,
+            includeBase64QrCode: false,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        )
+    }
+
+    func fetchEsimDetailsResult(
+        iccid: String,
+        includeBase64QrCode: Bool,
+        forceRefresh: Bool,
+        cacheTTL: TimeInterval
+    ) async -> RepositoryResult<Esim?> {
+        let cacheKey = "esim_details_\(iccid)_qr\(includeBase64QrCode)"
         if !forceRefresh, let cached: Esim = await cache.get(cacheKey) {
             return RepositoryResult(value: cached)
         }
@@ -81,6 +116,7 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
             let esim: Esim = try await client.fetch(
                 endpoint: .esimDetails,
                 method: .GET,
+                parameters: includeBase64QrCode ? ["include_base64_qr_code": "true"] : nil,
                 id: iccid
             )
             await cache.set(cacheKey, value: esim, ttl: cacheTTL)
