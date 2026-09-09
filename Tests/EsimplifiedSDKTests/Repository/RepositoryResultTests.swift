@@ -1,11 +1,6 @@
 //
 //  RepositoryResultTests.swift
 //  EsimplifiedSDK
-//  Created by Kieran on 2026/08/31.
-//
-//  The reads must keep serving cache first while ALSO reporting why a refresh failed.
-//  Today a failure is indistinguishable from an empty result, so the app cannot tell
-//  "no plans for this country" from "the request died".
 //
 
 import Testing
