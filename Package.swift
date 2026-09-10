@@ -26,7 +26,10 @@ let package = Package(
         .testTarget(
             name: "EsimplifiedSDKTests",
             dependencies: ["EsimplifiedSDK"],
-            path: "Tests/EsimplifiedSDKTests"
+            path: "Tests/EsimplifiedSDKTests",
+            resources: [
+                .copy("Fixtures")
+            ]
         )
     ]
 )

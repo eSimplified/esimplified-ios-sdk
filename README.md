@@ -394,12 +394,26 @@ Voucher code redemption.
 
 ### FaqAndSupportRepository
 
-Destination FAQs.
+Destination FAQs plus the localised help-centre, terms and privacy content.
 
 | Method | Signature | Description |
 |---|---|---|
 | `fetchDestinationFaqs` | `func fetchDestinationFaqs(countryNameSlug: String, forceRefresh: Bool = false) async -> [Faq]` | Fetch the FAQs for a destination (empty on failure) |
 | `fetchDestinationFaqsResult` | `func fetchDestinationFaqsResult(countryNameSlug: String, forceRefresh: Bool = false) async -> RepositoryResult<[Faq]>` | Same, with the failure reported |
+| `fetchSupportSections` | `func fetchSupportSections(language: String, forceRefresh: Bool = false) async -> [SupportSection]` | Help-centre categories and articles from `GET /faqs/` (empty on failure) |
+| `fetchSupportSectionsResult` | `func fetchSupportSectionsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<[SupportSection]>` | Same, with the failure reported |
+| `fetchSupportLabels` | `func fetchSupportLabels(language: String, forceRefresh: Bool = false) async -> SupportLabels?` | Help-centre UI labels from `GET /support/` (nil on failure) |
+| `fetchSupportLabelsResult` | `func fetchSupportLabelsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<SupportLabels?>` | Same, with the failure reported |
+| `fetchTerms` | `func fetchTerms(language: String, forceRefresh: Bool = false) async -> TermsDocument?` | Terms and conditions from `GET /terms/` (nil on failure) |
+| `fetchTermsResult` | `func fetchTermsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<TermsDocument?>` | Same, with the failure reported |
+| `fetchPrivacy` | `func fetchPrivacy(language: String, forceRefresh: Bool = false) async -> PrivacyDocument?` | Privacy policy from `GET /privacy/` (nil on failure) |
+| `fetchPrivacyResult` | `func fetchPrivacyResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<PrivacyDocument?>` | Same, with the failure reported |
+
+#### Content endpoints
+
+`/api/v2/terms/`, `/api/v2/faqs/`, `/api/v2/support/` and `/api/v2/privacy/` all return the same envelope, `{"language": "en", "content": {...}}` (`ContentEnvelope<Content>`), with `content` being the flat i18n namespace for that document. The language is selected by the `accept-language` header, so pass it through `customHeadersProvider`; the `language` argument only scopes the cache key (`faqs_general_<lang>`, `support_labels_<lang>`, `terms_<lang>`, `privacy_<lang>`).
+
+The SDK parses the raw namespaces into typed models (`SupportSection`/`SupportArticle`/`SupportBlock`, `TermsDocument`/`TermsSection`/`TermsItem`, `PrivacyDocument`/`PolicySection`/`PolicyBlock`) before caching. The structural configs the payloads do not carry -- the help-centre category order and article slugs (`SupportCatalog`), the terms section order, item depths, sublist markers and body keys (`TermsOutline`), and the privacy section order and block kinds (`PrivacyOutline`) -- live in SDK code, ported from the web storefront. An unknown slug or a line/depth count mismatch degrades softly (the entry is skipped or flattened), matching the web.
 
 ### ThemeRepository
 
