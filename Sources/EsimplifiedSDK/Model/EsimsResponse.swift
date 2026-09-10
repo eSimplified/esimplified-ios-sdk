@@ -51,7 +51,12 @@ public struct Esim: Codable, Identifiable, Hashable {
     public let isPrimary: Bool
     @DefaultFalse public var isUniversal: Bool
 
-    public init(iccid: String, country: Country? = nil, orderUUID: String? = nil, androidSha: Bool, archived: Bool, orderNumber: String? = nil, assignedDate: String, packageDetails: [PackageDetail]? = nil, dataUsageRemainingBytes: Int, dataUsageRemainingGigabytes: Double, dateActivatedEpoch: Int? = nil, dateExpiryEpoch: Int? = nil, daysLeftToExpiry: Int? = nil, profile: EsimProfile? = nil, esimName: String? = nil, autoTopUp: Bool, isPrimary: Bool = false, isUniversal: Bool = false) {
+    public let smDpAddress: String?
+    public let activationCode: String?
+    public let qrCodeImageBase64: String?
+    public let esimProvider: String?
+
+    public init(iccid: String, country: Country? = nil, orderUUID: String? = nil, androidSha: Bool, archived: Bool, orderNumber: String? = nil, assignedDate: String, packageDetails: [PackageDetail]? = nil, dataUsageRemainingBytes: Int, dataUsageRemainingGigabytes: Double, dateActivatedEpoch: Int? = nil, dateExpiryEpoch: Int? = nil, daysLeftToExpiry: Int? = nil, profile: EsimProfile? = nil, esimName: String? = nil, autoTopUp: Bool, isPrimary: Bool = false, isUniversal: Bool = false, smDpAddress: String? = nil, activationCode: String? = nil, qrCodeImageBase64: String? = nil, esimProvider: String? = nil) {
         self.iccid = iccid
         self.country = country
         self.orderUUID = orderUUID
@@ -70,6 +75,15 @@ public struct Esim: Codable, Identifiable, Hashable {
         self.autoTopUp = autoTopUp
         self.isPrimary = isPrimary
         self.isUniversal = isUniversal
+        self.smDpAddress = smDpAddress
+        self.activationCode = activationCode
+        self.qrCodeImageBase64 = qrCodeImageBase64
+        self.esimProvider = esimProvider
+    }
+
+    public var canInstallDirectly: Bool {
+        guard let smDpAddress, let activationCode else { return false }
+        return !smDpAddress.isEmpty && !activationCode.isEmpty
     }
 
     public var hasUnlimitedPackage: Bool {
@@ -92,6 +106,10 @@ public struct Esim: Codable, Identifiable, Hashable {
         case autoTopUp = "auto_top_up"
         case isPrimary = "is_primary"
         case isUniversal = "is_universal"
+        case smDpAddress = "sm_dp_address"
+        case activationCode = "activation_code"
+        case qrCodeImageBase64 = "qr_code_image_base64"
+        case esimProvider = "esim_provider"
     }
 }
 
