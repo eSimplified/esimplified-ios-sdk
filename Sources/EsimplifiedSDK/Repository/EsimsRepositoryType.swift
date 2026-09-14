@@ -7,7 +7,7 @@
 import Foundation
 
 public protocol EsimsRepositoryType {
-    func fetchEsims(archivedEsims: Bool, showLegacy: Bool, isPrimary: Bool?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> [Esim]
+    func fetchEsims(archivedEsims: Bool, showLegacy: Bool?, isPrimary: Bool?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> [Esim]
     func fetchEsimDetails(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> Esim?
     func updateEsimName(customName: String, iccid: String) async -> Bool
     func updateEsimAutoTopUpStatus(status: Bool, iccid: String) async -> Bool
@@ -15,10 +15,10 @@ public protocol EsimsRepositoryType {
     func updateEsimPrimaryStatus(status: Bool, iccid: String) async -> Bool
     func invalidateCache() async
 
-    func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool, isPrimary: Bool?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Esim]>
+    func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool?, isPrimary: Bool?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Esim]>
     func fetchEsimDetailsResult(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<Esim?>
 
-    func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool, isPrimary: Bool?, includeBase64QrCode: Bool, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Esim]>
+    func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool?, isPrimary: Bool?, includeBase64QrCode: Bool, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Esim]>
     func fetchEsimDetailsResult(iccid: String, includeBase64QrCode: Bool, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<Esim?>
     func updateEsimNameOrThrow(customName: String, iccid: String) async throws
     func updateEsimAutoTopUpStatusOrThrow(status: Bool, iccid: String) async throws
@@ -30,7 +30,7 @@ public protocol EsimsRepositoryType {
 public extension EsimsRepositoryType {
     func fetchEsims(
         archivedEsims: Bool,
-        showLegacy: Bool = true,
+        showLegacy: Bool? = nil,
         isPrimary: Bool? = nil,
         forceRefresh: Bool = false
     ) async -> [Esim] {
@@ -45,7 +45,7 @@ public extension EsimsRepositoryType {
 
     func fetchEsimsResult(
         archivedEsims: Bool,
-        showLegacy: Bool = true,
+        showLegacy: Bool? = nil,
         isPrimary: Bool? = nil,
         forceRefresh: Bool = false
     ) async -> RepositoryResult<[Esim]> {
@@ -63,7 +63,7 @@ public extension EsimsRepositoryType {
 
     func fetchEsims(
         archivedEsims: Bool,
-        showLegacy: Bool = true,
+        showLegacy: Bool? = nil,
         isPrimary: Bool? = nil,
         includeBase64QrCode: Bool,
         forceRefresh: Bool = false,
@@ -95,7 +95,7 @@ public extension EsimsRepositoryType {
 
     func fetchEsimsResult(
         archivedEsims: Bool,
-        showLegacy: Bool = true,
+        showLegacy: Bool? = nil,
         isPrimary: Bool? = nil,
         includeBase64QrCode: Bool,
         forceRefresh: Bool = false
@@ -112,7 +112,7 @@ public extension EsimsRepositoryType {
 
     func fetchEsimsResult(
         archivedEsims: Bool,
-        showLegacy: Bool,
+        showLegacy: Bool?,
         isPrimary: Bool?,
         includeBase64QrCode: Bool,
         forceRefresh: Bool,
@@ -141,7 +141,7 @@ public extension EsimsRepositoryType {
 
 public extension EsimsRepositoryType {
 
-    func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool, isPrimary: Bool?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Esim]> {
+    func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool?, isPrimary: Bool?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Esim]> {
         RepositoryResult(value: await fetchEsims(
             archivedEsims: archivedEsims,
             showLegacy: showLegacy,

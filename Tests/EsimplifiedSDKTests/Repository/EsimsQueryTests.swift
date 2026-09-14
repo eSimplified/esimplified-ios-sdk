@@ -38,8 +38,8 @@ extension NetworkSuite {
         }, uniquingKeysWith: { first, _ in first })
     }
 
-    @Test("eSIMs: the default asks for legacy too, so nothing vanishes from a customer's list")
-    func esimsDefaultIncludesLegacy() async throws {
+    @Test("eSIMs: the default sends no show_legacy, so the backend decides what a list contains")
+    func esimsDefaultOmitsShowLegacy() async throws {
         MockURLProtocol.reset()
         MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"esims": []}"#)
         let (client, cache) = makeEsimsEnv()
@@ -47,7 +47,7 @@ extension NetworkSuite {
 
         _ = await repo.fetchEsims(archivedEsims: false)
 
-        #expect(esimsQuery()["show_legacy"] == "true")
+        #expect(esimsQuery()["show_legacy"] == nil)
     }
 
     @Test("eSIMs: universal-only sends show_legacy=false explicitly")
