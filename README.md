@@ -33,13 +33,13 @@ Add via Swift Package Manager in Xcode:
 
 1. **File → Add Package Dependencies**
 2. Enter: `https://github.com/eSimplified/esimplified-ios-sdk.git`
-3. Select version rule: **Up to Next Major Version** from `1.2.0`
+3. Select version rule: **Up to Next Major Version** from `1.3.0`
 
 Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.2.0")
+    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.3.0")
 ]
 ```
 
@@ -186,7 +186,7 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 
 | Model | Description |
 |---|---|
-| `User` | Authenticated user profile (email, name, phone, referral code, preferences, loyalty provider) |
+| `User` | Customer profile (email, name, phone, referral code, language/currency, the eight `receive_*` notification flags, loyalty provider). Decodes `unique_referral_code` as an alias for `referral_code` |
 | `LoyaltyProvider` | Enum: kreds, mokafaa |
 | `SignInCustomerResponse` | Login response (access token, refresh token, expiry, user) |
 | `RegisterCustomerRequest` | Registration request (name, email, phone, password, marketing opt-in) |
@@ -353,6 +353,7 @@ User profile and location.
 
 | Method | Signature | Description |
 |---|---|---|
+| `fetchProfile` | `func fetchProfile() async throws -> User` | `GET customer/` — the full customer object on demand; the user of record after launch and after any profile/preference write |
 | `updateProfile` | `func updateProfile(_ request: UpdateCustomerRequest) async throws -> UpdateCustomerResponse` | Update profile fields |
 | `updatePreferences` | `func updatePreferences(_ request: UpdateCustomerPreferencesRequest) async throws -> User` | Update language/currency preferences |
 | `fetchUserLocation` | `func fetchUserLocation() async throws -> UserLocationResponse` | Detect user's current country via IP |
