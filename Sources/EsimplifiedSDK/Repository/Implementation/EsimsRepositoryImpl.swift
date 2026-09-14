@@ -18,7 +18,7 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
 
     func fetchEsimsResult(
         archivedEsims: Bool,
-        showLegacy: Bool = true,
+        showLegacy: Bool? = nil,
         isPrimary: Bool? = nil,
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 86400
@@ -35,13 +35,13 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
 
     func fetchEsimsResult(
         archivedEsims: Bool,
-        showLegacy: Bool,
+        showLegacy: Bool?,
         isPrimary: Bool?,
         includeBase64QrCode: Bool,
         forceRefresh: Bool,
         cacheTTL: TimeInterval
     ) async -> RepositoryResult<[Esim]> {
-        let cacheKey = "esims_\(archivedEsims)_legacy\(showLegacy)_primary\(isPrimary.map(String.init) ?? "any")_qr\(includeBase64QrCode)"
+        let cacheKey = "esims_\(archivedEsims)_legacy\(showLegacy.map(String.init) ?? "any")_primary\(isPrimary.map(String.init) ?? "any")_qr\(includeBase64QrCode)"
         if !forceRefresh, let cached: [Esim] = await cache.get(cacheKey) {
             return RepositoryResult(value: cached)
         }
@@ -53,7 +53,9 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
             "show_archived_esims": archivedEsims ? "true" : "false",
             "limit": "1000"
         ]
-        parameters["show_legacy"] = showLegacy ? "true" : "false"
+        if let showLegacy {
+            parameters["show_legacy"] = showLegacy ? "true" : "false"
+        }
 
         if let isPrimary {
             parameters["is_primary"] = isPrimary ? "true" : "false"
@@ -79,7 +81,7 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
 
     func fetchEsims(
         archivedEsims: Bool,
-        showLegacy: Bool = true,
+        showLegacy: Bool? = nil,
         isPrimary: Bool? = nil,
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 86400

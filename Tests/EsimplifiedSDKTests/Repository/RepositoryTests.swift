@@ -130,6 +130,33 @@ extension NetworkSuite {
         #expect(cached == nil)
     }
 
+    @Test("eSIMs: an omitted showLegacy sends no show_legacy parameter")
+    func esimsOmitsShowLegacyWhenNil() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"count":0,"esims":[]}"#)
+
+        let (client, cache, _, _) = makeRepoEnv()
+        let repo = EsimsRepositoryImpl(client: client, cache: cache)
+        _ = await repo.fetchEsims(archivedEsims: true, forceRefresh: true)
+
+        let query = MockURLProtocol.capturedRequests.first?.url?.query ?? ""
+        #expect(query.contains("show_archived_esims=true"))
+        #expect(!query.contains("show_legacy"))
+    }
+
+    @Test("eSIMs: an explicit showLegacy is still sent", arguments: [true, false])
+    func esimsSendsExplicitShowLegacy(showLegacy: Bool) async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"count":0,"esims":[]}"#)
+
+        let (client, cache, _, _) = makeRepoEnv()
+        let repo = EsimsRepositoryImpl(client: client, cache: cache)
+        _ = await repo.fetchEsims(archivedEsims: false, showLegacy: showLegacy, forceRefresh: true)
+
+        let query = MockURLProtocol.capturedRequests.first?.url?.query ?? ""
+        #expect(query.contains("show_legacy=\(showLegacy)"))
+    }
+
     // MARK: - Orders
 
     @Test("Orders: fetchOrders hits /customer/orders")

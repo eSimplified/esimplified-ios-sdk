@@ -33,13 +33,13 @@ Add via Swift Package Manager in Xcode:
 
 1. **File → Add Package Dependencies**
 2. Enter: `https://github.com/eSimplified/esimplified-ios-sdk.git`
-3. Select version rule: **Up to Next Major Version** from `1.3.0`
+3. Select version rule: **Up to Next Major Version** from `1.4.0`
 
 Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.3.0")
+    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.4.0")
 ]
 ```
 
@@ -298,7 +298,7 @@ eSIM lifecycle management for authenticated users.
 
 | Method | Signature | Description |
 |---|---|---|
-| `fetchEsims` | `func fetchEsims(archivedEsims: Bool, showLegacy: Bool = false, isPrimary: Bool? = nil, forceRefresh: Bool = false) async -> [Esim]` | Fetch the customer's eSIMs; `showLegacy` includes legacy (non-universal) eSIMs, `isPrimary` filters to the default device |
+| `fetchEsims` | `func fetchEsims(archivedEsims: Bool, showLegacy: Bool? = nil, isPrimary: Bool? = nil, forceRefresh: Bool = false) async -> [Esim]` | Fetch the customer's eSIMs. `showLegacy` is sent only when non-nil — `true` returns legacy eSIMs, `false` returns universal ones, and omitting it lets the backend decide. `isPrimary` filters to the default device |
 | `fetchEsimDetails` | `func fetchEsimDetails(iccid: String, forceRefresh: Bool = false) async -> Esim?` | Fetch a specific eSIM by ICCID |
 | `updateEsimName` | `func updateEsimName(customName: String, iccid: String) async -> Bool` | Update eSIM display name |
 | `updateEsimAutoTopUpStatus` | `func updateEsimAutoTopUpStatus(status: Bool, iccid: String) async -> Bool` | Toggle eSIM auto top-up |
