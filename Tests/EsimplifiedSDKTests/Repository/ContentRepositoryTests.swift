@@ -7,6 +7,7 @@
 import Testing
 import Foundation
 @testable import EsimplifiedSDK
+
 extension NetworkSuite {
 
     private static let unavailableJson = #"{"detail":"FAQs are temporarily unavailable. Please try again later."}"#
@@ -34,6 +35,7 @@ extension NetworkSuite {
         let body = String(decoding: try Fixtures.data(name), as: UTF8.self)
         return MockSession.jsonResponse(json: body)
     }
+
     private func assertGet(path: String) {
         let request = MockURLProtocol.capturedRequests.first
         let urlString = request?.url?.absoluteString ?? ""

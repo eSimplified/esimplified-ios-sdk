@@ -7,6 +7,7 @@
 import Foundation
 
 // MARK: Support Labels
+
 public struct SupportLabels: Codable, Hashable, Sendable {
 
     public let article: Article?

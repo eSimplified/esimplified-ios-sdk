@@ -81,6 +81,29 @@ public struct SupportListItem: Codable, Hashable, Sendable {
     }
 }
 
+// MARK: Support Content Parser
+
+public enum SupportContentParser {
+
+    public static func popularArticles(
+        in sections: [SupportSection],
+        limit: Int
+    ) -> [(section: SupportSection, article: SupportArticle)] {
+        var picked: [(section: SupportSection, article: SupportArticle)] = []
+        var round = 0
+        while picked.count < limit {
+            let before = picked.count
+            for section in sections where section.articles.indices.contains(round) {
+                picked.append((section: section, article: section.articles[round]))
+                if picked.count == limit { return picked }
+            }
+            if picked.count == before { break }
+            round += 1
+        }
+        return picked
+    }
+}
+
 // MARK: Raw FAQs Content
 
 struct RawFaqsContent: Decodable, Hashable, Sendable {

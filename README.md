@@ -251,6 +251,22 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `ThemePage` | Page theme from `/theme/?page=` (url path, featured image, colour) |
 | `ThemeDestination` | Destination theme from `/theme/?url=` (image, gallery, country code) |
 | `ThemeImage` | Themed image (url, accent colour) |
+| `SupportSection` | Help-centre category from `/faqs/` (slug, title, description, articles) |
+| `SupportArticle` | Help-centre article (slug, title, summary block, body blocks) |
+| `SupportBlock` | Article block (optional heading, paragraphs, optional list) |
+| `SupportList` | Ordered or bulleted list within a block |
+| `SupportListItem` | List entry (text, sub-items) |
+| `SupportLabels` | Help-centre UI strings from `/support/` (nested `Article`, `Categories`, `Popular`, `Search`, `Cta`, `Hero`) |
+| `TermsDocument` | Terms and conditions from `/terms/` (title, table-of-contents label, sections) |
+| `TermsSection` | Terms section (id, title, items, sublist marker) |
+| `TermsItem` | Terms line (depth, text) |
+| `TermsSublistMarker` | Enum: alpha, disc |
+| `TermsNode` | Nested terms item built by `LegalContentParser.termsTree` (text, children) |
+| `PrivacyDocument` | Privacy policy from `/privacy/` (title, table-of-contents label, last updated, sections) |
+| `PolicySection` | Privacy section (id, title, blocks) |
+| `PolicyBlock` | Privacy block (kind, text) |
+| `PolicyBlockKind` | Enum: paragraph, heading, listItem |
+| `PolicyGroup` | Enum built by `LegalContentParser.groups`: paragraph, heading, list |
 
 ## All Repository Methods
 
@@ -411,9 +427,11 @@ Destination FAQs plus the localised help-centre, terms and privacy content.
 
 #### Content endpoints
 
-`/api/v2/terms/`, `/api/v2/faqs/`, `/api/v2/support/` and `/api/v2/privacy/` all return the same envelope, `{"language": "en", "content": {...}}` (`ContentEnvelope<Content>`), with `content` being the flat i18n namespace for that document. The language is selected by the `accept-language` header, so pass it through `customHeadersProvider`; the `language` argument only scopes the cache key (`faqs_general_<lang>`, `support_labels_<lang>`, `terms_<lang>`, `privacy_<lang>`).
+`/api/v2/terms/`, `/api/v2/faqs/`, `/api/v2/support/` and `/api/v2/privacy/` all return the same envelope, `{"language": "en", "content": {...}}`, with `content` being the flat i18n namespace for that document. The language is selected by the `accept-language` header, so pass it through `customHeadersProvider`; the `language` argument only scopes the cache key (`faqs_general_<lang>`, `support_labels_<lang>`, `terms_<lang>`, `privacy_<lang>`).
 
-The SDK parses the raw namespaces into typed models (`SupportSection`/`SupportArticle`/`SupportBlock`, `TermsDocument`/`TermsSection`/`TermsItem`, `PrivacyDocument`/`PolicySection`/`PolicyBlock`) before caching. The structural configs the payloads do not carry -- the help-centre category order and article slugs (`SupportCatalog`), the terms section order, item depths, sublist markers and body keys (`TermsOutline`), and the privacy section order and block kinds (`PrivacyOutline`) -- live in SDK code, ported from the web storefront. An unknown slug or a line/depth count mismatch degrades softly (the entry is skipped or flattened), matching the web.
+The SDK parses the raw namespaces into typed models (`SupportSection`/`SupportArticle`/`SupportBlock`, `TermsDocument`/`TermsSection`/`TermsItem`, `PrivacyDocument`/`PolicySection`/`PolicyBlock`) before caching. The structural configs the payloads do not carry -- the help-centre category order and article slugs, the terms section order, item depths, sublist markers and body keys, and the privacy section order and block kinds -- are internal to the SDK, ported from the web storefront. An unknown slug or a line/depth count mismatch degrades softly (the entry is skipped or flattened), matching the web.
+
+`LegalContentParser.termsTree(_:)` nests `TermsItem`s into `TermsNode`s by depth, `LegalContentParser.groups(_:)` coalesces consecutive `PolicyBlock` list items into `PolicyGroup`s, and `SupportContentParser.popularArticles(in:limit:)` round-robins articles across sections.
 
 ### ThemeRepository
 

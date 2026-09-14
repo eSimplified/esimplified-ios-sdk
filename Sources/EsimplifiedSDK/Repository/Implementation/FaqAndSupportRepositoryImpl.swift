@@ -57,7 +57,7 @@ final class FaqAndSupportRepositoryImpl: FaqAndSupportRepositoryType {
         ).value
     }
 
-    // MARK: Help centre (general FAQs)
+    // MARK: Help Centre
 
     func fetchSupportSectionsResult(
         language: String,
@@ -89,10 +89,14 @@ final class FaqAndSupportRepositoryImpl: FaqAndSupportRepositoryType {
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 86400
     ) async -> [SupportSection] {
-        await fetchSupportSectionsResult(language: language, forceRefresh: forceRefresh, cacheTTL: cacheTTL).value
+        await fetchSupportSectionsResult(
+            language: language,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        ).value
     }
 
-    // MARK: Support labels
+    // MARK: Support Labels
 
     func fetchSupportLabelsResult(
         language: String,
@@ -123,7 +127,11 @@ final class FaqAndSupportRepositoryImpl: FaqAndSupportRepositoryType {
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 86400
     ) async -> SupportLabels? {
-        await fetchSupportLabelsResult(language: language, forceRefresh: forceRefresh, cacheTTL: cacheTTL).value
+        await fetchSupportLabelsResult(
+            language: language,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        ).value
     }
 
     // MARK: Terms
@@ -158,7 +166,11 @@ final class FaqAndSupportRepositoryImpl: FaqAndSupportRepositoryType {
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 86400
     ) async -> TermsDocument? {
-        await fetchTermsResult(language: language, forceRefresh: forceRefresh, cacheTTL: cacheTTL).value
+        await fetchTermsResult(
+            language: language,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        ).value
     }
 
     // MARK: Privacy
@@ -193,7 +205,11 @@ final class FaqAndSupportRepositoryImpl: FaqAndSupportRepositoryType {
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 86400
     ) async -> PrivacyDocument? {
-        await fetchPrivacyResult(language: language, forceRefresh: forceRefresh, cacheTTL: cacheTTL).value
+        await fetchPrivacyResult(
+            language: language,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        ).value
     }
 
     // MARK: Cache

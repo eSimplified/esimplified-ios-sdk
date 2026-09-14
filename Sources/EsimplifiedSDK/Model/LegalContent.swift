@@ -6,24 +6,35 @@
 
 import Foundation
 
-// MARK: Policy Block Kind
+// MARK: Terms Document
 
-public enum PolicyBlockKind: String, Codable, Hashable, Sendable {
-    case paragraph = "p"
-    case heading = "h"
-    case listItem = "li"
+public struct TermsDocument: Codable, Hashable, Sendable {
+
+    public let title: String
+    public let tocLabel: String
+    public let sections: [TermsSection]
+
+    public init(title: String, tocLabel: String, sections: [TermsSection]) {
+        self.title = title
+        self.tocLabel = tocLabel
+        self.sections = sections
+    }
 }
 
-// MARK: Policy Block
+// MARK: Terms Section
 
-public struct PolicyBlock: Codable, Hashable, Sendable {
+public struct TermsSection: Codable, Hashable, Sendable {
 
-    public let kind: PolicyBlockKind
-    public let text: String
+    public let id: String
+    public let title: String
+    public let items: [TermsItem]
+    public let sublistMarker: TermsSublistMarker
 
-    public init(kind: PolicyBlockKind, text: String) {
-        self.kind = kind
-        self.text = text
+    public init(id: String, title: String, items: [TermsItem], sublistMarker: TermsSublistMarker) {
+        self.id = id
+        self.title = title
+        self.items = items
+        self.sublistMarker = sublistMarker
     }
 }
 
@@ -47,34 +58,32 @@ public enum TermsSublistMarker: String, Codable, Hashable, Sendable {
     case disc
 }
 
-// MARK: Terms Section
+// MARK: Terms Node
 
-public struct TermsSection: Codable, Hashable, Sendable {
+public struct TermsNode: Hashable, Sendable {
 
-    public let id: String
-    public let title: String
-    public let items: [TermsItem]
-    public let sublistMarker: TermsSublistMarker
+    public let text: String
+    public let children: [TermsNode]
 
-    public init(id: String, title: String, items: [TermsItem], sublistMarker: TermsSublistMarker) {
-        self.id = id
-        self.title = title
-        self.items = items
-        self.sublistMarker = sublistMarker
+    public init(text: String, children: [TermsNode] = []) {
+        self.text = text
+        self.children = children
     }
 }
 
-// MARK: Terms Document
+// MARK: Privacy Document
 
-public struct TermsDocument: Codable, Hashable, Sendable {
+public struct PrivacyDocument: Codable, Hashable, Sendable {
 
     public let title: String
     public let tocLabel: String
-    public let sections: [TermsSection]
+    public let lastUpdated: String?
+    public let sections: [PolicySection]
 
-    public init(title: String, tocLabel: String, sections: [TermsSection]) {
+    public init(title: String, tocLabel: String, lastUpdated: String? = nil, sections: [PolicySection]) {
         self.title = title
         self.tocLabel = tocLabel
+        self.lastUpdated = lastUpdated
         self.sections = sections
     }
 }
@@ -94,20 +103,80 @@ public struct PolicySection: Codable, Hashable, Sendable {
     }
 }
 
-// MARK: Privacy Document
+// MARK: Policy Block
 
-public struct PrivacyDocument: Codable, Hashable, Sendable {
+public struct PolicyBlock: Codable, Hashable, Sendable {
 
-    public let title: String
-    public let tocLabel: String
-    public let lastUpdated: String?
-    public let sections: [PolicySection]
+    public let kind: PolicyBlockKind
+    public let text: String
 
-    public init(title: String, tocLabel: String, lastUpdated: String? = nil, sections: [PolicySection]) {
-        self.title = title
-        self.tocLabel = tocLabel
-        self.lastUpdated = lastUpdated
-        self.sections = sections
+    public init(kind: PolicyBlockKind, text: String) {
+        self.kind = kind
+        self.text = text
+    }
+}
+
+// MARK: Policy Block Kind
+
+public enum PolicyBlockKind: String, Codable, Hashable, Sendable {
+    case paragraph = "p"
+    case heading = "h"
+    case listItem = "li"
+}
+
+// MARK: Policy Group
+
+public enum PolicyGroup: Hashable, Sendable {
+    case paragraph(String)
+    case heading(String)
+    case list([String])
+}
+
+// MARK: Legal Content Parser
+
+public enum LegalContentParser {
+
+    public static func termsTree(_ items: [TermsItem]) -> [TermsNode] {
+        let root = MutableNode(text: "")
+        var openAt: [Int: MutableNode] = [0: root]
+        for item in items {
+            let node = MutableNode(text: item.text)
+            (openAt[item.depth - 1] ?? root).children.append(node)
+            openAt[item.depth] = node
+        }
+        return root.children.map { $0.frozen() }
+    }
+
+    public static func groups(_ blocks: [PolicyBlock]) -> [PolicyGroup] {
+        var groups: [PolicyGroup] = []
+        for block in blocks {
+            switch block.kind {
+            case .listItem:
+                if case .list(let items)? = groups.last {
+                    groups[groups.count - 1] = .list(items + [block.text])
+                } else {
+                    groups.append(.list([block.text]))
+                }
+            case .heading:
+                groups.append(.heading(block.text))
+            case .paragraph:
+                groups.append(.paragraph(block.text))
+            }
+        }
+        return groups
+    }
+
+    private final class MutableNode {
+        let text: String
+        var children: [MutableNode] = []
+
+        init(text: String) {
+            self.text = text
+        }
+
+        func frozen() -> TermsNode {
+            TermsNode(text: text, children: children.map { $0.frozen() })
+        }
     }
 }
 

@@ -14,13 +14,13 @@ public protocol FaqAndSupportRepositoryType {
 
     func fetchDestinationFaqsResult(countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Faq]>
 
-    // MARK: Help centre (general FAQs)
+    // MARK: Help Centre
 
     func fetchSupportSections(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> [SupportSection]
 
     func fetchSupportSectionsResult(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[SupportSection]>
 
-    // MARK: Support labels
+    // MARK: Support Labels
 
     func fetchSupportLabels(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> SupportLabels?
 
