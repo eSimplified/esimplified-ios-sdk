@@ -11,6 +11,7 @@ enum Endpoints: String {
     case packages = "packages"
     case payments = "payments"
     case auth = "auth/token"
+    case customer = "customer"
     case updateCustomer = "customer/edit"
     case esims = "customer/esims"
     case esimDetails = "customer/esims/placeholder/details"

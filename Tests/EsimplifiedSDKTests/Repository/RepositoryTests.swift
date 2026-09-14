@@ -304,6 +304,40 @@ extension NetworkSuite {
 
     // MARK: - User
 
+    @Test("User: fetchProfile hits GET customer/ and reads referral_code")
+    func userFetchProfile() async throws {
+        MockURLProtocol.reset()
+        let json = #"{"email":"a@b.com","referral_code":"REF123","signed_in_with_provider":true,"receive_marketing_email":true,"receive_viber_messages":false,"loyalty_provider":"kreds"}"#
+        MockURLProtocol.handler = MockSession.jsonResponse(json: json)
+
+        let (client, _, _, _) = makeRepoEnv()
+        let repo = UserRepositoryImpl(client: client)
+        let user = try await repo.fetchProfile()
+        #expect(user.referralCode == "REF123")
+        #expect(user.signedInWithProvider == true)
+        #expect(user.receiveMarketingEmail == true)
+        #expect(user.receiveViberMessages == false)
+        #expect(user.loyaltyProvider == .kreds)
+
+        let request = MockURLProtocol.capturedRequests.first
+        #expect(request?.httpMethod == "GET")
+        #expect(request?.url?.absoluteString.hasSuffix("/api/v2/customer/") == true)
+    }
+
+    @Test("User: the preferences response spells the referral code differently and still decodes")
+    func userPreferencesReferralCodeAlias() async throws {
+        MockURLProtocol.reset()
+        let json = #"{"email":"a@b.com","unique_referral_code":"REF123","preferred_language":"zh-hans"}"#
+        MockURLProtocol.handler = MockSession.jsonResponse(json: json)
+
+        let (client, _, _, _) = makeRepoEnv()
+        let repo = UserRepositoryImpl(client: client)
+        let user = try await repo.updatePreferences(
+            UpdateCustomerPreferencesRequest(preferredLanguage: "zh-hans", preferredCurrency: nil)
+        )
+        #expect(user.referralCode == "REF123")
+    }
+
     @Test("User: updatePreferences hits preferences endpoint")
     func userUpdatePreferences() async throws {
         MockURLProtocol.reset()
