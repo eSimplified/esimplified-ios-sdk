@@ -14,6 +14,13 @@ final class UserRepositoryImpl: UserRepositoryType {
         self.client = client
     }
 
+    func fetchProfile() async throws -> User {
+        try await client.fetch(
+            endpoint: .customer,
+            method: .GET
+        )
+    }
+
     func updateProfile(_ request: UpdateCustomerRequest) async throws -> UpdateCustomerResponse {
         try await client.fetch(
             endpoint: .updateCustomer,
