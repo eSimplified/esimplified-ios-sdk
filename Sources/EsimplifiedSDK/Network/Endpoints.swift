@@ -40,4 +40,7 @@ enum Endpoints: String {
     case initiateMokafaaOtp = "loyalty/mokafaa/otp/initiate"
     case validateMokafaaOtp = "loyalty/mokafaa/otp/validate"
     case theme = "theme"
+    case terms = "terms"
+    case generalFaqs = "faqs"
+    case privacy = "privacy"
 }
