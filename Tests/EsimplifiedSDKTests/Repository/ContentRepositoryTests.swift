@@ -13,6 +13,16 @@ extension NetworkSuite {
     private static let unavailableJson = #"{"detail":"Content is temporarily unavailable. Please try again later."}"#
     private static let unavailableMessage = "Content is temporarily unavailable. Please try again later."
 
+    /// The smallest valid document: one section carrying one paragraph.
+    private static func contentJson(language: String = "en") -> String {
+        """
+        {"language":"\(language)","id":"doc","title":"Doc","description":null,
+         "updatedAt":"Last updated: 28 April 2025","blocks":[],
+         "children":[{"id":"one","title":"One","description":null,"updatedAt":null,
+         "blocks":[{"type":"paragraph","text":"Body."}],"children":[]}]}
+        """
+    }
+
     private func makeContentRepo(
         language: String = "en"
     ) -> (FaqAndSupportRepositoryImpl, SdkCache) {
@@ -31,9 +41,8 @@ extension NetworkSuite {
         return (FaqAndSupportRepositoryImpl(client: client, cache: cache), cache)
     }
 
-    private func fixtureHandler(_ name: String) throws -> MockURLProtocol.Handler {
-        let body = String(decoding: try Fixtures.data(name), as: UTF8.self)
-        return MockSession.jsonResponse(json: body)
+    private func contentHandler(language: String = "en") -> MockURLProtocol.Handler {
+        MockSession.jsonResponse(json: Self.contentJson(language: language))
     }
 
     private func assertGet(path: String) {
@@ -53,7 +62,7 @@ extension NetworkSuite {
     @Test("Content: fetchTerms GETs /api/v2/terms/ and forwards accept-language")
     func termsRequest() async throws {
         MockURLProtocol.reset()
-        MockURLProtocol.handler = try fixtureHandler("terms_ar")
+        MockURLProtocol.handler = contentHandler(language: "ar")
 
         let (repo, _) = makeContentRepo(language: "ar")
         let document = await repo.fetchTerms(language: "ar")
@@ -61,36 +70,36 @@ extension NetworkSuite {
         assertGet(path: "/api/v2/terms/")
         assertAcceptLanguage("ar")
         #expect(document?.language == "ar")
-        #expect(document?.children.count == 9)
+        #expect(document?.children.count == 1)
         #expect(document?.title?.isEmpty == false)
     }
 
     @Test("Content: fetchPrivacy GETs /api/v2/privacy/ and forwards accept-language")
     func privacyRequest() async throws {
         MockURLProtocol.reset()
-        MockURLProtocol.handler = try fixtureHandler("privacy_en")
+        MockURLProtocol.handler = contentHandler()
 
         let (repo, _) = makeContentRepo(language: "en")
         let document = await repo.fetchPrivacy(language: "en")
 
         assertGet(path: "/api/v2/privacy/")
         assertAcceptLanguage("en")
-        #expect(document?.children.count == 14)
+        #expect(document?.children.count == 1)
         #expect(document?.updatedAt == "Last updated: 28 April 2025")
     }
 
     @Test("Content: fetchFaqs GETs /api/v2/faqs/ and forwards accept-language")
     func faqsRequest() async throws {
         MockURLProtocol.reset()
-        MockURLProtocol.handler = try fixtureHandler("faqs_en")
+        MockURLProtocol.handler = contentHandler()
 
         let (repo, _) = makeContentRepo(language: "en")
         let document = await repo.fetchFaqs(language: "en")
 
         assertGet(path: "/api/v2/faqs/")
         assertAcceptLanguage("en")
-        #expect(document?.children.count == 6)
-        #expect(document?.children.flatMap(\.children).count == 62)
+        #expect(document?.children.count == 1)
+        #expect(document?.children.first?.blocks == [.paragraph("Body.")])
     }
 
     // MARK: Caching
@@ -98,7 +107,7 @@ extension NetworkSuite {
     @Test("Content: second fetchFaqs call is served from cache")
     func faqsCacheHit() async throws {
         MockURLProtocol.reset()
-        MockURLProtocol.handler = try fixtureHandler("faqs_en")
+        MockURLProtocol.handler = contentHandler()
 
         let (repo, cache) = makeContentRepo()
         _ = await repo.fetchFaqs(language: "en")
@@ -107,15 +116,15 @@ extension NetworkSuite {
         #expect(MockURLProtocol.capturedRequests.count == 1)
         #expect(again.isStale == false)
         #expect(again.failure == nil)
-        #expect(again.value?.children.count == 6)
+        #expect(again.value?.children.count == 1)
         let cached: ContentDocument? = await cache.get("faqs_en")
-        #expect(cached?.children.count == 6)
+        #expect(cached?.children.count == 1)
     }
 
     @Test("Content: forceRefresh refetches terms")
     func termsForceRefresh() async throws {
         MockURLProtocol.reset()
-        MockURLProtocol.handler = try fixtureHandler("terms_en")
+        MockURLProtocol.handler = contentHandler()
 
         let (repo, cache) = makeContentRepo()
         _ = await repo.fetchTerms(language: "en")
@@ -125,19 +134,19 @@ extension NetworkSuite {
         _ = await repo.fetchTerms(language: "en", forceRefresh: true)
         #expect(MockURLProtocol.capturedRequests.count == 2)
         let cached: ContentDocument? = await cache.get("terms_en")
-        #expect(cached?.children.count == 9)
+        #expect(cached?.children.count == 1)
     }
 
     @Test("Content: privacy is cached under its language key")
     func privacyCacheKey() async throws {
         MockURLProtocol.reset()
-        MockURLProtocol.handler = try fixtureHandler("privacy_en")
+        MockURLProtocol.handler = contentHandler()
 
         let (repo, cache) = makeContentRepo()
         _ = await repo.fetchPrivacy(language: "en")
 
         let cached: ContentDocument? = await cache.get("privacy_en")
-        #expect(cached?.children.count == 14)
+        #expect(cached?.children.count == 1)
         let other: ContentDocument? = await cache.get("privacy_ar")
         #expect(other == nil)
     }

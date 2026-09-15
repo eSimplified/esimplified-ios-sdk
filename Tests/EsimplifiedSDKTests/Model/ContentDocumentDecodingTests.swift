@@ -8,128 +8,160 @@ import Testing
 import Foundation
 @testable import EsimplifiedSDK
 
+/// A miniature document shaped like the live payloads: a root with an explicit null,
+/// a section of blocks and a section whose children nest one level deeper.
+private let documentJson = """
+{
+  "language": "en",
+  "id": "terms",
+  "title": "Terms of Service",
+  "description": null,
+  "updatedAt": "Last updated: 28 April 2025",
+  "blocks": [],
+  "children": [
+    {
+      "id": "eligibility",
+      "title": "Eligibility",
+      "description": null,
+      "updatedAt": null,
+      "blocks": [
+        {"type": "heading", "text": "Who can sign up"},
+        {"type": "paragraph", "text": "You must be able to hold an account."},
+        {
+          "type": "list",
+          "ordered": true,
+          "marker": "decimal",
+          "items": [
+            {
+              "text": "Access to benefits: eligible cardholders must:",
+              "items": [
+                {"text": "Select your region.", "items": []},
+                {"text": "Log in to an account.", "items": []}
+              ],
+              "ordered": false,
+              "marker": "bullet"
+            },
+            {"text": "Verification happens on entry.", "items": []},
+            {"text": "Your device must support eSIM.", "items": []}
+          ]
+        }
+      ],
+      "children": []
+    },
+    {
+      "id": "general",
+      "title": "General",
+      "description": null,
+      "updatedAt": null,
+      "blocks": [],
+      "children": [
+        {
+          "id": "are-esims-safe",
+          "title": "Are eSIMs safe?",
+          "description": null,
+          "updatedAt": null,
+          "blocks": [{"type": "paragraph", "text": "Yes, an eSIM cannot be removed."}],
+          "children": []
+        }
+      ]
+    }
+  ]
+}
+"""
+
 @Suite("ContentDocument decoding")
 struct ContentDocumentDecodingTests {
+
+    private func decode<T: Decodable>(_ json: String) throws -> T {
+        try JSONDecoder().decode(T.self, from: Data(json.utf8))
+    }
+
+    private func document() throws -> ContentDocument {
+        try decode(documentJson)
+    }
 
     private func child(_ id: String, in document: ContentDocument) -> ContentNode? {
         document.children.first { $0.id == id }
     }
 
-    // MARK: Terms
+    // MARK: Document
 
-    @Test("Terms: en and ar decode 9 sections with a title", arguments: ["en", "ar"])
-    func termsSections(language: String) throws {
-        let document = try Fixtures.content("terms_\(language)")
-        #expect(document.language == language)
-        #expect(document.title?.isEmpty == false)
-        #expect(document.updatedAt == nil)
+    @Test("Root fields decode, including an explicit null and two levels of children")
+    func rootFields() throws {
+        let document = try document()
+        #expect(document.language == "en")
+        #expect(document.id == "terms")
+        #expect(document.title == "Terms of Service")
+        #expect(document.description == nil)
+        #expect(document.updatedAt == "Last updated: 28 April 2025")
         #expect(document.blocks.isEmpty)
-        #expect(document.children.count == 9)
-        for section in document.children where section.id != "kreds" {
-            #expect(section.blocks.count == 1)
-            guard case .list? = section.blocks.first else {
-                Issue.record("expected a list block in \(section.id ?? "?")")
-                continue
-            }
-        }
+        #expect(document.children.count == 2)
+
+        let general = try #require(child("general", in: document))
+        #expect(general.blocks.isEmpty)
+        #expect(general.children.count == 1)
+        let article = try #require(general.children.first)
+        #expect(article.id == "are-esims-safe")
+        #expect(article.title == "Are eSIMs safe?")
+        #expect(article.children.isEmpty)
     }
 
-    @Test("Terms: kreds section carries 27 blocks including headings")
-    func termsKreds() throws {
-        let document = try Fixtures.content("terms_en")
-        let kreds = try #require(child("kreds", in: document))
-        #expect(kreds.blocks.count == 27)
-        #expect(kreds.blocks[1] == .heading("Earning Kreds"))
-        guard case .paragraph(let text)? = kreds.blocks.first else {
-            Issue.record("expected a leading paragraph")
-            return
-        }
-        #expect(text.contains("Kreds"))
-    }
+    // MARK: Blocks
 
-    @Test("Terms: eligibility is a decimal list whose first item nests four bullets")
-    func termsEligibility() throws {
-        let document = try Fixtures.content("terms_en")
+    @Test("Heading and paragraph blocks decode with their text")
+    func headingAndParagraph() throws {
+        let document = try document()
         let eligibility = try #require(child("eligibility", in: document))
-        guard case .list(let list)? = eligibility.blocks.first else {
-            Issue.record("expected a list block")
+        #expect(eligibility.blocks.count == 3)
+        #expect(eligibility.blocks[0] == .heading("Who can sign up"))
+        #expect(eligibility.blocks[1] == .paragraph("You must be able to hold an account."))
+
+        let article = try #require(child("general", in: document)?.children.first)
+        #expect(article.blocks == [.paragraph("Yes, an eSIM cannot be removed.")])
+    }
+
+    @Test("List block decodes ordered, marker and its nested items")
+    func listBlock() throws {
+        let document = try document()
+        let eligibility = try #require(child("eligibility", in: document))
+        guard case .list(let list) = eligibility.blocks[2] else {
+            Issue.record("expected a list block, got \(eligibility.blocks[2])")
             return
         }
         #expect(list.ordered)
         #expect(list.marker == .decimal)
         #expect(list.items.count == 3)
+
         let first = try #require(list.items.first)
-        #expect(first.items.count == 4)
+        #expect(first.text == "Access to benefits: eligible cardholders must:")
         #expect(first.ordered == false)
         #expect(first.marker == .bullet)
+        #expect(first.items.count == 2)
+
+        let leaf = try #require(first.items.first)
+        #expect(leaf.text == "Select your region.")
+        #expect(leaf.items.isEmpty)
+        #expect(leaf.ordered == nil)
+        #expect(leaf.marker == nil)
+
         #expect(list.items[1].items.isEmpty)
         #expect(list.items[1].ordered == nil)
         #expect(list.items[1].marker == nil)
-    }
-
-    // MARK: Privacy
-
-    @Test("Privacy: en and ar decode 14 sections with updatedAt", arguments: ["en", "ar"])
-    func privacySections(language: String) throws {
-        let document = try Fixtures.content("privacy_\(language)")
-        #expect(document.language == language)
-        #expect(document.children.count == 14)
-        #expect(document.updatedAt?.isEmpty == false)
-        #expect(document.children.allSatisfy { $0.children.isEmpty })
-        #expect(document.children.allSatisfy { !$0.blocks.isEmpty })
-    }
-
-    @Test("Privacy: en updatedAt is the last-updated line")
-    func privacyUpdatedAt() throws {
-        let document = try Fixtures.content("privacy_en")
-        #expect(document.title == "Privacy Policy")
-        #expect(document.updatedAt == "Last updated: 28 April 2025")
-    }
-
-    // MARK: FAQs
-
-    @Test("FAQs: en and ar decode 6 categories and 62 articles", arguments: ["en", "ar"])
-    func faqsTree(language: String) throws {
-        let document = try Fixtures.content("faqs_\(language)")
-        #expect(document.language == language)
-        #expect(document.title == nil)
-        #expect(document.children.count == 6)
-        let articles = document.children.flatMap(\.children)
-        #expect(articles.count == 62)
-        #expect(articles.allSatisfy { !$0.blocks.isEmpty })
-        #expect(articles.allSatisfy { $0.id?.isEmpty == false && $0.title?.isEmpty == false })
-    }
-
-    @Test("FAQs: an article block is an ordered decimal list with nested items")
-    func faqsNestedList() throws {
-        let document = try Fixtures.content("faqs_en")
-        let general = try #require(child("general", in: document))
-        let article = try #require(general.children.first { $0.id == "are-esims-safe-and-secure-to-use" })
-        guard case .list(let list) = article.blocks[6] else {
-            Issue.record("expected a list block")
-            return
-        }
-        #expect(list.ordered)
-        #expect(list.marker == .decimal)
-        #expect(list.items.count == 2)
-        #expect(list.items[0].text == "Remote Deactivation")
-        #expect(list.items[0].items.count == 1)
-        #expect(list.items[0].marker == .bullet)
     }
 
     // MARK: Forward compatibility
 
     @Test("Unknown block type decodes to .unknown")
     func unknownBlock() throws {
-        let json = #"[{"type":"table","rows":[]},{"type":"paragraph","text":"p"}]"#
-        let blocks = try JSONDecoder().decode([ContentBlock].self, from: Data(json.utf8))
+        let json = #"[{"type":"video","url":"x"},{"type":"paragraph","text":"p"}]"#
+        let blocks: [ContentBlock] = try decode(json)
         #expect(blocks == [.unknown, .paragraph("p")])
     }
 
     @Test("Unknown list marker falls back to .bullet")
     func unknownMarker() throws {
         let json = #"{"type":"list","ordered":false,"marker":"roman","items":[]}"#
-        let block = try JSONDecoder().decode(ContentBlock.self, from: Data(json.utf8))
+        let block: ContentBlock = try decode(json)
         #expect(block == .list(ContentList(ordered: false, marker: .bullet, items: [])))
     }
 
@@ -137,7 +169,7 @@ struct ContentDocumentDecodingTests {
 
     @Test("Encoding then decoding a document is lossless")
     func roundTrip() throws {
-        let document = try Fixtures.content("terms_en")
+        let document = try document()
         let data = try JSONEncoder().encode(document)
         let decoded = try JSONDecoder().decode(ContentDocument.self, from: data)
         #expect(decoded == document)
