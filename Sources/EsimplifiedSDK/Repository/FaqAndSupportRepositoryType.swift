@@ -14,29 +14,23 @@ public protocol FaqAndSupportRepositoryType {
 
     func fetchDestinationFaqsResult(countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Faq]>
 
-    // MARK: Help Centre
-
-    func fetchSupportSections(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> [SupportSection]
-
-    func fetchSupportSectionsResult(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[SupportSection]>
-
-    // MARK: Support Labels
-
-    func fetchSupportLabels(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> SupportLabels?
-
-    func fetchSupportLabelsResult(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<SupportLabels?>
-
     // MARK: Terms
 
-    func fetchTerms(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> TermsDocument?
+    func fetchTerms(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> ContentDocument?
 
-    func fetchTermsResult(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<TermsDocument?>
+    func fetchTermsResult(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<ContentDocument?>
 
     // MARK: Privacy
 
-    func fetchPrivacy(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> PrivacyDocument?
+    func fetchPrivacy(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> ContentDocument?
 
-    func fetchPrivacyResult(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PrivacyDocument?>
+    func fetchPrivacyResult(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<ContentDocument?>
+
+    // MARK: FAQs
+
+    func fetchFaqs(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> ContentDocument?
+
+    func fetchFaqsResult(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<ContentDocument?>
 
     func invalidateCache() async
 }
@@ -51,35 +45,27 @@ public extension FaqAndSupportRepositoryType {
         await fetchDestinationFaqsResult(countryNameSlug: countryNameSlug, forceRefresh: forceRefresh, cacheTTL: 86400)
     }
 
-    func fetchSupportSections(language: String, forceRefresh: Bool = false) async -> [SupportSection] {
-        await fetchSupportSections(language: language, forceRefresh: forceRefresh, cacheTTL: 86400)
-    }
-
-    func fetchSupportSectionsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<[SupportSection]> {
-        await fetchSupportSectionsResult(language: language, forceRefresh: forceRefresh, cacheTTL: 86400)
-    }
-
-    func fetchSupportLabels(language: String, forceRefresh: Bool = false) async -> SupportLabels? {
-        await fetchSupportLabels(language: language, forceRefresh: forceRefresh, cacheTTL: 86400)
-    }
-
-    func fetchSupportLabelsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<SupportLabels?> {
-        await fetchSupportLabelsResult(language: language, forceRefresh: forceRefresh, cacheTTL: 86400)
-    }
-
-    func fetchTerms(language: String, forceRefresh: Bool = false) async -> TermsDocument? {
+    func fetchTerms(language: String, forceRefresh: Bool = false) async -> ContentDocument? {
         await fetchTerms(language: language, forceRefresh: forceRefresh, cacheTTL: 86400)
     }
 
-    func fetchTermsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<TermsDocument?> {
+    func fetchTermsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<ContentDocument?> {
         await fetchTermsResult(language: language, forceRefresh: forceRefresh, cacheTTL: 86400)
     }
 
-    func fetchPrivacy(language: String, forceRefresh: Bool = false) async -> PrivacyDocument? {
+    func fetchPrivacy(language: String, forceRefresh: Bool = false) async -> ContentDocument? {
         await fetchPrivacy(language: language, forceRefresh: forceRefresh, cacheTTL: 86400)
     }
 
-    func fetchPrivacyResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<PrivacyDocument?> {
+    func fetchPrivacyResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<ContentDocument?> {
         await fetchPrivacyResult(language: language, forceRefresh: forceRefresh, cacheTTL: 86400)
+    }
+
+    func fetchFaqs(language: String, forceRefresh: Bool = false) async -> ContentDocument? {
+        await fetchFaqs(language: language, forceRefresh: forceRefresh, cacheTTL: 86400)
+    }
+
+    func fetchFaqsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<ContentDocument?> {
+        await fetchFaqsResult(language: language, forceRefresh: forceRefresh, cacheTTL: 86400)
     }
 }

@@ -251,22 +251,12 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `ThemePage` | Page theme from `/theme/?page=` (url path, featured image, colour) |
 | `ThemeDestination` | Destination theme from `/theme/?url=` (image, gallery, country code) |
 | `ThemeImage` | Themed image (url, accent colour) |
-| `SupportSection` | Help-centre category from `/faqs/` (slug, title, description, articles) |
-| `SupportArticle` | Help-centre article (slug, title, summary block, body blocks) |
-| `SupportBlock` | Article block (optional heading, paragraphs, optional list) |
-| `SupportList` | Ordered or bulleted list within a block |
-| `SupportListItem` | List entry (text, sub-items) |
-| `SupportLabels` | Help-centre UI strings from `/support/` (nested `Article`, `Categories`, `Popular`, `Search`, `Cta`, `Hero`) |
-| `TermsDocument` | Terms and conditions from `/terms/` (title, table-of-contents label, sections) |
-| `TermsSection` | Terms section (id, title, items, sublist marker) |
-| `TermsItem` | Terms line (depth, text) |
-| `TermsSublistMarker` | Enum: alpha, disc |
-| `TermsNode` | Nested terms item built by `LegalContentParser.termsTree` (text, children) |
-| `PrivacyDocument` | Privacy policy from `/privacy/` (title, table-of-contents label, last updated, sections) |
-| `PolicySection` | Privacy section (id, title, blocks) |
-| `PolicyBlock` | Privacy block (kind, text) |
-| `PolicyBlockKind` | Enum: paragraph, heading, listItem |
-| `PolicyGroup` | Enum built by `LegalContentParser.groups`: paragraph, heading, list |
+| `ContentDocument` | Ready-to-render document from `/terms/`, `/privacy/` or `/faqs/` (language, id, title, description, updatedAt, blocks, children) |
+| `ContentNode` | Section, category or article within a document (id, title, description, updatedAt, blocks, children) |
+| `ContentBlock` | Enum: heading(String), paragraph(String), list(ContentList), unknown |
+| `ContentList` | Ordered or bulleted list (ordered, marker, items) |
+| `ContentListMarker` | Enum: decimal, alpha, bullet (unknown markers decode as bullet) |
+| `ContentListItem` | List entry (text, nested items, nested ordered/marker when items are present) |
 
 ## All Repository Methods
 
@@ -410,28 +400,24 @@ Voucher code redemption.
 
 ### FaqAndSupportRepository
 
-Destination FAQs plus the localised help-centre, terms and privacy content.
+Destination FAQs plus the localised terms, privacy and help-centre documents.
 
 | Method | Signature | Description |
 |---|---|---|
 | `fetchDestinationFaqs` | `func fetchDestinationFaqs(countryNameSlug: String, forceRefresh: Bool = false) async -> [Faq]` | Fetch the FAQs for a destination (empty on failure) |
 | `fetchDestinationFaqsResult` | `func fetchDestinationFaqsResult(countryNameSlug: String, forceRefresh: Bool = false) async -> RepositoryResult<[Faq]>` | Same, with the failure reported |
-| `fetchSupportSections` | `func fetchSupportSections(language: String, forceRefresh: Bool = false) async -> [SupportSection]` | Help-centre categories and articles from `GET /faqs/` (empty on failure) |
-| `fetchSupportSectionsResult` | `func fetchSupportSectionsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<[SupportSection]>` | Same, with the failure reported |
-| `fetchSupportLabels` | `func fetchSupportLabels(language: String, forceRefresh: Bool = false) async -> SupportLabels?` | Help-centre UI labels from `GET /support/` (nil on failure) |
-| `fetchSupportLabelsResult` | `func fetchSupportLabelsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<SupportLabels?>` | Same, with the failure reported |
-| `fetchTerms` | `func fetchTerms(language: String, forceRefresh: Bool = false) async -> TermsDocument?` | Terms and conditions from `GET /terms/` (nil on failure) |
-| `fetchTermsResult` | `func fetchTermsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<TermsDocument?>` | Same, with the failure reported |
-| `fetchPrivacy` | `func fetchPrivacy(language: String, forceRefresh: Bool = false) async -> PrivacyDocument?` | Privacy policy from `GET /privacy/` (nil on failure) |
-| `fetchPrivacyResult` | `func fetchPrivacyResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<PrivacyDocument?>` | Same, with the failure reported |
+| `fetchTerms` | `func fetchTerms(language: String, forceRefresh: Bool = false) async -> ContentDocument?` | Terms and conditions from `GET /terms/` (nil on failure) |
+| `fetchTermsResult` | `func fetchTermsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<ContentDocument?>` | Same, with the failure reported |
+| `fetchPrivacy` | `func fetchPrivacy(language: String, forceRefresh: Bool = false) async -> ContentDocument?` | Privacy policy from `GET /privacy/` (nil on failure) |
+| `fetchPrivacyResult` | `func fetchPrivacyResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<ContentDocument?>` | Same, with the failure reported |
+| `fetchFaqs` | `func fetchFaqs(language: String, forceRefresh: Bool = false) async -> ContentDocument?` | Help-centre categories and articles from `GET /faqs/` (nil on failure) |
+| `fetchFaqsResult` | `func fetchFaqsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<ContentDocument?>` | Same, with the failure reported |
 
 #### Content endpoints
 
-`/api/v2/terms/`, `/api/v2/faqs/`, `/api/v2/support/` and `/api/v2/privacy/` all return the same envelope, `{"language": "en", "content": {...}}`, with `content` being the flat i18n namespace for that document. The language is selected by the `accept-language` header, so pass it through `customHeadersProvider`; the `language` argument only scopes the cache key (`faqs_general_<lang>`, `support_labels_<lang>`, `terms_<lang>`, `privacy_<lang>`).
+`/api/v2/terms/`, `/api/v2/privacy/` and `/api/v2/faqs/` each return one ready-to-render `ContentDocument`: a tree of `ContentNode`s (terms and privacy sections; FAQ categories with article children) whose `blocks` are headings, paragraphs and nested lists. The document structure lives in the i18nexus key names and is assembled server-side; see the backend docs. The SDK does no parsing -- it decodes the tree, caches it and hands it back.
 
-The SDK parses the raw namespaces into typed models (`SupportSection`/`SupportArticle`/`SupportBlock`, `TermsDocument`/`TermsSection`/`TermsItem`, `PrivacyDocument`/`PolicySection`/`PolicyBlock`) before caching. The structural configs the payloads do not carry -- the help-centre category order and article slugs, the terms section order, item depths, sublist markers and body keys, and the privacy section order and block kinds -- are internal to the SDK, ported from the web storefront. An unknown slug or a line/depth count mismatch degrades softly (the entry is skipped or flattened), matching the web.
-
-`LegalContentParser.termsTree(_:)` nests `TermsItem`s into `TermsNode`s by depth, `LegalContentParser.groups(_:)` coalesces consecutive `PolicyBlock` list items into `PolicyGroup`s, and `SupportContentParser.popularArticles(in:limit:)` round-robins articles across sections.
+The language is selected by the `accept-language` header, so pass it through `customHeadersProvider`; the `language` argument only scopes the cache key (`terms_<lang>`, `privacy_<lang>`, `faqs_<lang>`). A block whose `type` the SDK does not know decodes as `ContentBlock.unknown` and should be skipped when rendering, so the backend can add block types without breaking older clients.
 
 ### ThemeRepository
 

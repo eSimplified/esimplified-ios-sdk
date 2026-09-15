@@ -11,7 +11,7 @@ final class FaqAndSupportRepositoryImpl: FaqAndSupportRepositoryType {
     private let client: HTTPClient
     private let cache: SdkCache
 
-    private static let cachePrefixes = ["faqs_", "terms_", "privacy_", "support_"]
+    private static let cachePrefixes = ["faqs_", "terms_", "privacy_"]
 
     init(client: HTTPClient, cache: SdkCache) {
         self.client = client
@@ -57,115 +57,26 @@ final class FaqAndSupportRepositoryImpl: FaqAndSupportRepositoryType {
         ).value
     }
 
-    // MARK: Help Centre
-
-    func fetchSupportSectionsResult(
-        language: String,
-        forceRefresh: Bool = false,
-        cacheTTL: TimeInterval = 86400
-    ) async -> RepositoryResult<[SupportSection]> {
-        let cacheKey = "faqs_general_\(language)"
-        if !forceRefresh, let cached: [SupportSection] = await cache.get(cacheKey) {
-            return RepositoryResult(value: cached)
-        }
-        do {
-            let envelope: ContentEnvelope<RawFaqsContent> = try await client.fetch(
-                endpoint: .generalFaqs,
-                method: .GET,
-                requiresAuth: false
-            )
-            let sections = SupportContentParser.normalize(envelope.content)
-            await cache.set(cacheKey, value: sections, ttl: cacheTTL)
-            return RepositoryResult(value: sections)
-        } catch {
-            let failure = error as? SdkError ?? .unknown(error)
-            let expired: [SupportSection] = await cache.getExpired(cacheKey) ?? []
-            return RepositoryResult(value: expired, isStale: !expired.isEmpty, failure: failure)
-        }
-    }
-
-    func fetchSupportSections(
-        language: String,
-        forceRefresh: Bool = false,
-        cacheTTL: TimeInterval = 86400
-    ) async -> [SupportSection] {
-        await fetchSupportSectionsResult(
-            language: language,
-            forceRefresh: forceRefresh,
-            cacheTTL: cacheTTL
-        ).value
-    }
-
-    // MARK: Support Labels
-
-    func fetchSupportLabelsResult(
-        language: String,
-        forceRefresh: Bool = false,
-        cacheTTL: TimeInterval = 86400
-    ) async -> RepositoryResult<SupportLabels?> {
-        let cacheKey = "support_labels_\(language)"
-        if !forceRefresh, let cached: SupportLabels = await cache.get(cacheKey) {
-            return RepositoryResult(value: cached)
-        }
-        do {
-            let envelope: ContentEnvelope<SupportLabels> = try await client.fetch(
-                endpoint: .support,
-                method: .GET,
-                requiresAuth: false
-            )
-            await cache.set(cacheKey, value: envelope.content, ttl: cacheTTL)
-            return RepositoryResult(value: envelope.content)
-        } catch {
-            let failure = error as? SdkError ?? .unknown(error)
-            let expired: SupportLabels? = await cache.getExpired(cacheKey)
-            return RepositoryResult(value: expired, isStale: expired != nil, failure: failure)
-        }
-    }
-
-    func fetchSupportLabels(
-        language: String,
-        forceRefresh: Bool = false,
-        cacheTTL: TimeInterval = 86400
-    ) async -> SupportLabels? {
-        await fetchSupportLabelsResult(
-            language: language,
-            forceRefresh: forceRefresh,
-            cacheTTL: cacheTTL
-        ).value
-    }
-
     // MARK: Terms
 
     func fetchTermsResult(
         language: String,
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 86400
-    ) async -> RepositoryResult<TermsDocument?> {
-        let cacheKey = "terms_\(language)"
-        if !forceRefresh, let cached: TermsDocument = await cache.get(cacheKey) {
-            return RepositoryResult(value: cached)
-        }
-        do {
-            let envelope: ContentEnvelope<RawLegalContent> = try await client.fetch(
-                endpoint: .terms,
-                method: .GET,
-                requiresAuth: false
-            )
-            let document = LegalContentParser.termsDocument(from: envelope.content)
-            await cache.set(cacheKey, value: document, ttl: cacheTTL)
-            return RepositoryResult(value: document)
-        } catch {
-            let failure = error as? SdkError ?? .unknown(error)
-            let expired: TermsDocument? = await cache.getExpired(cacheKey)
-            return RepositoryResult(value: expired, isStale: expired != nil, failure: failure)
-        }
+    ) async -> RepositoryResult<ContentDocument?> {
+        await fetchDocumentResult(
+            endpoint: .terms,
+            cacheKey: "terms_\(language)",
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        )
     }
 
     func fetchTerms(
         language: String,
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 86400
-    ) async -> TermsDocument? {
+    ) async -> ContentDocument? {
         await fetchTermsResult(
             language: language,
             forceRefresh: forceRefresh,
@@ -179,37 +90,78 @@ final class FaqAndSupportRepositoryImpl: FaqAndSupportRepositoryType {
         language: String,
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 86400
-    ) async -> RepositoryResult<PrivacyDocument?> {
-        let cacheKey = "privacy_\(language)"
-        if !forceRefresh, let cached: PrivacyDocument = await cache.get(cacheKey) {
-            return RepositoryResult(value: cached)
-        }
-        do {
-            let envelope: ContentEnvelope<RawLegalContent> = try await client.fetch(
-                endpoint: .privacy,
-                method: .GET,
-                requiresAuth: false
-            )
-            let document = LegalContentParser.privacyDocument(from: envelope.content)
-            await cache.set(cacheKey, value: document, ttl: cacheTTL)
-            return RepositoryResult(value: document)
-        } catch {
-            let failure = error as? SdkError ?? .unknown(error)
-            let expired: PrivacyDocument? = await cache.getExpired(cacheKey)
-            return RepositoryResult(value: expired, isStale: expired != nil, failure: failure)
-        }
+    ) async -> RepositoryResult<ContentDocument?> {
+        await fetchDocumentResult(
+            endpoint: .privacy,
+            cacheKey: "privacy_\(language)",
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        )
     }
 
     func fetchPrivacy(
         language: String,
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 86400
-    ) async -> PrivacyDocument? {
+    ) async -> ContentDocument? {
         await fetchPrivacyResult(
             language: language,
             forceRefresh: forceRefresh,
             cacheTTL: cacheTTL
         ).value
+    }
+
+    // MARK: FAQs
+
+    func fetchFaqsResult(
+        language: String,
+        forceRefresh: Bool = false,
+        cacheTTL: TimeInterval = 86400
+    ) async -> RepositoryResult<ContentDocument?> {
+        await fetchDocumentResult(
+            endpoint: .generalFaqs,
+            cacheKey: "faqs_\(language)",
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        )
+    }
+
+    func fetchFaqs(
+        language: String,
+        forceRefresh: Bool = false,
+        cacheTTL: TimeInterval = 86400
+    ) async -> ContentDocument? {
+        await fetchFaqsResult(
+            language: language,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        ).value
+    }
+
+    // MARK: Content Document
+
+    private func fetchDocumentResult(
+        endpoint: Endpoints,
+        cacheKey: String,
+        forceRefresh: Bool,
+        cacheTTL: TimeInterval
+    ) async -> RepositoryResult<ContentDocument?> {
+        if !forceRefresh, let cached: ContentDocument = await cache.get(cacheKey) {
+            return RepositoryResult(value: cached)
+        }
+        do {
+            let document: ContentDocument = try await client.fetch(
+                endpoint: endpoint,
+                method: .GET,
+                requiresAuth: false
+            )
+            await cache.set(cacheKey, value: document, ttl: cacheTTL)
+            return RepositoryResult(value: document)
+        } catch {
+            let failure = error as? SdkError ?? .unknown(error)
+            let expired: ContentDocument? = await cache.getExpired(cacheKey)
+            return RepositoryResult(value: expired, isStale: expired != nil, failure: failure)
+        }
     }
 
     // MARK: Cache

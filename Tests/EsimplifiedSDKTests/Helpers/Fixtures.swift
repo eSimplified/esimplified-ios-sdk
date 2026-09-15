@@ -24,11 +24,7 @@ enum Fixtures {
         try JSONDecoder().decode(T.self, from: data(name))
     }
 
-    static func faqs(_ language: String) throws -> ContentEnvelope<RawFaqsContent> {
-        try decode("faqs_\(language)")
-    }
-
-    static func legal(_ document: String, _ language: String) throws -> ContentEnvelope<RawLegalContent> {
-        try decode("\(document)_\(language)")
+    static func content(_ name: String) throws -> ContentDocument {
+        try decode(name)
     }
 }
