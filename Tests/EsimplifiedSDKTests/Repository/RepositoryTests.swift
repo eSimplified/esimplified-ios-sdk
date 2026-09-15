@@ -42,6 +42,27 @@ extension NetworkSuite {
         #expect(query.contains(where: { $0.name == "limit" && $0.value == "1000" }))
     }
 
+    @Test("Countries: invalidateCache evicts primed data, so the next customer reads from the network")
+    func countriesInvalidateCacheEvictsPrimedData() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"count":0,"next":null,"previous":null,"results":[]}"#)
+
+        let (client, cache, _, _) = makeRepoEnv()
+        let repo = CountriesRepositoryImpl(client: client, cache: cache)
+
+        _ = await repo.fetchAllCountries()
+        let callsAfterPriming = MockURLProtocol.capturedRequests.count
+        #expect(callsAfterPriming == 1)
+
+        _ = await repo.fetchAllCountries()
+        #expect(MockURLProtocol.capturedRequests.count == callsAfterPriming, "a warm cache must not hit the network")
+
+        await repo.invalidateCache()
+        _ = await repo.fetchAllCountries()
+
+        #expect(MockURLProtocol.capturedRequests.count == callsAfterPriming + 1, "after invalidating, the read must hit the network")
+    }
+
     @Test("Countries: fetchAllCountries returns expired cache on network failure")
     func countriesExpiredCacheFallback() async throws {
         MockURLProtocol.reset()
