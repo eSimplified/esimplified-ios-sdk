@@ -29,6 +29,9 @@ Contact eSimplified to obtain these before integrating. See [Support](#support) 
 
 ## Installation
 
+> Integrating for the first time? **[SDK_API_REFERENCE.md](SDK_API_REFERENCE.md)** walks through setup and documents every method and model in one place.
+
+
 Add via Swift Package Manager in Xcode:
 
 1. **File → Add Package Dependencies**
@@ -182,6 +185,9 @@ SdkConfig(
 
 ## All Models
 
+> Full field-by-field reference with JSON keys: **[SDK_API_REFERENCE.md](SDK_API_REFERENCE.md)**. The table below is a summary.
+
+
 Every model is a `Codable` struct in `EsimplifiedSDK`.
 
 | Model | Description |
@@ -259,6 +265,9 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `ContentListItem` | List entry (text, nested items, nested ordered/marker when items are present) |
 
 ## All Repository Methods
+
+> Every signature including overloads: **[SDK_API_REFERENCE.md](SDK_API_REFERENCE.md)**.
+
 
 All repositories are accessed as properties on the `EsimplifiedSdk` instance.
 
