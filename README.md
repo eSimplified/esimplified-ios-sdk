@@ -33,13 +33,13 @@ Add via Swift Package Manager in Xcode:
 
 1. **File → Add Package Dependencies**
 2. Enter: `https://github.com/eSimplified/esimplified-ios-sdk.git`
-3. Select version rule: **Up to Next Major Version** from `1.4.0`
+3. Select version rule: **Up to Next Major Version** from `1.5.0`
 
 Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.4.0")
+    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.5.0")
 ]
 ```
 
@@ -251,6 +251,12 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `ThemePage` | Page theme from `/theme/?page=` (url path, featured image, colour) |
 | `ThemeDestination` | Destination theme from `/theme/?url=` (image, gallery, country code) |
 | `ThemeImage` | Themed image (url, accent colour) |
+| `ContentDocument` | Ready-to-render document from `/terms/`, `/privacy/` or `/faqs/` (language, id, title, description, updatedAt, blocks, children) |
+| `ContentNode` | Section, category or article within a document (id, title, description, updatedAt, blocks, children) |
+| `ContentBlock` | Enum: heading(String), paragraph(String), list(ContentList), unknown |
+| `ContentList` | Ordered or bulleted list (ordered, marker, items) |
+| `ContentListMarker` | Enum: decimal, alpha, bullet (unknown markers decode as bullet) |
+| `ContentListItem` | List entry (text, nested items, nested ordered/marker when items are present) |
 
 ## All Repository Methods
 
@@ -395,12 +401,24 @@ Voucher code redemption.
 
 ### FaqAndSupportRepository
 
-Destination FAQs.
+Destination FAQs plus the localised terms, privacy and help-centre documents.
 
 | Method | Signature | Description |
 |---|---|---|
 | `fetchDestinationFaqs` | `func fetchDestinationFaqs(countryNameSlug: String, forceRefresh: Bool = false) async -> [Faq]` | Fetch the FAQs for a destination (empty on failure) |
 | `fetchDestinationFaqsResult` | `func fetchDestinationFaqsResult(countryNameSlug: String, forceRefresh: Bool = false) async -> RepositoryResult<[Faq]>` | Same, with the failure reported |
+| `fetchTerms` | `func fetchTerms(language: String, forceRefresh: Bool = false) async -> ContentDocument?` | Terms and conditions from `GET /terms/` (nil on failure) |
+| `fetchTermsResult` | `func fetchTermsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<ContentDocument?>` | Same, with the failure reported |
+| `fetchPrivacy` | `func fetchPrivacy(language: String, forceRefresh: Bool = false) async -> ContentDocument?` | Privacy policy from `GET /privacy/` (nil on failure) |
+| `fetchPrivacyResult` | `func fetchPrivacyResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<ContentDocument?>` | Same, with the failure reported |
+| `fetchFaqs` | `func fetchFaqs(language: String, forceRefresh: Bool = false) async -> ContentDocument?` | Help-centre categories and articles from `GET /faqs/` (nil on failure) |
+| `fetchFaqsResult` | `func fetchFaqsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<ContentDocument?>` | Same, with the failure reported |
+
+#### Content endpoints
+
+`/api/v2/terms/`, `/api/v2/privacy/` and `/api/v2/faqs/` each return one ready-to-render `ContentDocument`: a tree of `ContentNode`s (terms and privacy sections; FAQ categories with article children) whose `blocks` are headings, paragraphs and nested lists. The document structure lives in the i18nexus key names and is assembled server-side; see the backend docs. The SDK does no parsing -- it decodes the tree, caches it and hands it back.
+
+The language is selected by the `accept-language` header, so pass it through `customHeadersProvider`; the `language` argument only scopes the cache key (`terms_<lang>`, `privacy_<lang>`, `faqs_<lang>`). A block whose `type` the SDK does not know decodes as `ContentBlock.unknown` and should be skipped when rendering, so the backend can add block types without breaking older clients.
 
 ### ThemeRepository
 
