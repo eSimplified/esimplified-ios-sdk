@@ -21,8 +21,6 @@ public enum SdkError: Error, LocalizedError, CustomDebugStringConvertible {
         return false
     }
 
-    /// Technical detail for logs and bug reports. Never shown to a customer —
-    /// `errorDescription` is what reaches the UI.
     public var debugDescription: String {
         switch self {
         case .decodingError(let error): return "Decoding failed: \(Self.describe(error))"
