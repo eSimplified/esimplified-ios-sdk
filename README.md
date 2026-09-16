@@ -130,12 +130,13 @@ let payment = try await sdk.paymentsRepository.fetchPayment(
 // payment.uri → Stripe client secret. Confirm via Stripe SDK in your app.
 
 // 5. Once Stripe confirms, fetch the order to get the eSIM QR code
-let order = try await sdk.ordersRepository.fetchOrder(orderUUID: payment.orderId!)
+let order = try await sdk.ordersRepository.fetchOrder(orderUUID: payment.orderID!)
 // order.qrCode → string to render as QR
 // order.activationCode → manual activation code
+// Both are optional and absent until the order leaves "pending" — see SDK_API_REFERENCE.md
 
 // 6. Confirm conversion tracking
-await sdk.ordersRepository.trackedOrder(orderUUID: order.orderUUID)
+await sdk.ordersRepository.trackedOrder(orderUUID: payment.orderID!)
 ```
 
 ## SDK Structure

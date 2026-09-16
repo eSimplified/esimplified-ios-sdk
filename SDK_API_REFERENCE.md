@@ -1,4 +1,4 @@
-# eSIMplified iOS SDK — API Reference
+# eSimplified iOS SDK — API Reference
 
 For client teams integrating the SDK into an iOS app. Covers installation, configuration, every repository method available to you, and the full shape of every model the API returns.
 
@@ -11,11 +11,14 @@ For a shorter tour with worked examples, see [README.md](README.md). This docume
 ## Contents
 
 1. [Requirements](#1-requirements)
-2. [What you need from eSIMplified](#2-what-you-need-from-esimplified)
+2. [What you need from eSimplified](#2-what-you-need-from-esimplified)
 3. [Installing the SDK](#3-installing-the-sdk)
 4. [Configuring and creating the SDK](#4-configuring-and-creating-the-sdk)
 5. [Keeping the customer signed in](#5-keeping-the-customer-signed-in)
 6. [Making your first call](#6-making-your-first-call)
+6b. [The full purchase journey](#6b-the-full-purchase-journey)
+6c. [Installing the eSIM](#6c-installing-the-esim)
+6d. [Signing out](#6d-signing-out)
 7. [Error handling](#7-error-handling)
 8. [Caching](#8-caching)
 9. [Repository reference](#9-repository-reference)
@@ -32,9 +35,9 @@ For a shorter tour with worked examples, see [README.md](README.md). This docume
 | Xcode | 15.0+ |
 | Dependencies | None. The SDK is pure Swift with no third-party packages |
 
-## 2. What you need from eSIMplified
+## 2. What you need from eSimplified
 
-Before you write any code, ask your eSIMplified contact for:
+Before you write any code, ask your eSimplified contact for:
 
 | Value | Used for |
 |---|---|
@@ -139,9 +142,98 @@ let packages = await sdk.packagesRepository.fetchPackagesForCountry(
 )
 
 // Sign in, then read the customer's eSIMs
-try await sdk.authRepository.signIn(email: email, password: password)
+_ = try await sdk.authRepository.login(email: email, password: password)
 let esims = await sdk.esimsRepository.fetchEsims(archivedEsims: false, showLegacy: false)
 ```
+
+## 6b. The full purchase journey
+
+The SDK gets you an order. It does **not** take the payment and it does **not** install the eSIM — both of those happen in your app. This is the whole journey, with the handoffs marked.
+
+```swift
+// 1. Browse, no sign-in needed
+let countries = await sdk.countriesRepository.fetchAllCountries()
+let response  = await sdk.packagesRepository.fetchPackagesForCountry(
+    countryCode: "ZA",
+    countryNameSlug: "south-africa"
+)
+let packages = response?.packages ?? []
+
+// 2. The customer must be signed in to buy
+_ = try await sdk.authRepository.login(email: email, password: password)
+
+// 3. Ask the API to create a payment
+let payment = try await sdk.paymentsRepository.fetchPayment(
+    transactionType: .buy,
+    packageTypeId: packages[0].packageTypeID,
+    iccid: nil,                 // nil to buy a new eSIM; an ICCID to top an existing one up
+    autoTopUp: false,
+    savePaymentDetail: true,
+    loyaltyPointsAmount: nil
+)
+
+// 4. YOUR APP takes the payment — the SDK stops here
+//    payment.zeroCharge != nil  → nothing to pay, skip straight to step 5
+//    otherwise hand these to the Stripe iOS SDK:
+//      payment.publishableKey, payment.uri (the client secret),
+//      payment.ephemeralKey, payment.customerRef
+
+// 5. Once Stripe reports success, read the order
+let order = try await sdk.ordersRepository.fetchOrder(orderUUID: payment.orderID!)
+
+// 6. YOUR APP installs the eSIM — see "Installing the eSIM" below
+//    order.smDpAddress, order.activationCode
+
+// 7. Tell the API the conversion is recorded, so it is not counted twice
+await sdk.ordersRepository.trackedOrder(orderUUID: payment.orderID!)
+```
+
+### An order is not ready the instant it is paid
+
+Provisioning is asynchronous. Immediately after payment the order comes back with `orderStatus` `"pending"` and **no** `qrCode`, `smDpAddress`, `activationCode` or `profile` — every one of those is optional for exactly this reason. Poll `fetchOrder(orderUUID:forceRefresh: true)` until `smDpAddress` and `activationCode` are both present, and give the wait a deadline. If it expires, tell the customer the order has not completed rather than sending them into an install that cannot succeed. Their payment is safe and the order completes server-side.
+
+## 6c. Installing the eSIM
+
+The SDK hands you the credentials; iOS does the install. You need three things.
+
+**1. The entitlement.** eSIM installation requires `com.apple.CommCenter.fine-grained` with the `public-cellular-plan` value, which Apple grants on request for your app's bundle ID. Without it the API below does nothing. Request it early — it is not instant.
+
+```xml
+<key>com.apple.CommCenter.fine-grained</key>
+<array>
+    <string>public-cellular-plan</string>
+</array>
+```
+
+**2. A compatibility check**, so you do not offer installation on a device that cannot do it:
+
+```swift
+import CoreTelephony
+
+let canInstall = CTCellularPlanProvisioning().supportsEmbeddedSIM
+```
+
+**3. The install itself**, using the order's credentials:
+
+```swift
+let request = CTCellularPlanProvisioningRequest()
+request.address = order.smDpAddress ?? ""
+request.matchingID = order.activationCode
+CTCellularPlanProvisioning().addPlan(with: request) { result in
+    // .success, .fail, .unknown — iOS shows its own system UI during this
+}
+```
+
+Always offer a manual fallback as well. Render `order.qrCode` as a QR image for scanning on another device, and show `smDpAddress` and `activationCode` as text so the customer can type them into Settings. Some customers install on a second phone, and some devices refuse the direct install.
+
+## 6d. Signing out
+
+```swift
+try await sdk.authRepository.logout()
+await sdk.clearAllCaches()
+```
+
+Clear the caches as well as the session. Cached responses are keyed by endpoint, not by customer, so skipping this leaves one customer's eSIMs and orders readable by the next person to sign in on that device.
 
 ## 7. Error handling
 
@@ -1365,5 +1457,5 @@ Enum.
 
 ## Support
 
-Questions, credentials and environment access: your eSIMplified contact. Bugs in the SDK itself: open an issue on the repository, and include the `debugDescription` of any `SdkError` you hit — for decoding failures it names the field that broke.
+Questions, credentials and environment access: your eSimplified contact. Bugs in the SDK itself: open an issue on the repository, and include the `debugDescription` of any `SdkError` you hit — for decoding failures it names the field that broke.
 
