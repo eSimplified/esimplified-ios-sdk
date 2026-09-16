@@ -11,11 +11,11 @@ import Foundation
 
 public struct OrderDetail: Codable {
     public let iccid: String?
-    public let qrCode: String
-    public let smDpAddress: String
-    public let activationCode: String
-    public let countryName: String
-    public let countryCode: String
+    public let qrCode: String?
+    public let smDpAddress: String?
+    public let activationCode: String?
+    public let countryName: String?
+    public let countryCode: String?
     public let country: Country?
     public let orderNumber: Int
     public let orderType: String
@@ -38,7 +38,7 @@ public struct OrderDetail: Codable {
     public let paymentMethod: PaymentMethod
     public let package: Package
     public let qrCodeImageBase64: String?
-    public let profile: EsimProfile
+    public let profile: EsimProfile?
     public let loyaltyPointsEarned: LoyaltyPointsDetail?
     public let loyaltyPointsSpent: LoyaltyPointsDetail?
 
@@ -75,11 +75,11 @@ public struct OrderDetail: Codable {
 
     public init(
         iccid: String? = nil,
-        qrCode: String,
-        smDpAddress: String,
-        activationCode: String,
-        countryName: String,
-        countryCode: String,
+        qrCode: String? = nil,
+        smDpAddress: String? = nil,
+        activationCode: String? = nil,
+        countryName: String? = nil,
+        countryCode: String? = nil,
         country: Country?,
         orderNumber: Int,
         orderType: String,
@@ -102,7 +102,7 @@ public struct OrderDetail: Codable {
         paymentMethod: PaymentMethod,
         package: Package,
         qrCodeImageBase64: String? = nil,
-        profile: EsimProfile,
+        profile: EsimProfile? = nil,
         loyaltyPointsEarned: LoyaltyPointsDetail? = nil,
         loyaltyPointsSpent: LoyaltyPointsDetail? = nil
     ) {
@@ -142,11 +142,11 @@ public struct OrderDetail: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         iccid = try container.decodeIfPresent(String.self, forKey: .iccid)
-        qrCode = try container.decode(String.self, forKey: .qrCode)
-        smDpAddress = try container.decode(String.self, forKey: .smDpAddress)
-        activationCode = try container.decode(String.self, forKey: .activationCode)
-        countryName = try container.decode(String.self, forKey: .countryName)
-        countryCode = try container.decode(String.self, forKey: .countryCode)
+        qrCode = try container.decodeIfPresent(String.self, forKey: .qrCode)
+        smDpAddress = try container.decodeIfPresent(String.self, forKey: .smDpAddress)
+        activationCode = try container.decodeIfPresent(String.self, forKey: .activationCode)
+        countryName = try container.decodeIfPresent(String.self, forKey: .countryName)
+        countryCode = try container.decodeIfPresent(String.self, forKey: .countryCode)
         country = try container.decodeIfPresent(Country.self, forKey: .country)
         orderNumber = try container.decode(Int.self, forKey: .orderNumber)
         orderType = try container.decode(String.self, forKey: .orderType)
@@ -169,7 +169,7 @@ public struct OrderDetail: Codable {
         paymentMethod = try container.decode(PaymentMethod.self, forKey: .paymentMethod)
         package = try container.decode(Package.self, forKey: .package)
         qrCodeImageBase64 = try container.decodeIfPresent(String.self, forKey: .qrCodeImageBase64)
-        profile = try container.decode(EsimProfile.self, forKey: .profile)
+        profile = try container.decodeIfPresent(EsimProfile.self, forKey: .profile)
         loyaltyPointsEarned = try container.decodeIfPresent(LoyaltyPointsDetail.self, forKey: .loyaltyPointsEarned)
         loyaltyPointsSpent = try container.decodeIfPresent(LoyaltyPointsDetail.self, forKey: .loyaltyPointsSpent)
     }

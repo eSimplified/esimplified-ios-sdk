@@ -6,7 +6,7 @@
 
 import Foundation
 
-public enum SdkError: Error, LocalizedError {
+public enum SdkError: Error, LocalizedError, CustomDebugStringConvertible {
     case networkError(statusCode: Int, message: String)
     case decodingError(Error)
     case authenticationRequired
@@ -21,10 +21,40 @@ public enum SdkError: Error, LocalizedError {
         return false
     }
 
+    /// Technical detail for logs and bug reports. Never shown to a customer —
+    /// `errorDescription` is what reaches the UI.
+    public var debugDescription: String {
+        switch self {
+        case .decodingError(let error): return "Decoding failed: \(Self.describe(error))"
+        default: return errorDescription ?? "\(self)"
+        }
+    }
+
+    private static func describe(_ error: Error) -> String {
+        guard let decodingError = error as? DecodingError else { return error.localizedDescription }
+        switch decodingError {
+        case .keyNotFound(let key, let context):
+            return "missing key '\(key.stringValue)'\(path(context))"
+        case .valueNotFound(let type, let context):
+            return "null value for \(type)\(path(context))"
+        case .typeMismatch(let type, let context):
+            return "expected \(type)\(path(context))"
+        case .dataCorrupted(let context):
+            return "corrupted data\(path(context)) — \(context.debugDescription)"
+        @unknown default:
+            return decodingError.localizedDescription
+        }
+    }
+
+    private static func path(_ context: DecodingError.Context) -> String {
+        let keys = context.codingPath.map(\.stringValue)
+        return keys.isEmpty ? "" : " at \(keys.joined(separator: "."))"
+    }
+
     public var errorDescription: String? {
         switch self {
         case .networkError(_, let message): return message
-        case .decodingError(let error): return "Decoding failed: \(error.localizedDescription)"
+        case .decodingError: return "Something went wrong. Please try again."
         case .authenticationRequired: return "Authentication required"
         case .noInternetConnection: return "No internet connection"
         case .serverError(let message): return "Server error: \(message)"
