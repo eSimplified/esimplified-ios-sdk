@@ -16,22 +16,6 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
         self.cache = cache
     }
 
-    func fetchEsimsResult(
-        archivedEsims: Bool,
-        showLegacy: Bool? = nil,
-        isPrimary: Bool? = nil,
-        forceRefresh: Bool = false,
-        cacheTTL: TimeInterval = 86400
-    ) async -> RepositoryResult<[Esim]> {
-        await fetchEsimsResult(
-            archivedEsims: archivedEsims,
-            showLegacy: showLegacy,
-            isPrimary: isPrimary,
-            includeBase64QrCode: false,
-            forceRefresh: forceRefresh,
-            cacheTTL: cacheTTL
-        )
-    }
 
     func fetchEsimsResult(
         archivedEsims: Bool,
@@ -81,27 +65,20 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
 
     func fetchEsims(
         archivedEsims: Bool,
-        showLegacy: Bool? = nil,
-        isPrimary: Bool? = nil,
-        forceRefresh: Bool = false,
-        cacheTTL: TimeInterval = 86400
+        showLegacy: Bool?,
+        isPrimary: Bool?,
+        includeBase64QrCode: Bool,
+        forceRefresh: Bool,
+        cacheTTL: TimeInterval
     ) async -> [Esim] {
         await fetchEsimsResult(
             archivedEsims: archivedEsims,
             showLegacy: showLegacy,
             isPrimary: isPrimary,
+            includeBase64QrCode: includeBase64QrCode,
             forceRefresh: forceRefresh,
             cacheTTL: cacheTTL
         ).value
-    }
-
-    func fetchEsimDetailsResult(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 300) async -> RepositoryResult<Esim?> {
-        await fetchEsimDetailsResult(
-            iccid: iccid,
-            includeBase64QrCode: false,
-            forceRefresh: forceRefresh,
-            cacheTTL: cacheTTL
-        )
     }
 
     func fetchEsimDetailsResult(
@@ -130,8 +107,13 @@ final class EsimsRepositoryImpl: EsimsRepositoryType {
         }
     }
 
-    func fetchEsimDetails(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 300) async -> Esim? {
-        await fetchEsimDetailsResult(iccid: iccid, forceRefresh: forceRefresh, cacheTTL: cacheTTL).value
+    func fetchEsimDetails(iccid: String, includeBase64QrCode: Bool, forceRefresh: Bool, cacheTTL: TimeInterval) async -> Esim? {
+        await fetchEsimDetailsResult(
+            iccid: iccid,
+            includeBase64QrCode: includeBase64QrCode,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        ).value
     }
 
     func updateEsimNameOrThrow(customName: String, iccid: String) async throws {
