@@ -9,8 +9,10 @@ import Testing
 
 @Suite("SDK Version")
 struct EsimplifiedSDKTests {
-    @Test("Version is 1.5.1")
+    @Test("Version is a release number the tagger can use")
     func version() {
-        #expect(EsimplifiedSDKVersion.version == "1.5.1")
+        let components = EsimplifiedSDKVersion.version.split(separator: ".")
+        #expect(components.count == 3)
+        #expect(components.allSatisfy { Int($0) != nil })
     }
 }

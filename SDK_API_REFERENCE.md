@@ -2,7 +2,7 @@
 
 For client teams integrating the SDK into an iOS app. Covers installation, configuration, every repository method available to you, and the full shape of every model the API returns.
 
-Current version: **1.5.1**. The reference sections below are generated from the SDK source, so they match the code exactly.
+The reference sections below are generated from the SDK source, so they match the code exactly. The current version, and what changed in it, are on the [Releases page](https://github.com/eSimplified/esimplified-ios-sdk/releases).
 
 For a shorter tour with worked examples, see [README.md](README.md). This document is the complete reference.
 
@@ -55,14 +55,14 @@ Treat the client secret as a secret. Do not commit it; inject it at build time o
 
 1. **File → Add Package Dependencies…**
 2. Enter `https://github.com/eSimplified/esimplified-ios-sdk.git`
-3. Dependency Rule: **Up to Next Major Version** from `1.5.1`
+3. Dependency Rule: **Up to Next Major Version** from `1.0.0`
 4. Add the `EsimplifiedSDK` library to your app target
 
 ### Package.swift
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.5.1")
+    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.0.0")
 ],
 targets: [
     .target(

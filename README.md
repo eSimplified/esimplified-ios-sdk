@@ -29,7 +29,7 @@ Contact eSimplified to obtain these before integrating. See [Support](#support) 
 
 ## Installation
 
-> What changed between versions: **[CHANGELOG.md](CHANGELOG.md)**.
+> What changed between versions: **[Releases](https://github.com/eSimplified/esimplified-ios-sdk/releases)**.
 >
 > Integrating for the first time? **[SDK_API_REFERENCE.md](SDK_API_REFERENCE.md)** walks through setup and documents every method and model in one place.
 
@@ -38,13 +38,15 @@ Add via Swift Package Manager in Xcode:
 
 1. **File → Add Package Dependencies**
 2. Enter: `https://github.com/eSimplified/esimplified-ios-sdk.git`
-3. Select version rule: **Up to Next Major Version** from `1.5.1`
+3. Select version rule: **Up to Next Major Version** from `1.0.0`
+
+This resolves to the newest 1.x release, so the instructions never go stale. The badge above links to the release you will get.
 
 Or add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.5.1")
+    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.0.0")
 ]
 ```
 
