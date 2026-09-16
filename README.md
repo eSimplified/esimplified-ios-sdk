@@ -29,6 +29,8 @@ Contact eSimplified to obtain these before integrating. See [Support](#support) 
 
 ## Installation
 
+> What changed between versions: **[CHANGELOG.md](CHANGELOG.md)**.
+>
 > Integrating for the first time? **[SDK_API_REFERENCE.md](SDK_API_REFERENCE.md)** walks through setup and documents every method and model in one place.
 
 

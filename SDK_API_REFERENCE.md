@@ -81,7 +81,7 @@ Create one `EsimplifiedSdk` at launch and share it. Every repository hangs off t
 ```swift
 import EsimplifiedSDK
 
-let sdk = EsimplifiedSdk(
+let sdk = EsimplifiedSdk.initialize(
     config: SdkConfig(
         environment: .production,
         clientName: "acme",
@@ -154,7 +154,7 @@ public protocol SessionProvider {
 }
 ```
 
-Pass either to the `EsimplifiedSdk` initialiser. If you supply neither, the customer is signed out on every cold launch.
+Pass either to `EsimplifiedSdk.initialize` as `storageProvider:` or `sessionProvider:`. Supply neither and the SDK uses its in-memory defaults, so the customer is signed out on every cold launch.
 
 Token refresh is automatic: an expiring access token is refreshed before the request goes out, and a 401 triggers one refresh-and-retry. Concurrent calls share a single refresh rather than racing. A rejected refresh token ends the session; a network failure during refresh does not.
 
