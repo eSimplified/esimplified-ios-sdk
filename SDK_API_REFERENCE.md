@@ -22,6 +22,7 @@ For a shorter tour with worked examples, see [README.md](README.md). This docume
 7. [Error handling](#7-error-handling)
 8. [Caching](#8-caching)
 9. [Repository reference](#9-repository-reference)
+9b. [Supporting types](#9b-supporting-types)
 10. [Model reference](#10-model-reference)
 
 ---
@@ -124,8 +125,34 @@ customHeadersProvider: {
 
 The SDK holds tokens in memory for the lifetime of the process. To keep a customer signed in across launches, give it somewhere durable to read and write:
 
-- **`SessionProviding`** — supply your own access token, refresh token, expiry and customer email. Implement this when your app already owns the session.
-- **`StorageProviding`** — let the SDK own the session but persist it where you choose, normally the Keychain.
+- **`SessionProvider`** — your app already owns the session and hands tokens to the SDK.
+- **`StorageProvider`** — the SDK owns the session but persists it wherever you say, normally the Keychain. This is the simpler of the two and what most integrations want.
+
+`StorageProvider` is four methods over a string store:
+
+```swift
+public protocol StorageProvider {
+    func save(_ value: String, forKey key: String) throws
+    func retrieve(forKey key: String) -> String?
+    func delete(forKey key: String) throws
+    func clear() throws
+}
+```
+
+`SessionProvider` is the fuller contract, for when the session already lives in your app:
+
+```swift
+public protocol SessionProvider {
+    func saveAuthState(_ state: AuthState) throws
+    func getAuthState() -> AuthState
+    func getAccessToken() -> String?
+    func getRefreshToken() -> String?
+    func clearSession() throws
+    func getUserEmail() -> String?
+    func onTokenRefreshed(response: SignInCustomerResponse)
+    func onAuthenticationFailed()
+}
+```
 
 Pass either to the `EsimplifiedSdk` initialiser. If you supply neither, the customer is signed out on every cold launch.
 
@@ -483,6 +510,46 @@ Access: `sdk.storeReviewRepository`
 | `fetchStoreReview` | `func fetchStoreReview() async throws -> StoreReviewResponse` |
 | `fetchStoreReview` | `func fetchStoreReview(cacheTTL: TimeInterval) async throws -> StoreReviewResponse` |
 | `invalidateCache` | `func invalidateCache() async` |
+
+## 9b. Supporting types
+
+These are declared outside the model layer but you will meet them in signatures.
+
+### `RepositoryResult<Value>`
+
+What every `…Result` method returns.
+
+| Property | Type | Meaning |
+|---|---|---|
+| `value` | `Value` | The data. Present even when the call failed, if a stale cache could serve it |
+| `isStale` | `Bool` | `true` when `value` came from an expired cache rather than the network |
+| `failure` | `SdkError?` | Why the network call failed, or `nil` if it did not |
+
+### `SdkEnvironment`
+
+Enum: `staging`, `testing`, `production`. Selects the API host together with `clientName`.
+
+### `AuthState`
+
+Enum describing the session: `authenticated(accessToken:refreshToken:expiresAt:)` or `unauthenticated`. Exposes `isAuthenticated`, `accessToken`, `refreshToken` and `isExpired`.
+
+### `AuthProvider`
+
+Enum: `apple`, `google`. Used by `loginWithProvider` and `registerWithProvider`.
+
+### `OrdersPage`
+
+Returned by `fetchOrdersPage` and `fetchOrdersPageResult`.
+
+| Property | Type | Meaning |
+|---|---|---|
+| `orders` | `[Order]` | This page of orders |
+| `totalCount` | `Int` | Total across all pages, for a count or a progress indicator |
+| `hasMore` | `Bool` | Whether another page exists — use it to decide whether to fetch the next offset |
+
+### `EsimplifiedSDKVersion`
+
+`EsimplifiedSDKVersion.version` is the SDK version string. Useful in bug reports and diagnostics.
 
 ## 10. Model reference
 
