@@ -29,6 +29,11 @@ Contact eSimplified to obtain these before integrating. See [Support](#support) 
 
 ## Installation
 
+> What changed between versions: **[Releases](https://github.com/eSimplified/esimplified-ios-sdk/releases)**.
+>
+> Integrating for the first time? **[SDK_API_REFERENCE.md](SDK_API_REFERENCE.md)** walks through setup and documents every method and model in one place.
+
+
 Add via Swift Package Manager in Xcode:
 
 1. **File → Add Package Dependencies**
@@ -129,12 +134,13 @@ let payment = try await sdk.paymentsRepository.fetchPayment(
 // payment.uri → Stripe client secret. Confirm via Stripe SDK in your app.
 
 // 5. Once Stripe confirms, fetch the order to get the eSIM QR code
-let order = try await sdk.ordersRepository.fetchOrder(orderUUID: payment.orderId!)
+let order = try await sdk.ordersRepository.fetchOrder(orderUUID: payment.orderID!)
 // order.qrCode → string to render as QR
 // order.activationCode → manual activation code
+// Both are optional and absent until the order leaves "pending" — see SDK_API_REFERENCE.md
 
 // 6. Confirm conversion tracking
-await sdk.ordersRepository.trackedOrder(orderUUID: order.orderUUID)
+await sdk.ordersRepository.trackedOrder(orderUUID: payment.orderID!)
 ```
 
 ## SDK Structure
@@ -183,6 +189,9 @@ SdkConfig(
 - Production: `https://{clientName}.live.esimplified.io`
 
 ## All Models
+
+> Full field-by-field reference with JSON keys: **[SDK_API_REFERENCE.md](SDK_API_REFERENCE.md)**. The table below is a summary.
+
 
 Every model is a `Codable` struct in `EsimplifiedSDK`.
 
@@ -262,6 +271,9 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 
 ## All Repository Methods
 
+> Every signature including overloads: **[SDK_API_REFERENCE.md](SDK_API_REFERENCE.md)**.
+
+
 All repositories are accessed as properties on the `EsimplifiedSdk` instance.
 
 ### AuthRepository
@@ -288,6 +300,7 @@ Destination country browsing and search.
 | Method | Signature | Description |
 |---|---|---|
 | `fetchAllCountries` | `func fetchAllCountries(forceRefresh: Bool = false) async -> [Country]` | Fetch all supported destination countries |
+| `fetchAllCountriesResult` | `func fetchAllCountriesResult(forceRefresh: Bool = false) async -> RepositoryResult<[Country]>` | Same, with the failure reported |
 | `searchCountries` | `func searchCountries(searchTerm: String) async -> [Country]` | Search countries by name |
 
 ### PackagesRepository
@@ -298,6 +311,7 @@ eSIM data package browsing and stock checks.
 |---|---|---|
 | `fetchPackagesForCountry` | `func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, forceRefresh: Bool = false) async -> PackageResponse?` | Fetch packages for a destination |
 | `fetchPackagesForTopUpEsim` | `func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool = false) async -> [Package]` | Fetch top-up packages for an existing eSIM |
+| `fetchPackagesForTopUpEsimResult` | `func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool = false) async -> RepositoryResult<[Package]>` | Same, with the failure reported |
 | `fetchCheckStockForPackage` | `func fetchCheckStockForPackage(packageTypeId: Int, forceRefresh: Bool = false) async -> CheckStockResponse?` | Check if a specific package is in stock |
 
 ### EsimsRepository
@@ -308,10 +322,15 @@ eSIM lifecycle management for authenticated users.
 |---|---|---|
 | `fetchEsims` | `func fetchEsims(archivedEsims: Bool, showLegacy: Bool? = nil, isPrimary: Bool? = nil, forceRefresh: Bool = false) async -> [Esim]` | Fetch the customer's eSIMs. `showLegacy` is sent only when non-nil — `true` returns legacy eSIMs, `false` returns universal ones, and omitting it lets the backend decide. `isPrimary` filters to the default device |
 | `fetchEsimDetails` | `func fetchEsimDetails(iccid: String, forceRefresh: Bool = false) async -> Esim?` | Fetch a specific eSIM by ICCID |
+| `fetchEsimDetailsResult` | `func fetchEsimDetailsResult(iccid: String, forceRefresh: Bool = false) async -> RepositoryResult<Esim?>` | Same, with the failure reported |
 | `updateEsimName` | `func updateEsimName(customName: String, iccid: String) async -> Bool` | Update eSIM display name |
+| `updateEsimNameOrThrow` | `func updateEsimNameOrThrow(customName: String, iccid: String) async throws` | Same, throwing the failure instead of returning `false` |
 | `updateEsimAutoTopUpStatus` | `func updateEsimAutoTopUpStatus(status: Bool, iccid: String) async -> Bool` | Toggle eSIM auto top-up |
+| `updateEsimAutoTopUpStatusOrThrow` | `func updateEsimAutoTopUpStatusOrThrow(status: Bool, iccid: String) async throws` | Same, throwing the failure instead of returning `false` |
 | `updateEsimArchivedStatus` | `func updateEsimArchivedStatus(status: Bool, iccid: String) async -> Bool` | Archive/unarchive an eSIM |
+| `updateEsimArchivedStatusOrThrow` | `func updateEsimArchivedStatusOrThrow(status: Bool, iccid: String) async throws` | Same, throwing the failure instead of returning `false` |
 | `updateEsimPrimaryStatus` | `func updateEsimPrimaryStatus(status: Bool, iccid: String) async -> Bool` | Make an eSIM the customer's default device (invalidates every cached eSIM list) |
+| `updateEsimPrimaryStatusOrThrow` | `func updateEsimPrimaryStatusOrThrow(status: Bool, iccid: String) async throws` | Same, throwing the failure instead of returning `false` |
 
 ### OrdersRepository
 
@@ -320,6 +339,7 @@ Order history and tracking.
 | Method | Signature | Description |
 |---|---|---|
 | `fetchOrders` | `func fetchOrders(forceRefresh: Bool = false, withLoyaltyPoints: Bool) async -> [Order]` | Fetch all past orders |
+| `fetchOrdersResult` | `func fetchOrdersResult(forceRefresh: Bool = false, withLoyaltyPoints: Bool) async -> RepositoryResult<[Order]>` | Same, with the failure reported |
 | `fetchOrder` | `func fetchOrder(orderUUID: String, forceRefresh: Bool = false) async throws -> OrderDetail` | Fetch full order details (polls pending orders) |
 | `trackedOrder` | `func trackedOrder(orderUUID: String) async` | Mark an order's conversion as tracked |
 | `fetchOrdersPageResult` | `func fetchOrdersPageResult(limit: Int, offset: Int, withLoyaltyPoints: Bool, forceRefresh: Bool = false) async -> RepositoryResult<OrdersPage>` | Fetch one page of orders |
@@ -434,6 +454,8 @@ Brand theme assets (images and colours) served by the platform.
 ### Result variants
 
 Every cached fetch also has a `…Result` variant (for example `fetchEsimsResult`, `fetchPackagesForCountryResult`) returning `RepositoryResult<T>`, which carries the value together with whether it came from a stale cache and the failure that caused that, so the app can show data and an error at the same time.
+
+The update methods follow the same idea in the other direction. `updateEsimName`, `updateEsimAutoTopUpStatus`, `updateEsimArchivedStatus` and `updateEsimPrimaryStatus` return `Bool`, which tells you that something failed but not what. Each has an `…OrThrow` twin that throws the `SdkError` instead, so you can show the reason.
 
 ## Authentication Flow
 
