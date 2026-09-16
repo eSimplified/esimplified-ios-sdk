@@ -14,6 +14,26 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: The install instructions must name the current major
+        run: |
+          version=$(sed -n 's/.*public static let version = "\(.*\)".*/\1/p' Sources/EsimplifiedSDK/EsimplifiedSDK.swift)
+          major=${version%%.*}
+          status=0
+
+          for file in README.md SDK_API_REFERENCE.md; do
+            for documented in $(grep -oE 'from: "[0-9]+\.[0-9]+\.[0-9]+"|from `[0-9]+\.[0-9]+\.[0-9]+`' "$file" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+'); do
+              if [ "${documented%%.*}" != "$major" ]; then
+                echo "::error file=$file::says from $documented, but the SDK is $version. Anyone following it would be handed ${documented%%.*}.x forever. Change it to ${major}.0.0."
+                status=1
+              fi
+            done
+          done
+
+          if [ "$status" -eq 0 ]; then
+            echo "::notice::Install instructions point at ${major}.x, matching $version."
+          fi
+          exit $status
+
       - name: A breaking change must raise the major version
         run: |
           version=$(sed -n 's/.*public static let version = "\(.*\)".*/\1/p' Sources/EsimplifiedSDK/EsimplifiedSDK.swift)
