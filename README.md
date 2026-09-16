@@ -50,6 +50,18 @@ dependencies: [
 ]
 ```
 
+## Versioning
+
+Releases follow semantic versioning, and the Xcode rule above takes everything below the next major automatically.
+
+| Change | Example | What you do |
+|---|---|---|
+| A fix | `1.6.0` → `1.6.1` | nothing |
+| Something added | `1.6.0` → `1.7.0` | nothing |
+| Something you call changed or went away | `1.6.0` → `2.0.0` | update your code, then raise the version rule |
+
+Anything below the next major will not break code that calls the SDK. If you implement one of the repository protocols yourself, usually to mock it in tests, a minor release can add a requirement you have to satisfy; those are always listed under Breaking changes in the [release notes](https://github.com/eSimplified/esimplified-ios-sdk/releases).
+
 ## Quick Start
 
 ### 1. Initialize the SDK
