@@ -7,6 +7,39 @@ on:
     branches: [main]
 
 jobs:
+  semver:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: A breaking change must raise the major version
+        run: |
+          version=$(sed -n 's/.*public static let version = "\(.*\)".*/\1/p' Sources/EsimplifiedSDK/EsimplifiedSDK.swift)
+          previous=$(git tag --list '[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -1)
+
+          if [ -z "$previous" ] || [ "$version" = "$previous" ]; then
+            echo "::notice::$version is already released, so nothing new ships from this branch."
+            exit 0
+          fi
+
+          breaking=$(git log "$previous..HEAD" --no-merges --format='%s%n%b' \
+            | grep -cE '^[a-z]+(\([^)]*\))?!:|^BREAKING CHANGE:' || true)
+
+          if [ "$breaking" -eq 0 ]; then
+            echo "::notice::$previous -> $version, no breaking commits."
+            exit 0
+          fi
+
+          if [ "${previous%%.*}" = "${version%%.*}" ]; then
+            echo "::error file=Sources/EsimplifiedSDK/EsimplifiedSDK.swift::$breaking breaking commit(s) since $previous, but $version keeps major ${version%%.*}. Apps pin Up to Next Major, so they would take this automatically and fail to build. Release it as $(( ${previous%%.*} + 1 )).0.0, or drop the ! if it only breaks conformers."
+            git log "$previous..HEAD" --no-merges --format='%s' | grep -E '^[a-z]+(\([^)]*\))?!:'
+            exit 1
+          fi
+
+          echo "::notice::$previous -> $version raises the major for $breaking breaking commit(s)."
+
   test:
     runs-on: macos-15
     steps:
