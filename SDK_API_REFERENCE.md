@@ -283,7 +283,7 @@ Reads are cached in memory with a default TTL of one hour. Pass `forceRefresh: t
 
 ## 9. Repository reference
 
-Every method below is reachable as `sdk.<repository>.<method>`. 106 signatures across 15 repositories. Where a method is listed more than once these are real overloads — the shortest form is the one to reach for, the longer ones let you override the cache lifetime or ask for extra data.
+Every method below is reachable as `sdk.<repository>.<method>`. 73 methods across 15 repositories. Each row shows the form you call, with its default arguments. Cached reads also accept a `cacheTTL: TimeInterval` you can pass to override the lifetime shown in section 8.
 
 ### AuthRepository
 
@@ -323,9 +323,7 @@ Access: `sdk.countriesRepository`
 | Method | Signature |
 |---|---|
 | `fetchAllCountries` | `func fetchAllCountries(forceRefresh: Bool = false) async -> [Country]` |
-| `fetchAllCountries` | `func fetchAllCountries(forceRefresh: Bool, cacheTTL: TimeInterval) async -> [Country]` |
 | `fetchAllCountriesResult` | `func fetchAllCountriesResult(forceRefresh: Bool = false) async -> RepositoryResult<[Country]>` |
-| `fetchAllCountriesResult` | `func fetchAllCountriesResult(forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Country]>` |
 | `invalidateCache` | `func invalidateCache() async` |
 | `searchCountries` | `func searchCountries(searchTerm: String) async -> [Country]` |
 
@@ -337,15 +335,10 @@ Access: `sdk.packagesRepository`
 | Method | Signature |
 |---|---|
 | `fetchCheckStockForPackage` | `func fetchCheckStockForPackage(packageTypeId: Int, forceRefresh: Bool = false) async -> CheckStockResponse?` |
-| `fetchCheckStockForPackage` | `func fetchCheckStockForPackage(packageTypeId: Int, forceRefresh: Bool, cacheTTL: TimeInterval) async -> CheckStockResponse?` |
 | `fetchPackagesForCountry` | `func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, forceRefresh: Bool = false) async -> PackageResponse?` |
-| `fetchPackagesForCountry` | `func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> PackageResponse?` |
 | `fetchPackagesForCountryResult` | `func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, forceRefresh: Bool = false) async -> RepositoryResult<PackageResponse?>` |
-| `fetchPackagesForCountryResult` | `func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?>` |
 | `fetchPackagesForTopUpEsim` | `func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool = false) async -> [Package]` |
-| `fetchPackagesForTopUpEsim` | `func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> [Package]` |
 | `fetchPackagesForTopUpEsimResult` | `func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool = false) async -> RepositoryResult<[Package]>` |
-| `fetchPackagesForTopUpEsimResult` | `func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Package]>` |
 | `invalidateCache` | `func invalidateCache() async` |
 
 ### EsimsRepository
@@ -355,19 +348,10 @@ Access: `sdk.esimsRepository`
 
 | Method | Signature |
 |---|---|
-| `fetchEsimDetails` | `func fetchEsimDetails(iccid: String, forceRefresh: Bool = false) async -> Esim?` |
-| `fetchEsimDetails` | `func fetchEsimDetails(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> Esim?` |
-| `fetchEsimDetails` | `func fetchEsimDetails(iccid: String, includeBase64QrCode: Bool, forceRefresh: Bool = false, cacheTTL: TimeInterval = 300) async -> Esim?` |
-| `fetchEsimDetailsResult` | `func fetchEsimDetailsResult(iccid: String, forceRefresh: Bool = false) async -> RepositoryResult<Esim?>` |
-| `fetchEsimDetailsResult` | `func fetchEsimDetailsResult(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<Esim?>` |
-| `fetchEsimDetailsResult` | `func fetchEsimDetailsResult(iccid: String, includeBase64QrCode: Bool, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<Esim?>` |
-| `fetchEsims` | `func fetchEsims(archivedEsims: Bool, showLegacy: Bool? = nil, isPrimary: Bool? = nil, forceRefresh: Bool = false) async -> [Esim]` |
-| `fetchEsims` | `func fetchEsims(archivedEsims: Bool, showLegacy: Bool?, isPrimary: Bool?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> [Esim]` |
-| `fetchEsims` | `func fetchEsims(archivedEsims: Bool, showLegacy: Bool? = nil, isPrimary: Bool? = nil, includeBase64QrCode: Bool, forceRefresh: Bool = false, cacheTTL: TimeInterval = 86400) async -> [Esim]` |
-| `fetchEsimsResult` | `func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool? = nil, isPrimary: Bool? = nil, forceRefresh: Bool = false) async -> RepositoryResult<[Esim]>` |
-| `fetchEsimsResult` | `func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool?, isPrimary: Bool?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Esim]>` |
-| `fetchEsimsResult` | `func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool? = nil, isPrimary: Bool? = nil, includeBase64QrCode: Bool, forceRefresh: Bool = false) async -> RepositoryResult<[Esim]>` |
-| `fetchEsimsResult` | `func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool?, isPrimary: Bool?, includeBase64QrCode: Bool, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Esim]>` |
+| `fetchEsimDetails` | `func fetchEsimDetails(iccid: String, includeBase64QrCode: Bool = false, forceRefresh: Bool = false) async -> Esim?` |
+| `fetchEsimDetailsResult` | `func fetchEsimDetailsResult(iccid: String, includeBase64QrCode: Bool = false, forceRefresh: Bool = false) async -> RepositoryResult<Esim?>` |
+| `fetchEsims` | `func fetchEsims(archivedEsims: Bool, showLegacy: Bool? = nil, isPrimary: Bool? = nil, includeBase64QrCode: Bool = false, forceRefresh: Bool = false) async -> [Esim]` |
+| `fetchEsimsResult` | `func fetchEsimsResult(archivedEsims: Bool, showLegacy: Bool? = nil, isPrimary: Bool? = nil, includeBase64QrCode: Bool = false, forceRefresh: Bool = false) async -> RepositoryResult<[Esim]>` |
 | `invalidateCache` | `func invalidateCache() async` |
 | `updateEsimArchivedStatus` | `func updateEsimArchivedStatus(status: Bool, iccid: String) async -> Bool` |
 | `updateEsimArchivedStatusOrThrow` | `func updateEsimArchivedStatusOrThrow(status: Bool, iccid: String) async throws` |
@@ -387,13 +371,9 @@ Access: `sdk.ordersRepository`
 |---|---|
 | `fetchInvoice` | `func fetchInvoice(orderUUID: String) async throws -> Data` |
 | `fetchOrder` | `func fetchOrder(orderUUID: String, forceRefresh: Bool = false) async throws -> OrderDetail` |
-| `fetchOrder` | `func fetchOrder(orderUUID: String, forceRefresh: Bool, cacheTTL: TimeInterval) async throws -> OrderDetail` |
 | `fetchOrders` | `func fetchOrders(forceRefresh: Bool = false, withLoyaltyPoints: Bool) async -> [Order]` |
-| `fetchOrders` | `func fetchOrders(forceRefresh: Bool, withLoyaltyPoints: Bool, cacheTTL: TimeInterval) async -> [Order]` |
 | `fetchOrdersPageResult` | `func fetchOrdersPageResult(limit: Int = 100, offset: Int = 0, withLoyaltyPoints: Bool) async -> RepositoryResult<OrdersPage>` |
-| `fetchOrdersPageResult` | `func fetchOrdersPageResult(limit: Int, offset: Int, withLoyaltyPoints: Bool, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<OrdersPage>` |
 | `fetchOrdersResult` | `func fetchOrdersResult(forceRefresh: Bool = false, withLoyaltyPoints: Bool) async -> RepositoryResult<[Order]>` |
-| `fetchOrdersResult` | `func fetchOrdersResult(forceRefresh: Bool, withLoyaltyPoints: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Order]>` |
 | `invalidateCache` | `func invalidateCache() async` |
 | `trackedOrder` | `func trackedOrder(orderUUID: String) async` |
 
@@ -435,11 +415,9 @@ Access: `sdk.loyaltyRepository`
 | Method | Signature |
 |---|---|
 | `fetchKredsBalance` | `func fetchKredsBalance(forceRefresh: Bool = true) async throws -> KredsLoyaltyBalanceResponse` |
-| `fetchKredsBalance` | `func fetchKredsBalance(forceRefresh: Bool, cacheTTL: TimeInterval) async throws -> KredsLoyaltyBalanceResponse` |
 | `initiateOtp` | `func initiateOtp(purpose: MokafaaOtpPurpose) async throws -> MokafaaOtpInitiateResponse` |
 | `invalidateCache` | `func invalidateCache() async` |
 | `validateOtp` | `func validateOtp(sessionId: String, otp: String, points: Int? = nil) async throws -> MokafaaOtpValidateResponse` |
-| `validateOtp` | `func validateOtp(sessionId: String, otp: String, points: Int?, packageTypeId: Int?) async throws -> MokafaaOtpValidateResponse` |
 
 ### NotificationRepository
 
@@ -459,9 +437,7 @@ Access: `sdk.themeRepository`
 | Method | Signature |
 |---|---|
 | `fetchDestinationTheme` | `func fetchDestinationTheme(countryCode: String, forceRefresh: Bool = false) async throws -> ThemeDestination?` |
-| `fetchDestinationTheme` | `func fetchDestinationTheme(countryCode: String, forceRefresh: Bool, cacheTTL: TimeInterval) async throws -> ThemeDestination?` |
 | `fetchPageTheme` | `func fetchPageTheme(page: String, forceRefresh: Bool = false) async throws -> ThemePage?` |
-| `fetchPageTheme` | `func fetchPageTheme(page: String, forceRefresh: Bool, cacheTTL: TimeInterval) async throws -> ThemePage?` |
 | `invalidateCache` | `func invalidateCache() async` |
 
 ### FaqAndSupportRepository
@@ -472,21 +448,13 @@ Access: `sdk.faqAndSupportRepository`
 | Method | Signature |
 |---|---|
 | `fetchDestinationFaqs` | `func fetchDestinationFaqs(countryNameSlug: String, forceRefresh: Bool = false) async -> [Faq]` |
-| `fetchDestinationFaqs` | `func fetchDestinationFaqs(countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> [Faq]` |
 | `fetchDestinationFaqsResult` | `func fetchDestinationFaqsResult(countryNameSlug: String, forceRefresh: Bool = false) async -> RepositoryResult<[Faq]>` |
-| `fetchDestinationFaqsResult` | `func fetchDestinationFaqsResult(countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Faq]>` |
 | `fetchFaqs` | `func fetchFaqs(language: String, forceRefresh: Bool = false) async -> ContentDocument?` |
-| `fetchFaqs` | `func fetchFaqs(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> ContentDocument?` |
 | `fetchFaqsResult` | `func fetchFaqsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<ContentDocument?>` |
-| `fetchFaqsResult` | `func fetchFaqsResult(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<ContentDocument?>` |
 | `fetchPrivacy` | `func fetchPrivacy(language: String, forceRefresh: Bool = false) async -> ContentDocument?` |
-| `fetchPrivacy` | `func fetchPrivacy(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> ContentDocument?` |
 | `fetchPrivacyResult` | `func fetchPrivacyResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<ContentDocument?>` |
-| `fetchPrivacyResult` | `func fetchPrivacyResult(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<ContentDocument?>` |
 | `fetchTerms` | `func fetchTerms(language: String, forceRefresh: Bool = false) async -> ContentDocument?` |
-| `fetchTerms` | `func fetchTerms(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> ContentDocument?` |
 | `fetchTermsResult` | `func fetchTermsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<ContentDocument?>` |
-| `fetchTermsResult` | `func fetchTermsResult(language: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<ContentDocument?>` |
 | `invalidateCache` | `func invalidateCache() async` |
 
 ### VisaRewardsRepository
@@ -508,7 +476,6 @@ Access: `sdk.storeReviewRepository`
 | Method | Signature |
 |---|---|
 | `fetchStoreReview` | `func fetchStoreReview() async throws -> StoreReviewResponse` |
-| `fetchStoreReview` | `func fetchStoreReview(cacheTTL: TimeInterval) async throws -> StoreReviewResponse` |
 | `invalidateCache` | `func invalidateCache() async` |
 
 ## 9b. Supporting types
