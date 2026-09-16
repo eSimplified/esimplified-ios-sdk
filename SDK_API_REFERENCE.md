@@ -13,6 +13,7 @@ For a shorter tour with worked examples, see [README.md](README.md). This docume
 1. [Requirements](#1-requirements)
 2. [What you need from eSimplified](#2-what-you-need-from-esimplified)
 3. [Installing the SDK](#3-installing-the-sdk)
+3b. [Which versions you will receive](#3b-which-versions-you-will-receive)
 4. [Configuring and creating the SDK](#4-configuring-and-creating-the-sdk)
 5. [Keeping the customer signed in](#5-keeping-the-customer-signed-in)
 6. [Making your first call](#6-making-your-first-call)
@@ -73,6 +74,22 @@ targets: [
 ```
 
 Then `import EsimplifiedSDK` wherever you use it.
+
+## 3b. Which versions you will receive
+
+Releases follow semantic versioning, and the dependency rule above takes everything below the next major automatically.
+
+| Change | Example | What you do |
+|---|---|---|
+| A fix | `1.6.0` → `1.6.1` | nothing |
+| Something added | `1.6.0` → `1.7.0` | nothing |
+| Something you call changed or went away | `1.6.0` → `2.0.0` | update your code, then raise the dependency rule |
+
+Nothing below the next major will break code that calls the SDK, so a minor or patch release is always safe to take.
+
+There is one exception worth knowing about. If you implement one of the repository protocols yourself — usually to mock it in tests — a minor release can add a requirement you then have to satisfy. Your app code is unaffected; only the type that conforms needs the new method. These are always listed under **Breaking changes** at the top of the [release notes](https://github.com/eSimplified/esimplified-ios-sdk/releases), so check those before taking a release if you mock our protocols.
+
+Every release lists what was added, changed, removed and fixed, generated from the commits it contains.
 
 ## 4. Configuring and creating the SDK
 
