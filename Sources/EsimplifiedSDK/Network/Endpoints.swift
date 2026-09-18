@@ -43,4 +43,5 @@ enum Endpoints: String {
     case terms = "terms"
     case generalFaqs = "faqs"
     case privacy = "privacy"
+    case marketing = "marketing"
 }

@@ -474,6 +474,17 @@ Access: `sdk.faqAndSupportRepository`
 | `fetchTermsResult` | `func fetchTermsResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<ContentDocument?>` |
 | `invalidateCache` | `func invalidateCache() async` |
 
+### MarketingRepository
+
+The marketing promos shown on the home carousel and their detail pages, localised by `accept-language`.  
+Access: `sdk.marketingRepository`
+
+| Method | Signature |
+|---|---|
+| `fetchPromos` | `func fetchPromos(language: String, forceRefresh: Bool = false) async -> [Promo]` |
+| `fetchPromosResult` | `func fetchPromosResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<[Promo]>` |
+| `invalidateCache` | `func invalidateCache() async` |
+
 ### VisaRewardsRepository
 
 Visa cardholder reward validation and redemption.  

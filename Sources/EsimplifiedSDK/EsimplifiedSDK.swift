@@ -5,7 +5,7 @@
 //
 
 public enum EsimplifiedSDKVersion {
-    public static let version = "1.6.0"
+    public static let version = "1.7.0"
 }
 
 public final class EsimplifiedSdk {
@@ -25,6 +25,7 @@ public final class EsimplifiedSdk {
     public let storeReviewRepository: StoreReviewRepositoryType
     public let faqAndSupportRepository: FaqAndSupportRepositoryType
     public let themeRepository: ThemeRepositoryType
+    public let marketingRepository: MarketingRepositoryType
 
     public let sessionProvider: SessionProvider
     public let config: SdkConfig
@@ -77,6 +78,7 @@ public final class EsimplifiedSdk {
         self.storeReviewRepository = StoreReviewRepositoryImpl(client: client, cache: cache)
         self.faqAndSupportRepository = FaqAndSupportRepositoryImpl(client: client, cache: cache)
         self.themeRepository = ThemeRepositoryImpl(client: client, cache: cache)
+        self.marketingRepository = MarketingRepositoryImpl(client: client, cache: cache)
     }
 
     public func clearAllCaches() async {

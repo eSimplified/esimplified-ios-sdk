@@ -38,7 +38,19 @@ struct ApiReferenceTests {
             checked += 1
         }
 
-        #expect(checked == 15)
+        let protocols = try FileManager.default
+            .contentsOfDirectory(atPath: Self.root.appending(path: "Sources/EsimplifiedSDK/Repository").path())
+            .filter { $0.hasSuffix("RepositoryType.swift") }
+            .map { $0.replacingOccurrences(of: "Type.swift", with: "") }
+            .sorted()
+
+        let undocumented = protocols.filter { !reference.contains("\n### \($0)\n") }
+
+        #expect(
+            undocumented.isEmpty,
+            "\(undocumented.joined(separator: ", ")) has no section in SDK_API_REFERENCE.md, so nothing checks its table"
+        )
+        #expect(checked == protocols.count)
     }
 
     private static var root: URL {
