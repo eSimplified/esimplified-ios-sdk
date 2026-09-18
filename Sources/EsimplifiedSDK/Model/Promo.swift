@@ -47,10 +47,11 @@ public struct Promo: Codable, Hashable, Sendable, Identifiable {
         case color
         case image
         case content
+        case faqs
+
         case ctaHeading = "cta_heading"
         case ctaText = "cta_text"
         case faqHeading = "faq_heading"
-        case faqs
         case sliderImage = "slider_image"
         case sliderHeading = "slider_heading"
         case sliderSubheading = "slider_subheading"
@@ -100,7 +101,6 @@ public struct Promo: Codable, Hashable, Sendable, Identifiable {
         sliderSubheading = try container.decodeIfPresent(String.self, forKey: .sliderSubheading)
     }
 
-    /// The promo's call to action, as a URL when the slug is one.
     public var destinationURL: URL? {
         let trimmed = slug.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
