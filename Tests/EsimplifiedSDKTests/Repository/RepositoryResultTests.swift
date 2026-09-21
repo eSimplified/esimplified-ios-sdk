@@ -221,7 +221,7 @@ extension NetworkSuite {
         } catch {
             let sdkError = error as? SdkError
             #expect(sdkError?.isOffline == false)
-            #expect(sdkError?.errorDescription == "Server error: nope")
+            #expect(sdkError?.errorDescription == "nope")
         }
     }
 
@@ -246,5 +246,13 @@ extension NetworkSuite {
         } catch {
             #expect((error as? SdkError)?.errorDescription == "This eSIM is not universal")
         }
+    }
+
+    @Test("A server error reads as the backend wrote it, while the log keeps the prefix")
+    func serverErrorIsCustomerFacing() {
+        let error = SdkError.serverError("That name is already taken")
+
+        #expect(error.errorDescription == "That name is already taken")
+        #expect(error.debugDescription == "Server error: That name is already taken")
     }
 }
