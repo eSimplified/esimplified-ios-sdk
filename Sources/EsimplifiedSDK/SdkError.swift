@@ -24,6 +24,7 @@ public enum SdkError: Error, LocalizedError, CustomDebugStringConvertible {
     public var debugDescription: String {
         switch self {
         case .decodingError(let error): return "Decoding failed: \(Self.describe(error))"
+        case .serverError(let message): return "Server error: \(message)"
         default: return errorDescription ?? "\(self)"
         }
     }
@@ -55,7 +56,7 @@ public enum SdkError: Error, LocalizedError, CustomDebugStringConvertible {
         case .decodingError: return "Something went wrong. Please try again."
         case .authenticationRequired: return "Authentication required"
         case .noInternetConnection: return "No internet connection"
-        case .serverError(let message): return "Server error: \(message)"
+        case .serverError(let message): return message
         case .missingCredentials: return "Missing API credentials"
         case .invalidURL: return "Invalid URL"
         case .unknown(let error): return error.localizedDescription
