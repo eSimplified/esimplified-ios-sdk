@@ -101,6 +101,13 @@ public struct Promo: Codable, Hashable, Sendable, Identifiable {
         sliderSubheading = try container.decodeIfPresent(String.self, forKey: .sliderSubheading)
     }
 
+    public var isAboutKreds: Bool {
+        let haystack = [slug, title, sliderHeading ?? "", sliderSubheading ?? ""]
+            .joined(separator: " ")
+            .lowercased()
+        return haystack.contains("kred")
+    }
+
     public var destinationURL: URL? {
         let trimmed = slug.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }

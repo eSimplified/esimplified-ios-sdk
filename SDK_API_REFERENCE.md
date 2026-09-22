@@ -1206,6 +1206,36 @@ Enum.
 | `detail` | `String` | `detail` |
 | `paymentData` | `PaymentData` | `data` |
 
+### `Promo`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `slug` | `String` | `slug` |
+| `title` | `String` | `title` |
+| `color` | `String?` | `color` |
+| `image` | `String?` | `image` |
+| `content` | `String?` | `content` |
+| `ctaHeading` | `String?` | `cta_heading` |
+| `ctaText` | `String?` | `cta_text` |
+| `faqHeading` | `String?` | `faq_heading` |
+| `faqs` | `[PromoFaq]` | `faqs` |
+| `sliderImage` | `String?` | `slider_image` |
+| `sliderHeading` | `String?` | `slider_heading` |
+| `sliderSubheading` | `String?` | `slider_subheading` |
+
+| Computed | Type | What it gives you |
+|---|---|---|
+| `id` | `String` | The slug, so a promo is `Identifiable` |
+| `isAboutKreds` | `Bool` | True when the campaign is about the Kreds loyalty programme. Hide these for a customer whose `loyaltyProvider` is not `.kreds` |
+| `destinationURL` | `URL?` | The slug as a URL, given an `https://` scheme when the slug has none |
+
+### `PromoFaq`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `question` | `String` | `question` |
+| `answer` | `String` | `answer` |
+
 ### `PromoCodeResponse`
 
 | Property | Type | JSON key |

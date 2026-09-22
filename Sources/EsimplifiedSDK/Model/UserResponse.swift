@@ -169,7 +169,8 @@ public struct User: Codable, Equatable {
         preferredLanguage = try container.decodeIfPresent(String.self, forKey: .preferredLanguage)
         preferredCurrency = try container.decodeIfPresent(String.self, forKey: .preferredCurrency)
         signedInWithProvider = try container.decodeIfPresent(Bool.self, forKey: .signedInWithProvider)
-        loyaltyProvider = try container.decodeIfPresent(LoyaltyProvider.self, forKey: .loyaltyProvider)
+        loyaltyProvider = (try? container.decodeIfPresent(String.self, forKey: .loyaltyProvider))
+            .flatMap { LoyaltyProvider(rawValue: $0) }
         mokafaaEnrollment = try container.decodeIfPresent(MokafaaEnrollment.self, forKey: .mokafaaEnrollment)
     }
 
