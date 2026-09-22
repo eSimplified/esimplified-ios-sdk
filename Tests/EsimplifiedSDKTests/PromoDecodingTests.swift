@@ -92,4 +92,33 @@ struct PromoDecodingTests {
 
         #expect(response.promos.first?.destinationURL == nil)
     }
+
+    // MARK: Kreds Promos
+
+    private func promo(slug: String = "https://example.com/offer",
+                       title: String = "An offer",
+                       sliderHeading: String? = nil,
+                       sliderSubheading: String? = nil) throws -> Promo {
+        try JSONDecoder().decode(Promo.self, from: Data("""
+        {"slug":"\(slug)","title":"\(title)",
+         "slider_heading":\(sliderHeading.map { "\"\($0)\"" } ?? "null"),
+         "slider_subheading":\(sliderSubheading.map { "\"\($0)\"" } ?? "null")}
+        """.utf8))
+    }
+
+    @Test("A promo about Kreds is recognised from its slug, title or slider copy")
+    func recognisesKredsPromos() throws {
+        #expect(try promo(slug: "https://knowroaming.vercel.app/kreds").isAboutKreds)
+        #expect(try promo(title: "Got Kreds? Save on data.").isAboutKreds)
+        #expect(try promo(sliderHeading: "Your Kreds are waiting").isAboutKreds)
+        #expect(try promo(sliderSubheading: "Spend your kreds on any plan").isAboutKreds)
+    }
+
+    @Test("A promo that has nothing to do with Kreds is not flagged")
+    func leavesOtherPromosAlone() throws {
+        #expect(try promo(slug: "https://knowroaming.vercel.app/summer",
+                          title: "Summer sale",
+                          sliderHeading: "Half price data",
+                          sliderSubheading: "Every plan, this week only").isAboutKreds == false)
+    }
 }

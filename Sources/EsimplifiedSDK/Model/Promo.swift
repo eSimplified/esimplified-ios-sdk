@@ -101,6 +101,18 @@ public struct Promo: Codable, Hashable, Sendable, Identifiable {
         sliderSubheading = try container.decodeIfPresent(String.self, forKey: .sliderSubheading)
     }
 
+    /// True when the promo is about the Kreds loyalty programme, which only some
+    /// tenants and customers are on. The marketing payload carries no flag for
+    /// this, so it is read off the slug and the copy the campaign was written
+    /// with. Callers hide these promos for a customer whose `loyaltyProvider`
+    /// is not `.kreds`.
+    public var isAboutKreds: Bool {
+        let haystack = [slug, title, sliderHeading ?? "", sliderSubheading ?? ""]
+            .joined(separator: " ")
+            .lowercased()
+        return haystack.contains("kred")
+    }
+
     public var destinationURL: URL? {
         let trimmed = slug.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }

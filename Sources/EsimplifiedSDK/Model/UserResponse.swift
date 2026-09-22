@@ -9,6 +9,9 @@ import Foundation
 
 // MARK: Loyalty Provider
 
+/// A loyalty programme the backend can put a customer on. A value this version
+/// does not know about decodes as `nil` rather than failing the whole customer,
+/// so adding a programme server side never breaks an installed app.
 public enum LoyaltyProvider: String, Codable {
     case kreds
     case mokafaa
@@ -169,7 +172,8 @@ public struct User: Codable, Equatable {
         preferredLanguage = try container.decodeIfPresent(String.self, forKey: .preferredLanguage)
         preferredCurrency = try container.decodeIfPresent(String.self, forKey: .preferredCurrency)
         signedInWithProvider = try container.decodeIfPresent(Bool.self, forKey: .signedInWithProvider)
-        loyaltyProvider = try container.decodeIfPresent(LoyaltyProvider.self, forKey: .loyaltyProvider)
+        loyaltyProvider = (try? container.decodeIfPresent(String.self, forKey: .loyaltyProvider))
+            .flatMap { LoyaltyProvider(rawValue: $0) }
         mokafaaEnrollment = try container.decodeIfPresent(MokafaaEnrollment.self, forKey: .mokafaaEnrollment)
     }
 
