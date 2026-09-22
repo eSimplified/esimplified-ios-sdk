@@ -9,9 +9,6 @@ import Foundation
 
 // MARK: Loyalty Provider
 
-/// A loyalty programme the backend can put a customer on. A value this version
-/// does not know about decodes as `nil` rather than failing the whole customer,
-/// so adding a programme server side never breaks an installed app.
 public enum LoyaltyProvider: String, Codable {
     case kreds
     case mokafaa

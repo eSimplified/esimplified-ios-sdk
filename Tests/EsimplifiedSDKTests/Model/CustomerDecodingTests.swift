@@ -15,7 +15,6 @@ struct CustomerDecodingTests {
         try JSONDecoder().decode(User.self, from: Data(json.utf8))
     }
 
-    /// The payload `GET api/v2/customer/` returns on staging, verbatim.
     private let customerPayload = """
     {
       "email": "kieran@esimplified.io",
