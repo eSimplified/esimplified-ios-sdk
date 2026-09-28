@@ -111,10 +111,11 @@ final class AuthRepositoryImpl: AuthRepositoryType {
         )
     }
 
-    func verifyEmail(email: String?, token: String?, orderUUID: String?) async throws -> VerifyEmailResponse {
+    func verifyEmail(email: String?, token: String?, code: String?, orderUUID: String?) async throws -> VerifyEmailResponse {
         var body: [String: String] = [:]
         if let email { body["email"] = email }
         if let token { body["email_verification_token"] = token }
+        if let code { body["code"] = code }
         if let orderUUID { body["order_uuid"] = orderUUID }
         return try await client.fetch(
             endpoint: .verifyEmail,

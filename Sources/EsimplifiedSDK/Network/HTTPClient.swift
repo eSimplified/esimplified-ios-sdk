@@ -84,14 +84,11 @@ actor HTTPClient {
                 body: data
             )
 
-            if (httpResponse.statusCode == 401 || httpResponse.statusCode == 403),
-               requiresAuth,
-               !isRetry {
-                let staleAccessToken = request.value(forHTTPHeaderField: "Authorization")
-                    .flatMap { $0.hasPrefix("Bearer ") ? String($0.dropFirst("Bearer ".count)) : nil }
+            if !isRetry, shouldRefreshAndRetry(statusCode: httpResponse.statusCode, requiresAuth: requiresAuth, request: request, data: data) {
                 return try await handleTokenRefreshAndRetry(
                     endpoint: endpoint, method: method, parameters: parameters,
-                    body: body, id: id, staleAccessToken: staleAccessToken
+                    body: body, id: id, requiresAuth: requiresAuth,
+                    staleAccessToken: bearerToken(of: request)
                 )
             }
 
@@ -100,12 +97,14 @@ actor HTTPClient {
                    let serverError = try? JSONDecoder().decode(ServerErrorResponse.self, from: data) {
                     throw SdkError.networkError(
                         statusCode: httpResponse.statusCode,
-                        message: serverError.errorDescription ?? serverError.error ?? "Authentication failed"
+                        message: serverError.errorDescription ?? serverError.error ?? "Authentication failed",
+                        code: ApiErrorMessage.code(data) ?? serverError.error
                     )
                 }
                 throw SdkError.networkError(
                     statusCode: httpResponse.statusCode,
-                    message: ApiErrorMessage.parse(data)
+                    message: ApiErrorMessage.parse(data),
+                    code: ApiErrorMessage.code(data)
                 )
             }
 
@@ -156,20 +155,19 @@ actor HTTPClient {
                 body: nil
             )
 
-            if (httpResponse.statusCode == 401 || httpResponse.statusCode == 403), requiresAuth, !isRetry {
-                let staleAccessToken = request.value(forHTTPHeaderField: "Authorization")
-                    .flatMap { $0.hasPrefix("Bearer ") ? String($0.dropFirst("Bearer ".count)) : nil }
-                try await serializedRefresh(staleAccessToken: staleAccessToken)
+            if !isRetry, shouldRefreshAndRetry(statusCode: httpResponse.statusCode, requiresAuth: requiresAuth, request: request, data: data) {
+                try await serializedRefresh(staleAccessToken: bearerToken(of: request))
                 return try await fetchData(
                     endpoint: endpoint, method: method, parameters: parameters,
-                    id: id, requiresAuth: true, isRetry: true
+                    id: id, requiresAuth: requiresAuth, isRetry: true
                 )
             }
 
             guard (200..<300).contains(httpResponse.statusCode) else {
                 throw SdkError.networkError(
                     statusCode: httpResponse.statusCode,
-                    message: ApiErrorMessage.parse(data)
+                    message: ApiErrorMessage.parse(data),
+                    code: ApiErrorMessage.code(data)
                 )
             }
 
@@ -234,7 +232,8 @@ actor HTTPClient {
     }
 
     private func addHeaders(to request: inout URLRequest, requiresAuth: Bool, forceBasicAuth: Bool = false) async throws {
-        if requiresAuth, sessionProvider.getAuthState().isExpired, sessionProvider.getRefreshToken() != nil {
+        let sendsUserToken = requiresAuth || (!forceBasicAuth && sessionProvider.getAccessToken() != nil)
+        if sendsUserToken, sessionProvider.getAuthState().isExpired, sessionProvider.getRefreshToken() != nil {
             try await serializedRefresh(staleAccessToken: nil)
         }
 
@@ -256,6 +255,21 @@ actor HTTPClient {
                 request.setValue(value, forHTTPHeaderField: key)
             }
         }
+    }
+
+    private func shouldRefreshAndRetry(statusCode: Int, requiresAuth: Bool, request: URLRequest, data: Data) -> Bool {
+        if requiresAuth {
+            if statusCode == 403, ApiErrorMessage.code(data) == ApiErrorCode.phoneVerificationRequired.rawValue {
+                return false
+            }
+            return statusCode == 401 || statusCode == 403
+        }
+        return statusCode == 401 && bearerToken(of: request) != nil
+    }
+
+    private func bearerToken(of request: URLRequest) -> String? {
+        request.value(forHTTPHeaderField: "Authorization")
+            .flatMap { $0.hasPrefix("Bearer ") ? String($0.dropFirst("Bearer ".count)) : nil }
     }
 
     private func serializedRefresh(staleAccessToken: String?) async throws {
@@ -302,7 +316,7 @@ actor HTTPClient {
                 requiresAuth: false
             )
         } catch let error as SdkError {
-            if case .networkError(let statusCode, _) = error,
+            if case .networkError(let statusCode, _, _) = error,
                statusCode == 400 || statusCode == 401 || statusCode == 403 {
                 sessionProvider.onAuthenticationFailed()
                 throw SdkError.authenticationRequired
@@ -325,6 +339,7 @@ actor HTTPClient {
         parameters: [String: String]?,
         body: Encodable?,
         id: String?,
+        requiresAuth: Bool,
         staleAccessToken: String?
     ) async throws -> T {
         try await serializedRefresh(staleAccessToken: staleAccessToken)
@@ -335,7 +350,7 @@ actor HTTPClient {
             parameters: parameters,
             body: body,
             id: id,
-            requiresAuth: true,
+            requiresAuth: requiresAuth,
             isRetry: true
         )
     }

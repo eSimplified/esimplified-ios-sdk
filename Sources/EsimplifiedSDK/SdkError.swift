@@ -7,7 +7,7 @@
 import Foundation
 
 public enum SdkError: Error, LocalizedError, CustomDebugStringConvertible {
-    case networkError(statusCode: Int, message: String)
+    case networkError(statusCode: Int, message: String, code: String? = nil)
     case decodingError(Error)
     case authenticationRequired
     case noInternetConnection
@@ -19,6 +19,26 @@ public enum SdkError: Error, LocalizedError, CustomDebugStringConvertible {
     public var isOffline: Bool {
         if case .noInternetConnection = self { return true }
         return false
+    }
+
+    public var statusCode: Int? {
+        if case .networkError(let statusCode, _, _) = self { return statusCode }
+        return nil
+    }
+
+    public var apiCode: String? {
+        if case .networkError(_, _, let code) = self { return code }
+        return nil
+    }
+
+    public func hasApiCode(_ code: ApiErrorCode) -> Bool {
+        apiCode == code.rawValue
+    }
+
+    public var isEmailNotVerified: Bool {
+        if hasApiCode(.emailNotVerified) { return true }
+        guard case .networkError(_, let message, let code) = self, code == "invalid_grant" else { return false }
+        return message.localizedCaseInsensitiveContains("not verified")
     }
 
     public var debugDescription: String {
@@ -52,7 +72,7 @@ public enum SdkError: Error, LocalizedError, CustomDebugStringConvertible {
 
     public var errorDescription: String? {
         switch self {
-        case .networkError(_, let message): return message
+        case .networkError(_, let message, _): return message
         case .decodingError: return "Something went wrong. Please try again."
         case .authenticationRequired: return "Authentication required"
         case .noInternetConnection: return "No internet connection"
@@ -62,4 +82,17 @@ public enum SdkError: Error, LocalizedError, CustomDebugStringConvertible {
         case .unknown(let error): return error.localizedDescription
         }
     }
+}
+
+// MARK: Api Error Code
+
+public enum ApiErrorCode: String {
+    case invalidCode = "invalid_code"
+    case codeExpired = "code_expired"
+    case phoneAlreadyVerified = "phone_already_verified"
+    case noPendingVerification = "no_pending_verification"
+    case tooManyRequests = "too_many_requests"
+    case providerError = "provider_error"
+    case phoneVerificationRequired = "phone_verification_required"
+    case emailNotVerified = "email_not_verified"
 }

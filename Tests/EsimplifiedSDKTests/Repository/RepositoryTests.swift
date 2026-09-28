@@ -78,6 +78,25 @@ extension NetworkSuite {
         #expect(countries.first?.countryName == "Cached")
     }
 
+    @Test("Countries: fetchPopularCountries hits /countries with region=Popular and keeps the server order")
+    func countriesFetchPopular() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"count":2,"next":null,"previous":null,"results":[{"country_name":"Spain","country_name_slug":"spain","country_code":"ES","country_flag":"","country_flag_css":"","is_region":false},{"country_name":"France","country_name_slug":"france","country_code":"FR","country_flag":"","country_flag_css":"","is_region":false}]}"#)
+
+        let (client, cache, _, _) = makeRepoEnv()
+        let repo = CountriesRepositoryImpl(client: client, cache: cache)
+        let countries = await repo.fetchPopularCountries()
+        #expect(countries.map(\.countryName) == ["Spain", "France"])
+
+        let url = MockURLProtocol.capturedRequests.first?.url
+        #expect(url?.path.contains("/countries") == true)
+        let query = url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false)?.queryItems } ?? []
+        #expect(query.contains(where: { $0.name == "region" && $0.value == "Popular" }))
+
+        _ = await repo.fetchPopularCountries()
+        #expect(MockURLProtocol.capturedRequests.count == 1, "a warm cache must not hit the network")
+    }
+
     @Test("Countries: searchCountries hits /search with search_term")
     func countriesSearch() async throws {
         MockURLProtocol.reset()
@@ -256,7 +275,7 @@ extension NetworkSuite {
         do {
             _ = try await repo.sendKredsQuote(packageTypeId: 42, loyaltyPointsAmount: 10.0)
             Issue.record("Expected throw")
-        } catch let SdkError.networkError(_, message) {
+        } catch let SdkError.networkError(_, message, _) {
             #expect(message == "sentinel")
         }
 
@@ -309,7 +328,7 @@ extension NetworkSuite {
         do {
             _ = try await repo.fetchKredsBalance(forceRefresh: true, cacheTTL: 3600)
             Issue.record("Expected throw")
-        } catch let SdkError.networkError(_, message) {
+        } catch let SdkError.networkError(_, message, _) {
             #expect(message == "loyalty-hit")
         }
 
@@ -446,26 +465,35 @@ extension NetworkSuite {
 
     // MARK: - VisaRewards
 
-    @Test("VisaRewards: fetchVisaReward returns nil on error (not throw)")
-    func visaRewardReturnsNilOnError() async throws {
+    @Test("VisaRewards: fetchVisaReward throws the server error so callers can read its code")
+    func visaRewardThrowsOnError() async throws {
         MockURLProtocol.reset()
         MockURLProtocol.handler = MockSession.jsonResponse(statusCode: 500, json: #"{"error":"x","detail":"y"}"#)
 
         let (client, _, _, _) = makeRepoEnv()
         let repo = VisaRewardsRepositoryImpl(client: client)
-        let response = await repo.fetchVisaReward(isEU: false)
-        #expect(response == nil)
+        do {
+            _ = try await repo.fetchVisaReward(isEU: false)
+            Issue.record("Expected throw")
+        } catch let SdkError.networkError(statusCode, message, _) {
+            #expect(statusCode == 500)
+            #expect(message == "y")
+        }
     }
 
-    @Test("VisaRewards: fetchVisaValidation returns nil on error (not throw)")
-    func visaValidationReturnsNilOnError() async throws {
+    @Test("VisaRewards: fetchVisaValidation throws the server error")
+    func visaValidationThrowsOnError() async throws {
         MockURLProtocol.reset()
         MockURLProtocol.handler = MockSession.jsonResponse(statusCode: 500, json: #"{"error":"x","detail":"y"}"#)
 
         let (client, _, _, _) = makeRepoEnv()
         let repo = VisaRewardsRepositoryImpl(client: client)
-        let response = await repo.fetchVisaValidation(token: "abc")
-        #expect(response == nil)
+        do {
+            _ = try await repo.fetchVisaValidation(token: "abc")
+            Issue.record("Expected throw")
+        } catch let SdkError.networkError(statusCode, _, _) {
+            #expect(statusCode == 500)
+        }
     }
 
     @Test("VisaRewards: redeemVisaReward throws on error (does throw)")

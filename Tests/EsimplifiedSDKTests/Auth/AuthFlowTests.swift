@@ -51,11 +51,50 @@ extension NetworkSuite {
         do {
             _ = try await repo.login(email: "u@example.com", password: "wrong")
             Issue.record("Expected throw")
-        } catch let SdkError.networkError(statusCode, message) {
+        } catch let SdkError.networkError(statusCode, message, _) {
             #expect(statusCode == 400)
             #expect(message == "Bad credentials")
         }
         #expect(session.saveAuthStateCalls.isEmpty)
+    }
+
+    @Test("login surfaces the auth endpoint's error code")
+    func loginCarriesErrorCode() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(
+            statusCode: 400,
+            json: #"{"error":"email_not_verified","error_description":"Verify your email. We've sent you a new code."}"#
+        )
+        let (repo, _) = makeRepo()
+
+        do {
+            _ = try await repo.login(email: "u@example.com", password: "pw")
+            Issue.record("Expected throw")
+        } catch let error as SdkError {
+            #expect(error.hasApiCode(.emailNotVerified))
+            #expect(error.isEmailNotVerified)
+            #expect(error.errorDescription == "Verify your email. We've sent you a new code.")
+        }
+    }
+
+    @Test("login recognises the unverified-email refusal that only carries invalid_grant")
+    func loginRecognisesUnverifiedEmailByDescription() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(
+            statusCode: 400,
+            json: #"{"error":"invalid_grant","error_description":"Email not verified, new verification email sent."}"#
+        )
+        let (repo, _) = makeRepo()
+
+        do {
+            _ = try await repo.login(email: "u@example.com", password: "pw")
+            Issue.record("Expected throw")
+        } catch let error as SdkError {
+            #expect(error.isEmailNotVerified)
+        }
+
+        let wrongPassword = SdkError.networkError(statusCode: 400, message: "Invalid credentials", code: "invalid_grant")
+        #expect(!wrongPassword.isEmailNotVerified)
     }
 
     @Test("loginWithProvider persists tokens")
@@ -75,6 +114,41 @@ extension NetworkSuite {
         )
 
         #expect(session.getAccessToken() == "new-access")
+    }
+
+    @Test("verifyEmail with a code posts email and code to verify-email")
+    func verifyEmailWithCode() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"email":"a@example.com","email_verified":true}"#)
+        let (repo, _) = makeRepo()
+
+        let response = try await repo.verifyEmail(email: "a@example.com", token: nil, code: "482913", orderUUID: nil)
+
+        let request = MockURLProtocol.capturedRequests.first
+        #expect(request?.url?.path.hasSuffix("/verify-email") == true)
+        #expect(request?.value(forHTTPHeaderField: "Authorization")?.hasPrefix("Basic ") == true)
+        let body = MockURLProtocol.capturedBodies.first.flatMap { $0 }
+            .flatMap { try? JSONDecoder().decode([String: String].self, from: $0) }
+        #expect(body == ["email": "a@example.com", "code": "482913"])
+        #expect(response.email_verified)
+    }
+
+    @Test("verifyEmail with an expired code surfaces code_expired")
+    func verifyEmailExpiredCode() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(
+            statusCode: 400,
+            json: #"{"code":"code_expired","detail":"We emailed you a new code."}"#
+        )
+        let (repo, _) = makeRepo()
+
+        do {
+            _ = try await repo.verifyEmail(email: "a@example.com", token: nil, code: "000000", orderUUID: nil)
+            Issue.record("expected a throw")
+        } catch let error as SdkError {
+            #expect(error.hasApiCode(.codeExpired))
+            #expect(error.errorDescription == "We emailed you a new code.")
+        }
     }
 
     @Test("refreshSession emits onTokenRefreshed callback")
@@ -193,7 +267,7 @@ extension NetworkSuite {
         MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"email":"a@b.com","email_verified":true}"#)
 
         let (repo, _) = makeRepo()
-        let response = try await repo.verifyEmail(email: nil, token: nil, orderUUID: "order-1")
+        let response = try await repo.verifyEmail(email: nil, token: nil, code: nil, orderUUID: "order-1")
         #expect(response.email_verified == true)
     }
 }

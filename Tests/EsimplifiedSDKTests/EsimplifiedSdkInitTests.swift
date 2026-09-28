@@ -54,7 +54,7 @@ struct EsimplifiedSdkInitTests {
         #expect(!config.enableCaching)
     }
 
-    @Test("All 13 repositories are accessible")
+    @Test("Every repository is accessible")
     func allRepositories() {
         let sdk = EsimplifiedSdk.initialize(
             config: SdkConfig(
@@ -73,6 +73,7 @@ struct EsimplifiedSdkInitTests {
         let _: PromoCodeRepositoryType = sdk.promoCodeRepository
         let _: LoyaltyRepositoryType = sdk.loyaltyRepository
         let _: UserRepositoryType = sdk.userRepository
+        let _: PhoneVerificationRepositoryType = sdk.phoneVerificationRepository
         let _: NotificationRepositoryType = sdk.notificationRepository
         let _: VisaRewardsRepositoryType = sdk.visaRewardsRepository
         let _: VouchersRepositoryType = sdk.vouchersRepository

@@ -12,12 +12,17 @@ public protocol CountriesRepositoryType {
     func invalidateCache() async
 
     func fetchAllCountriesResult(forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Country]>
+    func fetchPopularCountriesResult(forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Country]>
 
 }
 
 public extension CountriesRepositoryType {
     func fetchAllCountries(forceRefresh: Bool = false) async -> [Country] {
         await fetchAllCountries(forceRefresh: forceRefresh, cacheTTL: 86400)
+    }
+
+    func fetchPopularCountries(forceRefresh: Bool = false) async -> [Country] {
+        await fetchPopularCountriesResult(forceRefresh: forceRefresh, cacheTTL: 86400).value
     }
 }
 

@@ -164,7 +164,7 @@ extension NetworkSuite {
         #expect(result.value == nil)
         #expect(result.isStale == false)
         #expect(result.didFail)
-        guard case .networkError(let statusCode, let message)? = result.failure else {
+        guard case .networkError(let statusCode, let message, _)? = result.failure else {
             Issue.record("expected networkError, got \(String(describing: result.failure))")
             return
         }
@@ -185,7 +185,7 @@ extension NetworkSuite {
         let result = await repo.fetchTermsResult(language: "en")
         #expect(result.value?.title == "Old")
         #expect(result.isStale)
-        guard case .networkError(let statusCode, let message)? = result.failure else {
+        guard case .networkError(let statusCode, let message, _)? = result.failure else {
             Issue.record("expected networkError, got \(String(describing: result.failure))")
             return
         }

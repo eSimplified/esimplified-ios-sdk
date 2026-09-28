@@ -290,7 +290,13 @@ Most read methods swallow failures and return an empty or `nil` value, so a list
 | `updateX(...)` | Returns `Bool`. Tells you it failed, not why |
 | `updateXOrThrow(...)` | Throws the `SdkError` instead, so you can show the reason |
 
-`SdkError` cases: `networkError(statusCode:message:)`, `decodingError`, `authenticationRequired`, `noInternetConnection`, `serverError`, `missingCredentials`, `invalidURL`, `unknown`.
+`SdkError` cases: `networkError(statusCode:message:code:)`, `decodingError`, `authenticationRequired`, `noInternetConnection`, `serverError`, `missingCredentials`, `invalidURL`, `unknown`.
+
+When the API names the reason for a failure it sends a machine-readable `code` in the error body, for example `invalid_code`, `phone_verification_required` or, from the token endpoint, `email_not_verified`. It rides along on `networkError` and is exposed through `error.apiCode` (the raw string) and `error.hasApiCode(.invalidCode)` (the `ApiErrorCode` enum, which lists the codes the SDK knows). Branch on the code, show `errorDescription` to the customer — the API translates it.
+
+The token endpoint reports an unverified email as `invalid_grant` with the description "Email not verified, new verification email sent."; `error.isEmailNotVerified` recognises that (and a future `email_not_verified` code) so you can show the code entry instead of a login error.
+
+A `403` whose code is `phone_verification_required` is a business rule, not a session problem, so the SDK does not refresh the token for it; it is thrown straight back so you can run the phone verification step and retry.
 
 Two descriptions, and the difference matters: **`errorDescription`** is safe to show a customer, **`debugDescription`** carries the technical detail — for a decoding failure it names the field and its coding path. Log the second, display the first.
 
@@ -318,7 +324,9 @@ Access: `sdk.authRepository`
 | `refreshSession` | `func refreshSession() async throws -> SignInCustomerResponse` |
 | `register` | `func register(request: RegisterCustomerRequest) async throws -> RegisterCustomerResponse` |
 | `resetPassword` | `func resetPassword(email: String, token: String, newPassword: String) async throws -> ChangePasswordResponse` |
-| `verifyEmail` | `func verifyEmail(email: String?, token: String?, orderUUID: String?) async throws -> VerifyEmailResponse` |
+| `verifyEmail` | `func verifyEmail(email: String?, token: String?, code: String?, orderUUID: String?) async throws -> VerifyEmailResponse` |
+
+The confirmation email carries a link and a 6-digit code; pass `token` for the link or `code` for what the customer typed, and leave the other nil. A `400` with code `invalid_code` is a wrong code, `code_expired` means a fresh code has already been emailed.
 
 ### UserRepository
 
@@ -332,6 +340,18 @@ Access: `sdk.userRepository`
 | `updatePreferences` | `func updatePreferences(_ request: UpdateCustomerPreferencesRequest) async throws -> User` |
 | `updateProfile` | `func updateProfile(_ request: UpdateCustomerRequest) async throws -> UpdateCustomerResponse` |
 
+### PhoneVerificationRepository
+
+Verifying the customer's phone number by a one-time code sent over SMS or WhatsApp. `User.phoneVerified` tells you whether it is needed; the Visa rewards endpoints refuse a customer without a verified phone with `403` and code `phone_verification_required`. Changing the phone number in the profile resets `phoneVerified` to `false`.  
+Access: `sdk.phoneVerificationRepository`
+
+| Method | Signature |
+|---|---|
+| `sendCode` | `func sendCode(phoneNumber: String, channel: PhoneOtpChannel) async throws -> PhoneOtpSendResponse` |
+| `verifyCode` | `func verifyCode(_ code: String) async throws -> PhoneOtpVerifyResponse` |
+
+The code lasts 10 minutes. After `verifyCode` succeeds, re-fetch the customer. Codes to branch on: `phone_already_verified` (`409`, the number belongs to another account), `invalid_code`, `no_pending_verification` (the code expired, send again), `too_many_requests` (`429`), `provider_error`. A `404` means the tenant has phone verification switched off.
+
 ### CountriesRepository
 
 Destination browsing and search.  
@@ -341,6 +361,8 @@ Access: `sdk.countriesRepository`
 |---|---|
 | `fetchAllCountries` | `func fetchAllCountries(forceRefresh: Bool = false) async -> [Country]` |
 | `fetchAllCountriesResult` | `func fetchAllCountriesResult(forceRefresh: Bool = false) async -> RepositoryResult<[Country]>` |
+| `fetchPopularCountries` | `func fetchPopularCountries(forceRefresh: Bool = false) async -> [Country]` |
+| `fetchPopularCountriesResult` | `func fetchPopularCountriesResult(forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Country]>` |
 | `invalidateCache` | `func invalidateCache() async` |
 | `searchCountries` | `func searchCountries(searchTerm: String) async -> [Country]` |
 
@@ -492,8 +514,8 @@ Access: `sdk.visaRewardsRepository`
 
 | Method | Signature |
 |---|---|
-| `fetchVisaReward` | `func fetchVisaReward(isEU: Bool) async -> VisaRewardResponse?` |
-| `fetchVisaValidation` | `func fetchVisaValidation(token: String) async -> VisaValidateResponse?` |
+| `fetchVisaReward` | `func fetchVisaReward(isEU: Bool) async throws -> VisaRewardResponse` |
+| `fetchVisaValidation` | `func fetchVisaValidation(token: String) async throws -> VisaValidateResponse` |
 | `redeemVisaReward` | `func redeemVisaReward(token: String, body: [String: String]) async throws -> RedeemVisaResponse` |
 
 ### StoreReviewRepository
@@ -557,6 +579,7 @@ Every type the SDK returns or accepts, with its Swift properties and the JSON ke
 | `error` | `String?` | `error` |
 | `detail` | `String?` | `detail` |
 | `message` | `String?` | `message` |
+| `code` | `String?` | `code` |
 
 ### `ApiInvalid`
 
@@ -1206,6 +1229,31 @@ Enum.
 | `detail` | `String` | `detail` |
 | `paymentData` | `PaymentData` | `data` |
 
+### `PhoneOtpChannel`
+
+`String`-backed enum: `sms`, `whatsapp`.
+
+### `PhoneOtpSendRequest`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `phoneNumber` | `String` | `phone_number` |
+| `channel` | `PhoneOtpChannel` | `channel` |
+
+### `PhoneOtpSendResponse`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `phoneNumber` | `String` | `phone_number` |
+| `channel` | `PhoneOtpChannel` | `channel` |
+
+### `PhoneOtpVerifyResponse`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `phoneNumber` | `String` | `phone_number` |
+| `phoneVerified` | `Bool` | `phone_verified` |
+
 ### `Promo`
 
 | Property | Type | JSON key |
@@ -1461,6 +1509,7 @@ Enum.
 |---|---|---|
 | `email` | `String?` | `email` |
 | `phoneNumber` | `String?` | `phone_number` |
+| `phoneVerified` | `Bool?` | `phone_verified` |
 | `firstName` | `String?` | `first_name` |
 | `lastName` | `String?` | `last_name` |
 | `fullName` | `String?` | `full_name` |

@@ -295,6 +295,70 @@ extension NetworkSuite {
         #expect(session.authenticationFailedCalls == 0)
     }
 
+    @Test("Public call with an expired token refreshes before sending")
+    func publicCallRefreshesExpiredToken() async throws {
+        MockURLProtocol.reset()
+        let server = SingleUseTokenServer(refreshToken: "refresh-0")
+        MockURLProtocol.handler = server.handler(successJson: payloadJson)
+
+        let expired = AuthState.authenticated(
+            accessToken: "expired-access",
+            refreshToken: "refresh-0",
+            expiresAt: Date().addingTimeInterval(-60)
+        )
+        let session = RecordingSessionProvider(initial: expired)
+        let client = HTTPClient(config: refreshConfig(), sessionProvider: session, session: MockSession.make())
+
+        let payload: Payload = try await client.fetch(endpoint: .countries, requiresAuth: false)
+
+        #expect(payload.count == 42)
+        #expect(server.tokenEndpointCalls == 1)
+        #expect(session.getAccessToken() == "access-1")
+        #expect(session.authenticationFailedCalls == 0)
+    }
+
+    @Test("Public call rejected with 401 refreshes and retries once")
+    func publicCallRetriesAfterRejectedToken() async throws {
+        MockURLProtocol.reset()
+        let server = SingleUseTokenServer(refreshToken: "refresh-0")
+        MockURLProtocol.handler = server.handler(successJson: payloadJson)
+
+        let session = RecordingSessionProvider(initial: validityWindowState())
+        let client = HTTPClient(config: refreshConfig(), sessionProvider: session, session: MockSession.make())
+
+        let payload: Payload = try await client.fetch(endpoint: .countries, requiresAuth: false)
+
+        #expect(payload.count == 42)
+        #expect(server.tokenEndpointCalls == 1)
+        #expect(session.authenticationFailedCalls == 0)
+    }
+
+    @Test("Signed-out public call sends Basic and never refreshes")
+    func signedOutPublicCallUsesBasic() async throws {
+        MockURLProtocol.reset()
+        let authorization = LockedBox<String?>(nil)
+        let tokenCalls = LockedBox(0)
+        MockURLProtocol.handler = { request in
+            guard let url = request.url else { throw URLError(.badURL) }
+            if url.path.contains("/auth/token") {
+                tokenCalls.value += 1
+            } else {
+                authorization.value = request.value(forHTTPHeaderField: "Authorization")
+            }
+            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: ["Content-Type": "application/json"])!
+            return (response, self.payloadJson.data(using: .utf8))
+        }
+
+        let session = RecordingSessionProvider(initial: .unauthenticated)
+        let client = HTTPClient(config: refreshConfig(), sessionProvider: session, session: MockSession.make())
+
+        let payload: Payload = try await client.fetch(endpoint: .countries, requiresAuth: false)
+
+        #expect(payload.count == 42)
+        #expect(authorization.value?.hasPrefix("Basic ") == true)
+        #expect(tokenCalls.value == 0)
+    }
+
     @Test("Failing token persistence does not end the session")
     func failingTokenPersistencePreservesSession() async throws {
         MockURLProtocol.reset()
@@ -308,5 +372,20 @@ extension NetworkSuite {
             let _: Payload = try await client.fetch(endpoint: .countries)
         }
         #expect(session.authenticationFailedCalls == 0)
+    }
+}
+
+final class LockedBox<Value>: @unchecked Sendable {
+
+    private let lock = NSLock()
+    private var stored: Value
+
+    init(_ value: Value) {
+        self.stored = value
+    }
+
+    var value: Value {
+        get { lock.lock(); defer { lock.unlock() }; return stored }
+        set { lock.lock(); defer { lock.unlock() }; stored = newValue }
     }
 }

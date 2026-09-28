@@ -19,6 +19,7 @@ struct CustomerDecodingTests {
     {
       "email": "kieran@esimplified.io",
       "phone_number": "+27724042682",
+      "phone_verified": false,
       "first_name": "Kieran",
       "last_name": "Woodrow",
       "full_name": "Kieran Woodrow",
@@ -46,6 +47,7 @@ struct CustomerDecodingTests {
 
         #expect(user.email == "kieran@esimplified.io")
         #expect(user.phoneNumber == "+27724042682")
+        #expect(user.phoneVerified == false)
         #expect(user.firstName == "Kieran")
         #expect(user.lastName == "Woodrow")
         #expect(user.fullName == "Kieran Woodrow")

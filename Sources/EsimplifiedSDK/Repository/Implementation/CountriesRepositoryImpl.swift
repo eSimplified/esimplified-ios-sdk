@@ -39,6 +39,29 @@ final class CountriesRepositoryImpl: CountriesRepositoryType {
         }
     }
 
+    func fetchPopularCountriesResult(forceRefresh: Bool = false, cacheTTL: TimeInterval = 86400) async -> RepositoryResult<[Country]> {
+        let cacheKey = "countries_popular"
+        if !forceRefresh, let cached: [Country] = await cache.get(cacheKey) {
+            return RepositoryResult(value: cached)
+        }
+        let parameters = ["region": "Popular", "limit": "1000"]
+        do {
+            let response: CountryResponse = try await client.fetch(
+                endpoint: .countries,
+                method: .GET,
+                parameters: parameters,
+                requiresAuth: false
+            )
+            let countries = response.countries
+            await cache.set(cacheKey, value: countries, ttl: cacheTTL)
+            return RepositoryResult(value: countries)
+        } catch {
+            let failure = error as? SdkError ?? .unknown(error)
+            let expired: [Country] = await cache.getExpired(cacheKey) ?? []
+            return RepositoryResult(value: expired, isStale: !expired.isEmpty, failure: failure)
+        }
+    }
+
     func fetchAllCountries(forceRefresh: Bool = false, cacheTTL: TimeInterval = 86400) async -> [Country] {
         await fetchAllCountriesResult(forceRefresh: forceRefresh, cacheTTL: cacheTTL).value
     }
