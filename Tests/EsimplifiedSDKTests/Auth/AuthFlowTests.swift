@@ -72,8 +72,29 @@ extension NetworkSuite {
             Issue.record("Expected throw")
         } catch let error as SdkError {
             #expect(error.hasApiCode(.emailNotVerified))
+            #expect(error.isEmailNotVerified)
             #expect(error.errorDescription == "Verify your email. We've sent you a new code.")
         }
+    }
+
+    @Test("login recognises the unverified-email refusal that only carries invalid_grant")
+    func loginRecognisesUnverifiedEmailByDescription() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(
+            statusCode: 400,
+            json: #"{"error":"invalid_grant","error_description":"Email not verified, new verification email sent."}"#
+        )
+        let (repo, _) = makeRepo()
+
+        do {
+            _ = try await repo.login(email: "u@example.com", password: "pw")
+            Issue.record("Expected throw")
+        } catch let error as SdkError {
+            #expect(error.isEmailNotVerified)
+        }
+
+        let wrongPassword = SdkError.networkError(statusCode: 400, message: "Invalid credentials", code: "invalid_grant")
+        #expect(!wrongPassword.isEmailNotVerified)
     }
 
     @Test("loginWithProvider persists tokens")

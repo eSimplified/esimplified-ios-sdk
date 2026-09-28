@@ -294,6 +294,8 @@ Most read methods swallow failures and return an empty or `nil` value, so a list
 
 When the API names the reason for a failure it sends a machine-readable `code` in the error body, for example `invalid_code`, `phone_verification_required` or, from the token endpoint, `email_not_verified`. It rides along on `networkError` and is exposed through `error.apiCode` (the raw string) and `error.hasApiCode(.invalidCode)` (the `ApiErrorCode` enum, which lists the codes the SDK knows). Branch on the code, show `errorDescription` to the customer — the API translates it.
 
+The token endpoint reports an unverified email as `invalid_grant` with the description "Email not verified, new verification email sent."; `error.isEmailNotVerified` recognises that (and a future `email_not_verified` code) so you can show the code entry instead of a login error.
+
 A `403` whose code is `phone_verification_required` is a business rule, not a session problem, so the SDK does not refresh the token for it; it is thrown straight back so you can run the phone verification step and retry.
 
 Two descriptions, and the difference matters: **`errorDescription`** is safe to show a customer, **`debugDescription`** carries the technical detail — for a decoding failure it names the field and its coding path. Log the second, display the first.

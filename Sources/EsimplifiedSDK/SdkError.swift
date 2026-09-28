@@ -35,6 +35,12 @@ public enum SdkError: Error, LocalizedError, CustomDebugStringConvertible {
         apiCode == code.rawValue
     }
 
+    public var isEmailNotVerified: Bool {
+        if hasApiCode(.emailNotVerified) { return true }
+        guard case .networkError(_, let message, let code) = self, code == "invalid_grant" else { return false }
+        return message.localizedCaseInsensitiveContains("not verified")
+    }
+
     public var debugDescription: String {
         switch self {
         case .decodingError(let error): return "Decoding failed: \(Self.describe(error))"
