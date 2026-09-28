@@ -56,14 +56,14 @@ Treat the client secret as a secret. Do not commit it; inject it at build time o
 
 1. **File → Add Package Dependencies…**
 2. Enter `https://github.com/eSimplified/esimplified-ios-sdk.git`
-3. Dependency Rule: **Up to Next Major Version** from `1.0.0`
+3. Dependency Rule: **Up to Next Major Version** from `2.0.0`
 4. Add the `EsimplifiedSDK` library to your app target
 
 ### Package.swift
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "1.0.0")
+    .package(url: "https://github.com/eSimplified/esimplified-ios-sdk.git", from: "2.0.0")
 ],
 targets: [
     .target(
