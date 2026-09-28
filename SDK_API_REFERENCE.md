@@ -322,9 +322,9 @@ Access: `sdk.authRepository`
 | `refreshSession` | `func refreshSession() async throws -> SignInCustomerResponse` |
 | `register` | `func register(request: RegisterCustomerRequest) async throws -> RegisterCustomerResponse` |
 | `resetPassword` | `func resetPassword(email: String, token: String, newPassword: String) async throws -> ChangePasswordResponse` |
-| `verifyEmail` | `func verifyEmail(email: String, code: String) async throws -> VerifyEmailResponse` |
+| `verifyEmail` | `func verifyEmail(email: String?, token: String?, code: String?, orderUUID: String?) async throws -> VerifyEmailResponse` |
 
-`verifyEmail` has two forms for the two things the confirmation email carries. `verifyEmail(email:code:)` takes the 6-digit code the customer types in; `verifyEmail(email:token:orderUUID:)` takes the token from the link. A `400` with code `invalid_code` is a wrong code, `code_expired` means a fresh code has already been emailed.
+The confirmation email carries a link and a 6-digit code; pass `token` for the link or `code` for what the customer typed, and leave the other nil. A `400` with code `invalid_code` is a wrong code, `code_expired` means a fresh code has already been emailed.
 
 ### UserRepository
 

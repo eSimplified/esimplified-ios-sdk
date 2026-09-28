@@ -301,8 +301,7 @@ Authentication, registration, password management, and profile operations.
 | `forgotPassword` | `func forgotPassword(email: String) async throws -> ForgotPasswordResponse` | Request a password reset email |
 | `changePassword` | `func changePassword(email: String, currentPassword: String, newPassword: String) async throws -> ChangePasswordResponse` | Change password for authenticated user |
 | `resetPassword` | `func resetPassword(email: String, token: String, newPassword: String) async throws -> ChangePasswordResponse` | Reset password using email token |
-| `verifyEmail` | `func verifyEmail(email: String?, token: String?, orderUUID: String?) async throws -> VerifyEmailResponse` | Verify email address with the token from the link |
-| `verifyEmail` | `func verifyEmail(email: String, code: String) async throws -> VerifyEmailResponse` | Verify email address with the 6-digit code from the email |
+| `verifyEmail` | `func verifyEmail(email: String?, token: String?, code: String?, orderUUID: String?) async throws -> VerifyEmailResponse` | Verify the email address with the token from the link or the 6-digit code from the email |
 | `deleteAccount` | `func deleteAccount() async throws -> DeleteAccountResponse` | Delete the authenticated user's account |
 | `refreshSession` | `func refreshSession() async throws -> SignInCustomerResponse` | Force a token refresh (e.g. for Face ID login, auth state validation) |
 | `logout` | `func logout() throws` | Clear stored session and tokens |

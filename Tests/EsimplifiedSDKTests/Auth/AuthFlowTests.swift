@@ -83,7 +83,7 @@ extension NetworkSuite {
         MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"email":"a@example.com","email_verified":true}"#)
         let (repo, _) = makeRepo()
 
-        let response = try await repo.verifyEmail(email: "a@example.com", code: "482913")
+        let response = try await repo.verifyEmail(email: "a@example.com", token: nil, code: "482913", orderUUID: nil)
 
         let request = MockURLProtocol.capturedRequests.first
         #expect(request?.url?.path.hasSuffix("/verify-email") == true)
@@ -104,7 +104,7 @@ extension NetworkSuite {
         let (repo, _) = makeRepo()
 
         do {
-            _ = try await repo.verifyEmail(email: "a@example.com", code: "000000")
+            _ = try await repo.verifyEmail(email: "a@example.com", token: nil, code: "000000", orderUUID: nil)
             Issue.record("expected a throw")
         } catch let error as SdkError {
             #expect(error.hasApiCode(.codeExpired))
@@ -228,7 +228,7 @@ extension NetworkSuite {
         MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"email":"a@b.com","email_verified":true}"#)
 
         let (repo, _) = makeRepo()
-        let response = try await repo.verifyEmail(email: nil, token: nil, orderUUID: "order-1")
+        let response = try await repo.verifyEmail(email: nil, token: nil, code: nil, orderUUID: "order-1")
         #expect(response.email_verified == true)
     }
 }
