@@ -258,7 +258,6 @@ actor HTTPClient {
 
     private func shouldRefreshAndRetry(statusCode: Int, requiresAuth: Bool, request: URLRequest, data: Data) -> Bool {
         if requiresAuth {
-            // A 403 that names a business rule is not a session problem, so a fresh token cannot fix it.
             if statusCode == 403, ApiErrorMessage.code(data) == ApiErrorCode.phoneVerificationRequired.rawValue {
                 return false
             }

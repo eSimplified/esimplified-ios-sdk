@@ -21,13 +21,11 @@ public enum SdkError: Error, LocalizedError, CustomDebugStringConvertible {
         return false
     }
 
-    /// The HTTP status of a `networkError`, nil for every other case.
     public var statusCode: Int? {
         if case .networkError(let statusCode, _, _) = self { return statusCode }
         return nil
     }
 
-    /// The machine-readable `code` the API put in the error body, e.g. `invalid_code`.
     public var apiCode: String? {
         if case .networkError(_, _, let code) = self { return code }
         return nil
@@ -82,7 +80,6 @@ public enum SdkError: Error, LocalizedError, CustomDebugStringConvertible {
 
 // MARK: Api Error Code
 
-/// Error codes the API sends in the body's `code` field.
 public enum ApiErrorCode: String {
     case invalidCode = "invalid_code"
     case codeExpired = "code_expired"

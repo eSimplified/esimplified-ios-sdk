@@ -30,7 +30,6 @@ enum ApiErrorMessage {
         return fallback
     }
 
-    /// The body's top-level `code` string, if the API sent one.
     static func code(_ data: Data) -> String? {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let code = object["code"] as? String, !code.isEmpty else { return nil }
