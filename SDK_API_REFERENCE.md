@@ -292,7 +292,7 @@ Most read methods swallow failures and return an empty or `nil` value, so a list
 
 `SdkError` cases: `networkError(statusCode:message:code:)`, `decodingError`, `authenticationRequired`, `noInternetConnection`, `serverError`, `missingCredentials`, `invalidURL`, `unknown`.
 
-When the API names the reason for a failure it sends a machine-readable `code` in the error body, for example `invalid_code` or `phone_verification_required`. It rides along on `networkError` and is exposed through `error.apiCode` (the raw string) and `error.hasApiCode(.invalidCode)` (the `ApiErrorCode` enum, which lists the codes the SDK knows). Branch on the code, show `errorDescription` to the customer — the API translates it.
+When the API names the reason for a failure it sends a machine-readable `code` in the error body, for example `invalid_code`, `phone_verification_required` or, from the token endpoint, `email_not_verified`. It rides along on `networkError` and is exposed through `error.apiCode` (the raw string) and `error.hasApiCode(.invalidCode)` (the `ApiErrorCode` enum, which lists the codes the SDK knows). Branch on the code, show `errorDescription` to the customer — the API translates it.
 
 A `403` whose code is `phone_verification_required` is a business rule, not a session problem, so the SDK does not refresh the token for it; it is thrown straight back so you can run the phone verification step and retry.
 

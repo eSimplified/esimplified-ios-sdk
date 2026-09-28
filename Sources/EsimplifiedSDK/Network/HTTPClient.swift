@@ -97,7 +97,8 @@ actor HTTPClient {
                    let serverError = try? JSONDecoder().decode(ServerErrorResponse.self, from: data) {
                     throw SdkError.networkError(
                         statusCode: httpResponse.statusCode,
-                        message: serverError.errorDescription ?? serverError.error ?? "Authentication failed"
+                        message: serverError.errorDescription ?? serverError.error ?? "Authentication failed",
+                        code: ApiErrorMessage.code(data) ?? serverError.error
                     )
                 }
                 throw SdkError.networkError(

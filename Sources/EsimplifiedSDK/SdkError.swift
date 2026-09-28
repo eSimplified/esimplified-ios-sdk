@@ -88,4 +88,5 @@ public enum ApiErrorCode: String {
     case tooManyRequests = "too_many_requests"
     case providerError = "provider_error"
     case phoneVerificationRequired = "phone_verification_required"
+    case emailNotVerified = "email_not_verified"
 }

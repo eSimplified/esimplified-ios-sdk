@@ -58,6 +58,24 @@ extension NetworkSuite {
         #expect(session.saveAuthStateCalls.isEmpty)
     }
 
+    @Test("login surfaces the auth endpoint's error code")
+    func loginCarriesErrorCode() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(
+            statusCode: 400,
+            json: #"{"error":"email_not_verified","error_description":"Verify your email. We've sent you a new code."}"#
+        )
+        let (repo, _) = makeRepo()
+
+        do {
+            _ = try await repo.login(email: "u@example.com", password: "pw")
+            Issue.record("Expected throw")
+        } catch let error as SdkError {
+            #expect(error.hasApiCode(.emailNotVerified))
+            #expect(error.errorDescription == "Verify your email. We've sent you a new code.")
+        }
+    }
+
     @Test("loginWithProvider persists tokens")
     func loginWithProviderPersists() async throws {
         MockURLProtocol.reset()
