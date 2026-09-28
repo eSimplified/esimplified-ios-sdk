@@ -51,6 +51,7 @@ public struct MokafaaEnrollment: Codable, Equatable {
 public struct User: Codable, Equatable {
     public var email: String? = ""
     public var phoneNumber: String? = ""
+    public var phoneVerified: Bool?
     public var firstName: String? = ""
     public var lastName: String? = ""
     public var fullName: String? = ""
@@ -75,6 +76,7 @@ public struct User: Codable, Equatable {
     enum CodingKeys: String, CodingKey {
         case email
         case phoneNumber = "phone_number"
+        case phoneVerified = "phone_verified"
         case firstName = "first_name"
         case lastName = "last_name"
         case fullName = "full_name"
@@ -101,6 +103,7 @@ public struct User: Codable, Equatable {
     public init(
         email: String? = "",
         phoneNumber: String? = "",
+        phoneVerified: Bool? = nil,
         firstName: String? = "",
         lastName: String? = "",
         fullName: String? = "",
@@ -124,6 +127,7 @@ public struct User: Codable, Equatable {
     ) {
         self.email = email
         self.phoneNumber = phoneNumber
+        self.phoneVerified = phoneVerified
         self.firstName = firstName
         self.lastName = lastName
         self.fullName = fullName
@@ -150,6 +154,7 @@ public struct User: Codable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         email = try container.decodeIfPresent(String.self, forKey: .email)
         phoneNumber = try container.decodeIfPresent(String.self, forKey: .phoneNumber)
+        phoneVerified = try container.decodeIfPresent(Bool.self, forKey: .phoneVerified)
         firstName = try container.decodeIfPresent(String.self, forKey: .firstName)
         lastName = try container.decodeIfPresent(String.self, forKey: .lastName)
         fullName = try container.decodeIfPresent(String.self, forKey: .fullName)
@@ -178,6 +183,7 @@ public struct User: Codable, Equatable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(email, forKey: .email)
         try container.encodeIfPresent(phoneNumber, forKey: .phoneNumber)
+        try container.encodeIfPresent(phoneVerified, forKey: .phoneVerified)
         try container.encodeIfPresent(firstName, forKey: .firstName)
         try container.encodeIfPresent(lastName, forKey: .lastName)
         try container.encodeIfPresent(fullName, forKey: .fullName)

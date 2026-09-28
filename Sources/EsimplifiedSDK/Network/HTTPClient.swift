@@ -84,7 +84,7 @@ actor HTTPClient {
                 body: data
             )
 
-            if !isRetry, shouldRefreshAndRetry(statusCode: httpResponse.statusCode, requiresAuth: requiresAuth, request: request) {
+            if !isRetry, shouldRefreshAndRetry(statusCode: httpResponse.statusCode, requiresAuth: requiresAuth, request: request, data: data) {
                 return try await handleTokenRefreshAndRetry(
                     endpoint: endpoint, method: method, parameters: parameters,
                     body: body, id: id, requiresAuth: requiresAuth,
@@ -102,7 +102,8 @@ actor HTTPClient {
                 }
                 throw SdkError.networkError(
                     statusCode: httpResponse.statusCode,
-                    message: ApiErrorMessage.parse(data)
+                    message: ApiErrorMessage.parse(data),
+                    code: ApiErrorMessage.code(data)
                 )
             }
 
@@ -153,7 +154,7 @@ actor HTTPClient {
                 body: nil
             )
 
-            if !isRetry, shouldRefreshAndRetry(statusCode: httpResponse.statusCode, requiresAuth: requiresAuth, request: request) {
+            if !isRetry, shouldRefreshAndRetry(statusCode: httpResponse.statusCode, requiresAuth: requiresAuth, request: request, data: data) {
                 try await serializedRefresh(staleAccessToken: bearerToken(of: request))
                 return try await fetchData(
                     endpoint: endpoint, method: method, parameters: parameters,
@@ -164,7 +165,8 @@ actor HTTPClient {
             guard (200..<300).contains(httpResponse.statusCode) else {
                 throw SdkError.networkError(
                     statusCode: httpResponse.statusCode,
-                    message: ApiErrorMessage.parse(data)
+                    message: ApiErrorMessage.parse(data),
+                    code: ApiErrorMessage.code(data)
                 )
             }
 
@@ -254,8 +256,12 @@ actor HTTPClient {
         }
     }
 
-    private func shouldRefreshAndRetry(statusCode: Int, requiresAuth: Bool, request: URLRequest) -> Bool {
+    private func shouldRefreshAndRetry(statusCode: Int, requiresAuth: Bool, request: URLRequest, data: Data) -> Bool {
         if requiresAuth {
+            // A 403 that names a business rule is not a session problem, so a fresh token cannot fix it.
+            if statusCode == 403, ApiErrorMessage.code(data) == ApiErrorCode.phoneVerificationRequired.rawValue {
+                return false
+            }
             return statusCode == 401 || statusCode == 403
         }
         return statusCode == 401 && bearerToken(of: request) != nil
@@ -310,7 +316,7 @@ actor HTTPClient {
                 requiresAuth: false
             )
         } catch let error as SdkError {
-            if case .networkError(let statusCode, _) = error,
+            if case .networkError(let statusCode, _, _) = error,
                statusCode == 400 || statusCode == 401 || statusCode == 403 {
                 sessionProvider.onAuthenticationFailed()
                 throw SdkError.authenticationRequired

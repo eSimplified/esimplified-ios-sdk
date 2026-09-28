@@ -51,7 +51,7 @@ extension NetworkSuite {
         do {
             _ = try await repo.login(email: "u@example.com", password: "wrong")
             Issue.record("Expected throw")
-        } catch let SdkError.networkError(statusCode, message) {
+        } catch let SdkError.networkError(statusCode, message, _) {
             #expect(statusCode == 400)
             #expect(message == "Bad credentials")
         }
@@ -75,6 +75,41 @@ extension NetworkSuite {
         )
 
         #expect(session.getAccessToken() == "new-access")
+    }
+
+    @Test("verifyEmail with a code posts email and code to verify-email")
+    func verifyEmailWithCode() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"email":"a@example.com","email_verified":true}"#)
+        let (repo, _) = makeRepo()
+
+        let response = try await repo.verifyEmail(email: "a@example.com", code: "482913")
+
+        let request = MockURLProtocol.capturedRequests.first
+        #expect(request?.url?.path.hasSuffix("/verify-email") == true)
+        #expect(request?.value(forHTTPHeaderField: "Authorization")?.hasPrefix("Basic ") == true)
+        let body = MockURLProtocol.capturedBodies.first.flatMap { $0 }
+            .flatMap { try? JSONDecoder().decode([String: String].self, from: $0) }
+        #expect(body == ["email": "a@example.com", "code": "482913"])
+        #expect(response.email_verified)
+    }
+
+    @Test("verifyEmail with an expired code surfaces code_expired")
+    func verifyEmailExpiredCode() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(
+            statusCode: 400,
+            json: #"{"code":"code_expired","detail":"We emailed you a new code."}"#
+        )
+        let (repo, _) = makeRepo()
+
+        do {
+            _ = try await repo.verifyEmail(email: "a@example.com", code: "000000")
+            Issue.record("expected a throw")
+        } catch let error as SdkError {
+            #expect(error.hasApiCode(.codeExpired))
+            #expect(error.errorDescription == "We emailed you a new code.")
+        }
     }
 
     @Test("refreshSession emits onTokenRefreshed callback")

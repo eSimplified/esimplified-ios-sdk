@@ -13,11 +13,13 @@ public struct ApiErrorResponse: Codable {
     public let error: String?
     public let detail: String?
     public let message: String?
+    public let code: String?
 
-    public init(error: String? = nil, detail: String? = nil, message: String? = nil) {
+    public init(error: String? = nil, detail: String? = nil, message: String? = nil, code: String? = nil) {
         self.error = error
         self.detail = detail
         self.message = message
+        self.code = code
     }
 }
 

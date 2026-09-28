@@ -124,6 +124,15 @@ final class AuthRepositoryImpl: AuthRepositoryType {
         )
     }
 
+    func verifyEmail(email: String, code: String) async throws -> VerifyEmailResponse {
+        try await client.fetch(
+            endpoint: .verifyEmail,
+            method: .POST,
+            body: ["email": email, "code": code],
+            requiresAuth: false
+        )
+    }
+
     func refreshSession() async throws -> SignInCustomerResponse {
         guard let refreshToken = sessionProvider.getRefreshToken() else {
             throw SdkError.authenticationRequired

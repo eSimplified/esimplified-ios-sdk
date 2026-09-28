@@ -15,6 +15,13 @@ struct ApiErrorMessageTests {
         ApiErrorMessage.parse(Data(json.utf8))
     }
 
+    @Test("code is read from the body when present")
+    func codeField() {
+        #expect(ApiErrorMessage.code(Data(#"{"code":"invalid_code","detail":"Wrong"}"#.utf8)) == "invalid_code")
+        #expect(ApiErrorMessage.code(Data(#"{"detail":"Wrong"}"#.utf8)) == nil)
+        #expect(ApiErrorMessage.code(Data(#"{"code":""}"#.utf8)) == nil)
+    }
+
     @Test("message key wins")
     func messageKey() {
         #expect(parse(#"{"message":"Card declined"}"#) == "Card declined")

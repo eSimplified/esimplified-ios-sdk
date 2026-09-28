@@ -34,6 +34,8 @@ enum Endpoints: String {
     case deleteAccount = "customer/delete"
     case updateEsim = "customer/esims/placeholder"
     case verifyEmail = "verify-email"
+    case phoneOtp = "customer/phone/otp"
+    case phoneOtpVerify = "customer/phone/otp/verify"
     case notificationSettings = "customer/notifications"
     case redeemVoucher = "customer/promotions/voucher"
     case loyaltyPoints = "customer/loyalty"

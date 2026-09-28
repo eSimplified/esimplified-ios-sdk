@@ -19,6 +19,7 @@ public final class EsimplifiedSdk {
     public let promoCodeRepository: PromoCodeRepositoryType
     public let loyaltyRepository: LoyaltyRepositoryType
     public let userRepository: UserRepositoryType
+    public let phoneVerificationRepository: PhoneVerificationRepositoryType
     public let notificationRepository: NotificationRepositoryType
     public let visaRewardsRepository: VisaRewardsRepositoryType
     public let vouchersRepository: VouchersRepositoryType
@@ -72,6 +73,7 @@ public final class EsimplifiedSdk {
         self.promoCodeRepository = PromoCodeRepositoryImpl(client: client)
         self.loyaltyRepository = LoyaltyRepositoryImpl(client: client, cache: cache)
         self.userRepository = UserRepositoryImpl(client: client)
+        self.phoneVerificationRepository = PhoneVerificationRepositoryImpl(client: client)
         self.notificationRepository = NotificationRepositoryImpl(client: client)
         self.visaRewardsRepository = VisaRewardsRepositoryImpl(client: client)
         self.vouchersRepository = VouchersRepositoryImpl(client: client)

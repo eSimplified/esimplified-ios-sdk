@@ -209,7 +209,7 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 
 | Model | Description |
 |---|---|
-| `User` | Customer profile (email, name, phone, referral code, language/currency, the eight `receive_*` notification flags, loyalty provider). Decodes `unique_referral_code` as an alias for `referral_code` |
+| `User` | Customer profile (email, name, phone and whether it is verified, referral code, language/currency, the eight `receive_*` notification flags, loyalty provider). Decodes `unique_referral_code` as an alias for `referral_code` |
 | `LoyaltyProvider` | Enum: kreds, mokafaa |
 | `SignInCustomerResponse` | Login response (access token, refresh token, expiry, user) |
 | `RegisterCustomerRequest` | Registration request (name, email, phone, password, marketing opt-in) |
@@ -264,7 +264,8 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `UserLocationResponse` | User's detected location (country, city, coordinates) |
 | `LocationDetails` | Location detail (country, country code, city, lat, lon, timezone) |
 | `RestrictedCountry` | Country with purchase restrictions (code, type, restricted for) |
-| `ApiErrorResponse` | API error response (error, detail) — used for non-auth endpoints |
+| `ApiErrorResponse` | API error response (error, detail, code) — used for non-auth endpoints |
+| `PhoneOtpChannel` / `PhoneOtpSendRequest` / `PhoneOtpSendResponse` / `PhoneOtpVerifyResponse` | Phone verification: the channel (`sms`, `whatsapp`), the send call and the two responses |
 | `ServerErrorResponse` | OAuth2 error response (error, error_description) — used for auth endpoint |
 | `TrackedOrderResponse` | Order tracking result (conversion tracked) |
 | `UpdateEsimResponse` | eSIM update result (message) |
@@ -300,7 +301,8 @@ Authentication, registration, password management, and profile operations.
 | `forgotPassword` | `func forgotPassword(email: String) async throws -> ForgotPasswordResponse` | Request a password reset email |
 | `changePassword` | `func changePassword(email: String, currentPassword: String, newPassword: String) async throws -> ChangePasswordResponse` | Change password for authenticated user |
 | `resetPassword` | `func resetPassword(email: String, token: String, newPassword: String) async throws -> ChangePasswordResponse` | Reset password using email token |
-| `verifyEmail` | `func verifyEmail(email: String?, token: String?, orderUUID: String?) async throws -> VerifyEmailResponse` | Verify email address with token |
+| `verifyEmail` | `func verifyEmail(email: String?, token: String?, orderUUID: String?) async throws -> VerifyEmailResponse` | Verify email address with the token from the link |
+| `verifyEmail` | `func verifyEmail(email: String, code: String) async throws -> VerifyEmailResponse` | Verify email address with the 6-digit code from the email |
 | `deleteAccount` | `func deleteAccount() async throws -> DeleteAccountResponse` | Delete the authenticated user's account |
 | `refreshSession` | `func refreshSession() async throws -> SignInCustomerResponse` | Force a token refresh (e.g. for Face ID login, auth state validation) |
 | `logout` | `func logout() throws` | Clear stored session and tokens |
@@ -313,6 +315,8 @@ Destination country browsing and search.
 |---|---|---|
 | `fetchAllCountries` | `func fetchAllCountries(forceRefresh: Bool = false) async -> [Country]` | Fetch all supported destination countries |
 | `fetchAllCountriesResult` | `func fetchAllCountriesResult(forceRefresh: Bool = false) async -> RepositoryResult<[Country]>` | Same, with the failure reported |
+| `fetchPopularCountries` | `func fetchPopularCountries(forceRefresh: Bool = false) async -> [Country]` | The popular destinations, in the order the server returns them |
+| `fetchPopularCountriesResult` | `func fetchPopularCountriesResult(forceRefresh: Bool = false, cacheTTL: TimeInterval = 86400) async -> RepositoryResult<[Country]>` | Same, with the failure reported |
 | `searchCountries` | `func searchCountries(searchTerm: String) async -> [Country]` | Search countries by name |
 
 ### PackagesRepository
@@ -398,6 +402,15 @@ User profile and location.
 | `updatePreferences` | `func updatePreferences(_ request: UpdateCustomerPreferencesRequest) async throws -> User` | Update language/currency preferences |
 | `fetchUserLocation` | `func fetchUserLocation() async throws -> UserLocationResponse` | Detect user's current country via IP |
 
+### PhoneVerificationRepository
+
+One-time-code verification of the customer's phone number. Check `User.phoneVerified` first; the Visa rewards endpoints refuse an unverified customer with `403` and code `phone_verification_required`.
+
+| Method | Signature | Description |
+|---|---|---|
+| `sendCode` | `func sendCode(phoneNumber: String, channel: PhoneOtpChannel) async throws -> PhoneOtpSendResponse` | `POST customer/phone/otp/` — send a code over `sms` or `whatsapp`; it lasts 10 minutes |
+| `verifyCode` | `func verifyCode(_ code: String) async throws -> PhoneOtpVerifyResponse` | `POST customer/phone/otp/verify/` — submit the code, then re-fetch the customer |
+
 ### NotificationRepository
 
 Push notification settings management.
@@ -413,8 +426,8 @@ Visa rewards verification and activation flow.
 
 | Method | Signature | Description |
 |---|---|---|
-| `fetchVisaReward` | `func fetchVisaReward(isEU: Bool) async throws -> VisaRewardResponse?` | Get the Visa verification iframe URL |
-| `fetchVisaValidation` | `func fetchVisaValidation(token: String) async throws -> VisaValidateResponse?` | Verify a Visa reward token |
+| `fetchVisaReward` | `func fetchVisaReward(isEU: Bool) async throws -> VisaRewardResponse` | Get the Visa verification iframe URL |
+| `fetchVisaValidation` | `func fetchVisaValidation(token: String) async throws -> VisaValidateResponse` | Verify a Visa reward token |
 | `redeemVisaReward` | `func redeemVisaReward(token: String, body: [String: String]) async throws -> RedeemVisaResponse` | Activate a verified Visa reward |
 
 ### StoreReviewRepository
@@ -594,7 +607,7 @@ All SDK errors are thrown as `SdkError`:
 
 ```swift
 public enum SdkError: Error, LocalizedError {
-    case networkError(statusCode: Int, message: String)  // HTTP error with backend message
+    case networkError(statusCode: Int, message: String, code: String? = nil)  // HTTP error with backend message and, when the API names the reason, its code
     case decodingError(Error)                             // JSON decode failure
     case authenticationRequired                           // Token refresh failed, user must re-login
     case noInternetConnection                             // No network
@@ -614,6 +627,8 @@ The SDK parses backend error responses differently based on the endpoint:
 
 `SdkError.networkError.message` always contains the best available message — `error_description` for auth errors, `detail` for API errors, falling back to the raw `error` code if neither is present.
 
+When the body carries a `code` (for example `invalid_code`, `code_expired`, `phone_verification_required`) it is exposed as `error.apiCode`, and `error.hasApiCode(.invalidCode)` compares against the `ApiErrorCode` enum. A `403` with code `phone_verification_required` is thrown as-is, without a token refresh, because a new token cannot fix it.
+
 ### Handling errors in the app
 
 ```swift
@@ -623,7 +638,7 @@ do {
     switch error {
     case .authenticationRequired:
         // Token refresh failed — redirect to login
-    case .networkError(let statusCode, let message):
+    case .networkError(let statusCode, let message, _):
         // Show message to user (already user-friendly from backend)
         showAlert(title: "Error", message: message)
     default:

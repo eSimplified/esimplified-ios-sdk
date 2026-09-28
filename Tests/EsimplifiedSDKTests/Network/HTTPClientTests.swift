@@ -334,7 +334,7 @@ extension NetworkSuite {
         do {
             let _: CountriesPayload = try await client.fetch(endpoint: .countries)
             Issue.record("Expected throw")
-        } catch let SdkError.networkError(statusCode, message) {
+        } catch let SdkError.networkError(statusCode, message, _) {
             #expect(statusCode == 422)
             #expect(message == "Email is required")
         }
@@ -361,7 +361,7 @@ extension NetworkSuite {
                 requiresAuth: false
             )
             Issue.record("Expected throw")
-        } catch let SdkError.networkError(statusCode, message) {
+        } catch let SdkError.networkError(statusCode, message, _) {
             #expect(statusCode == 400)
             #expect(message == "Bad password")
         }
