@@ -161,6 +161,34 @@ struct ModelDecodingTestsExtended {
         #expect(r.rewardType == .global)
     }
 
+    @Test("VisaValidateResponse matches reward_type ignoring case and keeps the original string")
+    func visaValidateResponseLowercaseType() throws {
+        let global: VisaValidateResponse = try decode(#"{"eligible":true,"reward_type":"global_esim"}"#)
+        let discount: VisaValidateResponse = try decode(#"{"eligible":true,"reward_type":"Discount"}"#)
+        let upper: VisaValidateResponse = try decode(#"{"eligible":true,"reward_type":"GLOBAL_ESIM"}"#)
+        #expect(global.rewardType == .global)
+        #expect(global.rewardTypeValue == "global_esim")
+        #expect(discount.rewardType == .discount)
+        #expect(discount.rewardTypeValue == "Discount")
+        #expect(upper.rewardTypeValue == "GLOBAL_ESIM")
+    }
+
+    @Test("VisaValidateResponse without reward_type has no reward type value")
+    func visaValidateResponseMissingType() throws {
+        let r: VisaValidateResponse = try decode(#"{"eligible":false}"#)
+        #expect(r.rewardType == nil)
+        #expect(r.rewardTypeValue == nil)
+    }
+
+    @Test("VisaValidateResponse encodes reward_type as it was received")
+    func visaValidateResponseRoundTrip() throws {
+        let r: VisaValidateResponse = try decode(#"{"eligible":true,"reward_type":"global_esim","used_count":1}"#)
+        let data = try JSONEncoder().encode(r)
+        let again = try JSONDecoder().decode(VisaValidateResponse.self, from: data)
+        #expect(again == r)
+        #expect(again.rewardTypeValue == "global_esim")
+    }
+
     @Test("VisaValidateResponse decodes unknown reward_type to .unknown")
     func visaValidateResponseUnknownType() throws {
         let json = #"{"eligible":false,"reward_type":"BOGUS"}"#
