@@ -1318,6 +1318,7 @@ Enum.
 | `redeemed` | `Bool?` | `redeemed` |
 | `detail` | `String?` | `detail` |
 | `redirectURL` | `String?` | `redirect_url` |
+| `orderUUID` | `String?` | computed: the `id` query item of `redirect_url`, else the text after its last `=` |
 
 ### `RegisterCustomerRequest`
 

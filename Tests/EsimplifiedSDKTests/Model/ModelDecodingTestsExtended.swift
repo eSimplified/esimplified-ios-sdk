@@ -196,6 +196,18 @@ struct ModelDecodingTestsExtended {
         #expect(r.rewardType == .unknown)
     }
 
+    @Test("RedeemVisaResponse reads the order id from redirect_url")
+    func redeemVisaResponseOrderUUID() throws {
+        let order: RedeemVisaResponse = try decode(#"{"redeemed":true,"detail":"ok","redirect_url":"order/7946?id=0f8e-11"}"#)
+        let discount: RedeemVisaResponse = try decode(#"{"redeemed":true,"detail":"ok"}"#)
+        let blank: RedeemVisaResponse = try decode(#"{"redeemed":true,"redirect_url":""}"#)
+        #expect(order.orderUUID == "0f8e-11")
+        #expect(discount.orderUUID == nil)
+        #expect(blank.orderUUID == nil)
+        let legacy: RedeemVisaResponse = try decode(#"{"redeemed":true,"redirect_url":"order?uuid=abc-9"}"#)
+        #expect(legacy.orderUUID == "abc-9")
+    }
+
     @Test("RedeemVisaResponse decodes redirect_url")
     func redeemVisaResponse() throws {
         let json = #"{"redeemed":true,"detail":"ok","redirect_url":"https://example.com"}"#
