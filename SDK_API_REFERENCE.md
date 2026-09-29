@@ -1318,6 +1318,7 @@ Enum.
 | `redeemed` | `Bool?` | `redeemed` |
 | `detail` | `String?` | `detail` |
 | `redirectURL` | `String?` | `redirect_url` |
+| `orderUUID` | `String?` | computed: the `id` query item of `redirect_url`, else the text after its last `=` |
 
 ### `RegisterCustomerRequest`
 
@@ -1382,7 +1383,7 @@ Enum.
 
 ### `RewardType`
 
-Enum.
+Enum. Matched ignoring case, so `global_esim` and `GLOBAL_ESIM` are both `global`.
 
 | Case | JSON value |
 |---|---|
@@ -1574,6 +1575,7 @@ Enum.
 | `eligible` | `Bool` | `eligible` |
 | `usedCount` | `Int?` | `used_count` |
 | `rewardType` | `RewardType?` | `reward_type` |
+| `rewardTypeValue` | `String?` | `reward_type`, exactly as the backend sent it; echo this back when redeeming |
 | `allowedCount` | `Int?` | `allowed_count` |
 | `remainingCount` | `Int?` | `remaining_count` |
 | `redeemed` | `Bool?` | `redeemed` |
