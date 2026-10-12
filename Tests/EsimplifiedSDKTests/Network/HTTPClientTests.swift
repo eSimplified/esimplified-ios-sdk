@@ -241,12 +241,12 @@ extension NetworkSuite {
         #expect(session.tokenRefreshedCalls.count == 1)
     }
 
-    @Test("403 response also triggers refresh and retry")
-    func refreshAndRetryOn403() async throws {
+    @Test("403 with no code in the body still refreshes and retries")
+    func refreshAndRetryOnBare403() async throws {
         MockURLProtocol.reset()
         let refreshJson = #"{"access_token":"new","expires_in":3600,"token_type":"Bearer","scope":"all","refresh_token":"new-r"}"#
         MockURLProtocol.handler = MockSession.sequence([
-            (statusCode: 403, json: nil),
+            (statusCode: 403, json: #"{"detail":"You do not have permission to perform this action."}"#),
             (statusCode: 200, json: refreshJson),
             (statusCode: 200, json: countriesJson)
         ])
@@ -257,6 +257,31 @@ extension NetworkSuite {
         let result: CountriesPayload = try await client.fetch(endpoint: .countries)
         #expect(result.count == 42)
         #expect(MockURLProtocol.capturedRequests.count == 3)
+        #expect(session.tokenRefreshedCalls.count == 1)
+    }
+
+    @Test("403 with a code in the body is thrown after one request and no refresh")
+    func coded403IsNotRetried() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(
+            statusCode: 403,
+            json: #"{"detail":"We can't verify this card right now.","code":"redemption_blocked"}"#
+        )
+
+        let session = RecordingSessionProvider(initial: authenticatedState(accessToken: "old", refreshToken: "old-r"))
+        let client = HTTPClient(config: makeConfig(), sessionProvider: session, session: MockSession.make())
+
+        do {
+            let _: CountriesPayload = try await client.fetch(endpoint: .visaIframe, method: .POST)
+            Issue.record("expected a throw")
+        } catch let error as SdkError {
+            #expect(error.statusCode == 403)
+            #expect(error.apiCode == "redemption_blocked")
+            #expect(error.errorDescription == "We can't verify this card right now.")
+        }
+        #expect(MockURLProtocol.capturedRequests.count == 1, "a server decision must not be replayed")
+        #expect(session.tokenRefreshedCalls.isEmpty)
+        #expect(session.getAccessToken() == "old")
     }
 
     @Test("Failed refresh emits onAuthenticationFailed and throws authenticationRequired")
