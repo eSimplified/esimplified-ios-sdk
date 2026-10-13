@@ -418,13 +418,14 @@ Access: `sdk.ordersRepository`
 
 ### PaymentsRepository
 
-Creating a payment and quoting a loyalty-point spend.  
+Creating a payment, quoting a loyalty-point spend and listing saved cards.  
 Access: `sdk.paymentsRepository`
 
 | Method | Signature |
 |---|---|
 | `fetchPayment` | `func fetchPayment(transactionType: TransactionType, packageTypeId: Int, iccid: String?, autoTopUp: Bool, savePaymentDetail: Bool, loyaltyPointsAmount: Double?) async throws -> PaymentData` |
 | `sendKredsQuote` | `func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse` |
+| `fetchPaymentMethods` | `func fetchPaymentMethods() async throws -> [SavedPaymentMethod]` |
 
 ### PromoCodeRepository
 
@@ -1390,6 +1391,16 @@ Enum. Matched ignoring case, so `global_esim` and `GLOBAL_ESIM` are both `global
 | `unknown` | `unknown` |
 | `discount` | `DISCOUNT` |
 | `global` | `GLOBAL_ESIM` |
+
+### `SavedPaymentMethod`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `paymentMethodID` | `String` | `payment_method_id` |
+| `cardBrand` | `String` | `card_brand` |
+| `cardLast4` | `String` | `card_last4` |
+| `cardExpMonth` | `Int?` | `card_exp_month` |
+| `cardExpYear` | `Int?` | `card_exp_year` |
 
 ### `ServerErrorResponse`
 

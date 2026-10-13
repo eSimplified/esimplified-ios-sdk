@@ -283,6 +283,22 @@ extension NetworkSuite {
         #expect(url?.path.contains("/payments/quote") == true)
     }
 
+    @Test("Payments: fetchPaymentMethods GETs /customer/payment-methods/ and decodes the saved cards")
+    func paymentsSavedMethods() async throws {
+        MockURLProtocol.reset()
+        let json = #"[{"payment_method_id":"pm_1","card_brand":"visa","card_last4":"4242","card_exp_month":2,"card_exp_year":2044}]"#
+        MockURLProtocol.handler = MockSession.jsonResponse(json: json)
+
+        let (client, _, session, _) = makeRepoEnv()
+        let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
+        let methods = try await repo.fetchPaymentMethods()
+
+        #expect(methods == [SavedPaymentMethod(paymentMethodID: "pm_1", cardBrand: "visa", cardLast4: "4242", cardExpMonth: 2, cardExpYear: 2044)])
+        let captured = MockURLProtocol.capturedRequests.first
+        #expect(captured?.httpMethod == "GET")
+        #expect(captured?.url?.absoluteString.hasSuffix("/api/v2/customer/payment-methods/") == true)
+    }
+
     // MARK: - PromoCode
 
     @Test("PromoCode: applyPromocode hits promo_code endpoint")

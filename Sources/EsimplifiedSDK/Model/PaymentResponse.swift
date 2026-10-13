@@ -82,6 +82,32 @@ public struct PaymentRequest: Encodable {
     }
 }
 
+// MARK: Saved Payment Method
+
+public struct SavedPaymentMethod: Codable, Equatable {
+    public let paymentMethodID: String
+    public let cardBrand: String
+    public let cardLast4: String
+    public let cardExpMonth: Int?
+    public let cardExpYear: Int?
+
+    public init(paymentMethodID: String, cardBrand: String, cardLast4: String, cardExpMonth: Int? = nil, cardExpYear: Int? = nil) {
+        self.paymentMethodID = paymentMethodID
+        self.cardBrand = cardBrand
+        self.cardLast4 = cardLast4
+        self.cardExpMonth = cardExpMonth
+        self.cardExpYear = cardExpYear
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case paymentMethodID = "payment_method_id"
+        case cardBrand = "card_brand"
+        case cardLast4 = "card_last4"
+        case cardExpMonth = "card_exp_month"
+        case cardExpYear = "card_exp_year"
+    }
+}
+
 // MARK: Kreds Quote Request
 
 public struct KredsQuoteRequest: Encodable {

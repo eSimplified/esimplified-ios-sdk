@@ -52,4 +52,8 @@ final class PaymentsRepositoryImpl: PaymentsRepositoryType {
             body: quoteRequest
         )
     }
+
+    func fetchPaymentMethods() async throws -> [SavedPaymentMethod] {
+        try await client.fetch(endpoint: .paymentMethods, method: .GET)
+    }
 }
