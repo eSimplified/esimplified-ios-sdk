@@ -418,7 +418,7 @@ Access: `sdk.ordersRepository`
 
 ### PaymentsRepository
 
-Creating a payment, quoting a loyalty-point spend and listing saved cards.  
+Creating a payment, quoting a loyalty-point spend, listing saved cards and paying with one.  
 Access: `sdk.paymentsRepository`
 
 | Method | Signature |
@@ -426,6 +426,7 @@ Access: `sdk.paymentsRepository`
 | `fetchPayment` | `func fetchPayment(transactionType: TransactionType, packageTypeId: Int, iccid: String?, autoTopUp: Bool, savePaymentDetail: Bool, loyaltyPointsAmount: Double?) async throws -> PaymentData` |
 | `sendKredsQuote` | `func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse` |
 | `fetchPaymentMethods` | `func fetchPaymentMethods() async throws -> [SavedPaymentMethod]` |
+| `payWithStoredPaymentMethod` | `func payWithStoredPaymentMethod(_ paymentMethodID: String, transactionType: TransactionType, packageTypeId: Int, iccid: String?) async throws -> PaymentData` |
 
 ### PromoCodeRepository
 
@@ -1222,6 +1223,7 @@ Enum.
 | `auto_top_up` | `Bool?` | `auto_top_up` |
 | `save_payment_method` | `Bool?` | `save_payment_method` |
 | `loyalty_points_amount` | `Double?` | `loyalty_points_amount` |
+| `stored_payment_method` | `String?` | `stored_payment_method` |
 
 ### `PaymentResponse`
 
