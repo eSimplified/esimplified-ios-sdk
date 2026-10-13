@@ -297,6 +297,7 @@ extension NetworkSuite {
         let captured = MockURLProtocol.capturedRequests.first
         #expect(captured?.httpMethod == "GET")
         #expect(captured?.url?.absoluteString.hasSuffix("/api/v2/customer/payment-methods/") == true)
+        #expect(captured?.value(forHTTPHeaderField: "Authorization") == "Bearer a")
     }
 
     // MARK: - PromoCode
