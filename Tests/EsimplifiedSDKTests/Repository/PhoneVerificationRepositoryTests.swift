@@ -114,6 +114,44 @@ extension NetworkSuite {
         #expect(session.tokenRefreshedCalls.isEmpty)
     }
 
+    @Test("Phone: a 403 phone_range_burst on the OTP send is returned after one request and no refresh")
+    func phoneRangeBurstIsNotReplayed() async throws {
+        try await assertCodedForbiddenIsNotReplayed(code: "phone_range_burst")
+    }
+
+    @Test("Phone: a 403 phone_change_locked on the OTP send is returned after one request and no refresh")
+    func phoneChangeLockedIsNotReplayed() async throws {
+        try await assertCodedForbiddenIsNotReplayed(code: "phone_change_locked")
+    }
+
+    private func assertCodedForbiddenIsNotReplayed(code: String) async throws {
+        MockURLProtocol.reset()
+        let detail = "We can't send a code to this number right now."
+        MockURLProtocol.handler = MockSession.jsonResponse(
+            statusCode: 403,
+            json: #"{"detail":"\#(detail)","code":"\#(code)"}"#
+        )
+        let config = SdkConfig(environment: .staging, clientName: "acme", clientId: "id", clientSecret: "secret")
+        let session = RecordingSessionProvider(
+            initial: .authenticated(accessToken: "a", refreshToken: "r", expiresAt: Date().addingTimeInterval(3600))
+        )
+        let client = HTTPClient(config: config, sessionProvider: session, session: MockSession.make())
+        let repo = PhoneVerificationRepositoryImpl(client: client)
+
+        do {
+            _ = try await repo.sendCode(phoneNumber: "+27821234567", channel: .sms)
+            Issue.record("expected a throw")
+        } catch let error as SdkError {
+            #expect(error.statusCode == 403)
+            #expect(error.apiCode == code)
+            #expect(error.errorDescription == detail)
+        }
+        #expect(MockURLProtocol.capturedRequests.count == 1, "a server decision must not be replayed")
+        #expect(session.tokenRefreshedCalls.isEmpty)
+        #expect(session.authenticationFailedCalls == 0)
+        #expect(session.getAccessToken() == "a")
+    }
+
     @Test("Phone: a plain 403 still refreshes and retries")
     func plain403StillRefreshes() async throws {
         MockURLProtocol.reset()
