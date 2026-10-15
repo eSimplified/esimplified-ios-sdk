@@ -68,8 +68,9 @@ public struct PaymentRequest: Encodable {
     public var auto_top_up: Bool?
     public var save_payment_method: Bool?
     public var loyalty_points_amount: Double?
+    public var stored_payment_method: String?
 
-    public init(type: TransactionType, payment_method: PaymentMethod = .stripeIntent, package_type_id: String, iccid: String? = nil, coupon_id: String? = nil, customer: CustomerEmail, auto_top_up: Bool? = nil, save_payment_method: Bool? = nil, loyalty_points_amount: Double? = nil) {
+    public init(type: TransactionType, payment_method: PaymentMethod = .stripeIntent, package_type_id: String, iccid: String? = nil, coupon_id: String? = nil, customer: CustomerEmail, auto_top_up: Bool? = nil, save_payment_method: Bool? = nil, loyalty_points_amount: Double? = nil, stored_payment_method: String? = nil) {
         self.type = type
         self.payment_method = payment_method
         self.package_type_id = package_type_id
@@ -79,6 +80,33 @@ public struct PaymentRequest: Encodable {
         self.auto_top_up = auto_top_up
         self.save_payment_method = save_payment_method
         self.loyalty_points_amount = loyalty_points_amount
+        self.stored_payment_method = stored_payment_method
+    }
+}
+
+// MARK: Saved Payment Method
+
+public struct SavedPaymentMethod: Codable, Equatable {
+    public let paymentMethodID: String
+    public let cardBrand: String
+    public let cardLast4: String
+    public let cardExpMonth: Int?
+    public let cardExpYear: Int?
+
+    public init(paymentMethodID: String, cardBrand: String, cardLast4: String, cardExpMonth: Int? = nil, cardExpYear: Int? = nil) {
+        self.paymentMethodID = paymentMethodID
+        self.cardBrand = cardBrand
+        self.cardLast4 = cardLast4
+        self.cardExpMonth = cardExpMonth
+        self.cardExpYear = cardExpYear
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case paymentMethodID = "payment_method_id"
+        case cardBrand = "card_brand"
+        case cardLast4 = "card_last4"
+        case cardExpMonth = "card_exp_month"
+        case cardExpYear = "card_exp_year"
     }
 }
 
