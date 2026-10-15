@@ -173,7 +173,7 @@ public protocol SessionProvider {
 
 Pass either to `EsimplifiedSdk.initialize` as `storageProvider:` or `sessionProvider:`. Supply neither and the SDK uses its in-memory defaults, so the customer is signed out on every cold launch.
 
-Token refresh is automatic: an expiring access token is refreshed before the request goes out, and a 401 triggers one refresh-and-retry. Concurrent calls share a single refresh rather than racing. A rejected refresh token ends the session; a network failure during refresh does not.
+Token refresh is automatic: an expiring access token is refreshed before the request goes out, and a 401, or a 403 with no `code` in the body, triggers one refresh-and-retry. A 403 whose body carries a `code` is a server decision and is thrown back after a single request, with no refresh. Concurrent calls share a single refresh rather than racing. A rejected refresh token ends the session; a network failure during refresh does not.
 
 ## 6. Making your first call
 
@@ -296,7 +296,7 @@ When the API names the reason for a failure it sends a machine-readable `code` i
 
 The token endpoint reports an unverified email as `invalid_grant` with the description "Email not verified, new verification email sent."; `error.isEmailNotVerified` recognises that (and a future `email_not_verified` code) so you can show the code entry instead of a login error.
 
-A `403` whose code is `phone_verification_required` is a business rule, not a session problem, so the SDK does not refresh the token for it; it is thrown straight back so you can run the phone verification step and retry.
+A `403` whose body carries a `code` (for example `phone_verification_required` or `redemption_blocked`) is a business rule, not a session problem, so the SDK does not refresh the token for it and does not resend the request; it is thrown straight back after one request so you can act on the code. Some of these rejections are counted by the server, which is why the SDK never replays them.
 
 Two descriptions, and the difference matters: **`errorDescription`** is safe to show a customer, **`debugDescription`** carries the technical detail — for a decoding failure it names the field and its coding path. Log the second, display the first.
 
