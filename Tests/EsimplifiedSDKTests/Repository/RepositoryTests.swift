@@ -314,7 +314,8 @@ extension NetworkSuite {
         #expect(captured?.httpMethod == "POST")
         #expect(captured?.url?.absoluteString.hasSuffix("/api/v2/payments/") == true)
         #expect(captured?.value(forHTTPHeaderField: "Authorization") == "Bearer a")
-        let body = try #require(MockURLProtocol.capturedBodies.first ?? nil)
+        let firstBody: Data? = MockURLProtocol.capturedBodies.first ?? nil
+        let body = try #require(firstBody)
         let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
         #expect(json["stored_payment_method"] as? String == "pm_1")
         #expect(json["payment_method"] as? String == "stripe_intent")
