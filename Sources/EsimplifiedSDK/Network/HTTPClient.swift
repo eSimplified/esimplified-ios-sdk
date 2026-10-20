@@ -259,7 +259,7 @@ actor HTTPClient {
 
     private func shouldRefreshAndRetry(statusCode: Int, requiresAuth: Bool, request: URLRequest, data: Data) -> Bool {
         if requiresAuth {
-            if statusCode == 403, ApiErrorMessage.code(data) == ApiErrorCode.phoneVerificationRequired.rawValue {
+            if statusCode == 403, ApiErrorMessage.code(data) != nil {
                 return false
             }
             return statusCode == 401 || statusCode == 403

@@ -504,11 +504,12 @@ The SDK delegates token persistence to the `SessionProvider` protocol. The consu
 The `HTTPClient` handles token refresh transparently:
 
 1. Every authenticated API request includes a `Bearer` token
-2. If the API returns `401` or `403`, the SDK automatically:
+2. If the API returns `401`, or `403` with no `code` in the body, the SDK automatically:
    - Sends a refresh token request to `POST /auth/token/` (grant_type=refresh_token)
    - Updates the stored tokens via `SessionProvider.saveAuthState()`
    - Retries the original request with the new access token
 3. If the refresh also fails, `SdkError.authenticationRequired` is thrown
+4. A `403` whose body carries a `code` is a server decision (for example `phone_verification_required` or `redemption_blocked`), not a session problem. It is thrown to the caller after exactly one request, with no refresh and no retry, so a rejection that the server counts is never counted twice
 
 The SDK also adds:
 - `Authorization: Basic {base64(clientId:clientSecret)}` for unauthenticated requests
@@ -626,7 +627,7 @@ The SDK parses backend error responses differently based on the endpoint:
 
 `SdkError.networkError.message` always contains the best available message — `error_description` for auth errors, `detail` for API errors, falling back to the raw `error` code if neither is present.
 
-When the body carries a `code` (for example `invalid_code`, `code_expired`, `phone_verification_required`) it is exposed as `error.apiCode`, and `error.hasApiCode(.invalidCode)` compares against the `ApiErrorCode` enum. A `403` with code `phone_verification_required` is thrown as-is, without a token refresh, because a new token cannot fix it.
+When the body carries a `code` (for example `invalid_code`, `code_expired`, `phone_verification_required`) it is exposed as `error.apiCode`, and `error.hasApiCode(.invalidCode)` compares against the `ApiErrorCode` enum. Any `403` that carries a `code` (such as `phone_verification_required` or `redemption_blocked`) is thrown as-is after a single request, without a token refresh, because a new token cannot change the server's decision and a replay could be counted against the customer.
 
 ### Handling errors in the app
 
