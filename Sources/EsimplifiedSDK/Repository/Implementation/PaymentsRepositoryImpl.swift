@@ -52,4 +52,29 @@ final class PaymentsRepositoryImpl: PaymentsRepositoryType {
             body: quoteRequest
         )
     }
+
+    func fetchPaymentMethods() async throws -> [SavedPaymentMethod] {
+        try await client.fetch(endpoint: .paymentMethods, method: .GET)
+    }
+
+    func payWithStoredPaymentMethod(
+        _ paymentMethodID: String,
+        transactionType: TransactionType,
+        packageTypeId: Int,
+        iccid: String?
+    ) async throws -> PaymentData {
+        let paymentBody = PaymentRequest(
+            type: transactionType,
+            package_type_id: String(packageTypeId),
+            iccid: iccid,
+            customer: CustomerEmail(email: sessionProvider.getUserEmail() ?? ""),
+            stored_payment_method: paymentMethodID
+        )
+        let response: PaymentResponse = try await client.fetch(
+            endpoint: .payments,
+            method: .POST,
+            body: paymentBody
+        )
+        return response.paymentData
+    }
 }

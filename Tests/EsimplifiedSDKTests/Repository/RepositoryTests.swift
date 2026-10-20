@@ -283,6 +283,48 @@ extension NetworkSuite {
         #expect(url?.path.contains("/payments/quote") == true)
     }
 
+    @Test("Payments: fetchPaymentMethods GETs /customer/payment-methods/ and decodes the saved cards")
+    func paymentsSavedMethods() async throws {
+        MockURLProtocol.reset()
+        let json = #"[{"payment_method_id":"pm_1","card_brand":"visa","card_last4":"4242","card_exp_month":2,"card_exp_year":2044}]"#
+        MockURLProtocol.handler = MockSession.jsonResponse(json: json)
+
+        let (client, _, session, _) = makeRepoEnv()
+        let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
+        let methods = try await repo.fetchPaymentMethods()
+
+        #expect(methods == [SavedPaymentMethod(paymentMethodID: "pm_1", cardBrand: "visa", cardLast4: "4242", cardExpMonth: 2, cardExpYear: 2044)])
+        let captured = MockURLProtocol.capturedRequests.first
+        #expect(captured?.httpMethod == "GET")
+        #expect(captured?.url?.absoluteString.hasSuffix("/api/v2/customer/payment-methods/") == true)
+        #expect(captured?.value(forHTTPHeaderField: "Authorization") == "Bearer a")
+    }
+
+    @Test("Payments: payWithStoredPaymentMethod POSTs /payments with stored_payment_method and no save or auto top-up flags")
+    func paymentsStoredMethod() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"detail":"ok","data":{"order_id":"o9"}}"#)
+
+        let (client, _, session, _) = makeRepoEnv()
+        let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
+        let data = try await repo.payWithStoredPaymentMethod("pm_1", transactionType: .topUp, packageTypeId: 42, iccid: "8901")
+
+        #expect(data.orderID == "o9")
+        let captured = MockURLProtocol.capturedRequests.first
+        #expect(captured?.httpMethod == "POST")
+        #expect(captured?.url?.absoluteString.hasSuffix("/api/v2/payments/") == true)
+        #expect(captured?.value(forHTTPHeaderField: "Authorization") == "Bearer a")
+        let firstBody: Data? = MockURLProtocol.capturedBodies.first ?? nil
+        let body = try #require(firstBody)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["stored_payment_method"] as? String == "pm_1")
+        #expect(json["payment_method"] as? String == "stripe_intent")
+        #expect(json["package_type_id"] as? String == "42")
+        #expect(json["iccid"] as? String == "8901")
+        #expect(json["auto_top_up"] == nil)
+        #expect(json["save_payment_method"] == nil)
+    }
+
     // MARK: - PromoCode
 
     @Test("PromoCode: applyPromocode hits promo_code endpoint")

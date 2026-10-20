@@ -418,13 +418,15 @@ Access: `sdk.ordersRepository`
 
 ### PaymentsRepository
 
-Creating a payment and quoting a loyalty-point spend.  
+Creating a payment, quoting a loyalty-point spend, listing saved cards and paying with one.  
 Access: `sdk.paymentsRepository`
 
 | Method | Signature |
 |---|---|
 | `fetchPayment` | `func fetchPayment(transactionType: TransactionType, packageTypeId: Int, iccid: String?, autoTopUp: Bool, savePaymentDetail: Bool, loyaltyPointsAmount: Double?) async throws -> PaymentData` |
 | `sendKredsQuote` | `func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse` |
+| `fetchPaymentMethods` | `func fetchPaymentMethods() async throws -> [SavedPaymentMethod]` |
+| `payWithStoredPaymentMethod` | `func payWithStoredPaymentMethod(_ paymentMethodID: String, transactionType: TransactionType, packageTypeId: Int, iccid: String?) async throws -> PaymentData` |
 
 ### PromoCodeRepository
 
@@ -1221,6 +1223,7 @@ Enum.
 | `auto_top_up` | `Bool?` | `auto_top_up` |
 | `save_payment_method` | `Bool?` | `save_payment_method` |
 | `loyalty_points_amount` | `Double?` | `loyalty_points_amount` |
+| `stored_payment_method` | `String?` | `stored_payment_method` |
 
 ### `PaymentResponse`
 
@@ -1390,6 +1393,16 @@ Enum. Matched ignoring case, so `global_esim` and `GLOBAL_ESIM` are both `global
 | `unknown` | `unknown` |
 | `discount` | `DISCOUNT` |
 | `global` | `GLOBAL_ESIM` |
+
+### `SavedPaymentMethod`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `paymentMethodID` | `String` | `payment_method_id` |
+| `cardBrand` | `String` | `card_brand` |
+| `cardLast4` | `String` | `card_last4` |
+| `cardExpMonth` | `Int?` | `card_exp_month` |
+| `cardExpYear` | `Int?` | `card_exp_year` |
 
 ### `ServerErrorResponse`
 

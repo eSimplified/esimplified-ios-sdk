@@ -27,6 +27,7 @@ enum Endpoints: String {
     case promoCode = "customer/promotions/promo_code"
     case checkStock = "check-stock"
     case paymentsQuote = "payments/quote"
+    case paymentMethods = "customer/payment-methods"
     case visaIframe = "customer/promotions/iframe"
     case validateVisa = "customer/promotions/validate"
     case storeReview = "reviews"
