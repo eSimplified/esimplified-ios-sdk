@@ -155,6 +155,29 @@ let order = try await sdk.ordersRepository.fetchOrder(orderUUID: payment.orderID
 await sdk.ordersRepository.trackedOrder(orderUUID: payment.orderID!)
 ```
 
+### Pay with SmartPay (hosted checkout)
+
+Start the payment with a `redirectUrl` on the tenant website host, open the returned `uri` in a secure system browser (for example `ASWebAuthenticationSession`), keep `payment.orderId`, then wait for the order to settle.
+
+```swift
+let payment = try await sdk.paymentsRepository.startSmartPayPayment(
+    transactionType: .buy,
+    packageTypeId: packages.first!.packageTypeId,
+    iccid: nil,
+    loyaltyPointsAmount: nil,
+    redirectUrl: "https://your-tenant-host.example/checkout/return"
+)
+let checkoutURL = URL(string: payment.uri!)!
+
+switch await sdk.ordersRepository.awaitSettlement(orderUUID: payment.orderId!) {
+case .fulfilled(let order): print(order.qrCode)
+case .failed(let order): print(order.paymentStatus as Any)
+case .pending: break
+}
+```
+
+`awaitSettlement` polls every 3 seconds for up to 120 seconds. `.pending` means the order had not settled yet, so check it again later.
+
 ## SDK Structure
 
 ```
@@ -234,13 +257,14 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `PackageDetail` | Detailed package info with activation status and expiry |
 | `Order` | Order summary (number, UUID, pricing, eSIM, payment method, loyalty) |
 | `OrderDetail` | Full order with QR code, activation code, SM-DP+ address, package |
+| `OrderSettlement` | Enum returned by `awaitSettlement`: fulfilled(OrderDetail), failed(OrderDetail), pending(OrderDetail?) |
 | `OrdersResponse` | Paginated order list response |
 | `EsimInfo` | Basic eSIM metadata (ICCID, matching ID, SM-DP+ address) |
 | `PurchaseCountry` | Country info on an order (ISO, name, flag, region) |
 | `PaymentData` | Payment intent result (URI, order ID, ephemeral key, publishable key) |
 | `PaymentResponse` | Payment response wrapper |
 | `PaymentRequest` | Payment intent creation payload |
-| `PaymentMethod` | Enum: stripeIntent, stripeCheckout, agentPayment, complimentary, voucher, splitPayment, paidWithPoints |
+| `PaymentMethod` | Enum: stripeIntent, stripeCheckout, smartpay, agentPayment, complimentary, voucher, splitPayment, paidWithPoints |
 | `TransactionType` | Enum: buy, topUp |
 | `CustomerEmail` | Email-only payload for payment requests |
 | `PromoCodeResponse` | Promo code result (valid, code, discount percentage, product type) |
