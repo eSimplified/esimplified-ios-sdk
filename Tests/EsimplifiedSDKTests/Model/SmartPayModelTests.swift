@@ -36,4 +36,21 @@ struct SmartPayModelTests {
         let without = try JSONDecoder().decode(OrderDetail.self, from: Data(OrderDetailJSON.make(paymentStatus: nil).utf8))
         #expect(without.paymentStatus == nil)
     }
+
+    @Test("OrderStatusProbe decodes a pending order without eSIM fields")
+    func probeDecodesPendingOrder() throws {
+        let probe = try JSONDecoder().decode(OrderStatusProbe.self, from: Data(PendingOrderJSON.make().utf8))
+        #expect(probe.orderStatus == "pending")
+        #expect(probe.paymentStatus == nil)
+        #expect(probe.iccid == nil)
+        #expect(!probe.isSettlementFailure)
+        #expect(!probe.isFulfilled)
+    }
+
+    @Test("A blank payment_status falls back to order_status")
+    func blankPaymentStatusFallsBack() {
+        #expect(SettlementRules.isFulfilled(orderStatus: "success", paymentStatus: "  ", iccid: "89"))
+        #expect(SettlementRules.isFailure(orderStatus: "cancelled", paymentStatus: ""))
+        #expect(!SettlementRules.isFulfilled(orderStatus: "success", paymentStatus: "", iccid: ""))
+    }
 }

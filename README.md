@@ -170,12 +170,16 @@ let payment = try await sdk.paymentsRepository.startSmartPayPayment(
 
 switch await sdk.ordersRepository.awaitSettlement(orderUUID: payment.orderID!) {
 case .fulfilled(let order): print(order.qrCode ?? "")
-case .failed(let order): print(order.paymentStatus as Any)
+case .failed(let order): print(order?.paymentStatus as Any)
 case .pending: break
 }
 ```
 
-`awaitSettlement` polls every 3 seconds for up to 120 seconds. `.pending` means the order had not settled yet, so check it again later.
+`awaitSettlement` checks the order's status roughly every 3 seconds for about 2 minutes and returns `.pending` if it is still unsettled, so check it again later.
+
+- `.fulfilled(order)`: `isFulfilled` is true, meaning the iccid is present and not empty and `payment_status` (or `order_status` when `payment_status` is missing or blank) is `success`.
+- `.failed(order)`: `payment_status` or `order_status` is `failed`, `cancelled`, `canceled`, `declined` or `expired`. `order` is optional: it is `nil` when the failed order cannot be read as a full `OrderDetail`.
+- `.pending`: still unsettled when polling stopped.
 
 ## SDK Structure
 
@@ -256,7 +260,7 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `PackageDetail` | Detailed package info with activation status and expiry |
 | `Order` | Order summary (number, UUID, pricing, eSIM, payment method, loyalty) |
 | `OrderDetail` | Full order with QR code, activation code, SM-DP+ address, package |
-| `OrderSettlement` | Enum returned by `awaitSettlement`: fulfilled(OrderDetail), failed(OrderDetail), pending(OrderDetail?) |
+| `OrderSettlement` | Enum returned by `awaitSettlement`: fulfilled(OrderDetail), failed(OrderDetail?), pending(OrderDetail?) |
 | `OrdersResponse` | Paginated order list response |
 | `EsimInfo` | Basic eSIM metadata (ICCID, matching ID, SM-DP+ address) |
 | `PurchaseCountry` | Country info on an order (ISO, name, flag, region) |
@@ -383,7 +387,7 @@ Order history and tracking.
 | `trackedOrder` | `func trackedOrder(orderUUID: String) async` | Mark an order's conversion as tracked |
 | `fetchOrdersPageResult` | `func fetchOrdersPageResult(limit: Int, offset: Int, withLoyaltyPoints: Bool, forceRefresh: Bool = false) async -> RepositoryResult<OrdersPage>` | Fetch one page of orders |
 | `fetchInvoice` | `func fetchInvoice(orderUUID: String) async throws -> Data` | Download an order's invoice PDF |
-| `awaitSettlement` | `func awaitSettlement(orderUUID: String) async -> OrderSettlement` | Poll a hosted-checkout order every 3 s for up to 120 s until it is fulfilled or failed |
+| `awaitSettlement` | `func awaitSettlement(orderUUID: String) async -> OrderSettlement` | Check a hosted-checkout order's status roughly every 3 s for about 2 minutes until it is fulfilled or failed, else return `pending` |
 
 ### PaymentsRepository
 

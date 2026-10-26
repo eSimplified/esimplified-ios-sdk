@@ -251,12 +251,12 @@ let payment = try await sdk.paymentsRepository.startSmartPayPayment(
 
 switch await sdk.ordersRepository.awaitSettlement(orderUUID: payment.orderID!) {
 case .fulfilled(let order): print(order.activationCode ?? "")
-case .failed(let order): print(order.paymentStatus ?? order.orderStatus)
+case .failed(let order): print(order?.paymentStatus ?? order?.orderStatus ?? "")
 case .pending: break
 }
 ```
 
-`awaitSettlement` polls `fetchOrder` every 3 seconds for up to 120 seconds and returns an [`OrderSettlement`](#ordersettlement). `.pending` means the order had not settled yet, so check it again later. The `awaitSettlement(orderUUID:interval:timeout:sleep:)` overload takes your own interval, deadline and sleep function; if the sleep throws (for example because the task was cancelled) polling stops and it returns `.pending`.
+`awaitSettlement` checks the order's status roughly every 3 seconds for about 2 minutes and returns an [`OrderSettlement`](#ordersettlement), or `.pending` if the order is still unsettled, so check it again later. Each check reads only the order's status; the full `OrderDetail` is fetched once the order has settled. The `awaitSettlement(orderUUID:interval:timeout:sleep:)` overload takes your own interval, deadline and sleep function; if the sleep throws (for example because the task was cancelled) polling stops and it returns `.pending`.
 
 ## 6c. Installing the eSIM
 
@@ -1135,7 +1135,7 @@ Enum.
 | `loyaltyPointsEarned` | `LoyaltyPointsDetail?` | `points_earned` |
 | `loyaltyPointsSpent` | `LoyaltyPointsDetail?` | `points_spent` |
 
-`isSettlementFailure` is `true` when `paymentStatus` or `orderStatus` is `failed`, `cancelled`, `canceled`, `declined` or `expired`. `isFulfilled` is `true` when `iccid` is present and `paymentStatus` (or `orderStatus` when there is no `paymentStatus`) is `success`.
+`isSettlementFailure` is `true` when `paymentStatus` or `orderStatus` is `failed`, `cancelled`, `canceled`, `declined` or `expired`. `isFulfilled` is `true` when `iccid` is present and not empty and `paymentStatus` (or `orderStatus` when `paymentStatus` is missing or blank) is `success`. A blank `paymentStatus` also counts as missing for `isSettlementFailure`.
 
 ### `OrderSettlement`
 
@@ -1144,8 +1144,8 @@ Enum returned by `awaitSettlement`.
 | Case | Meaning |
 |---|---|
 | `fulfilled(OrderDetail)` | Paid and provisioned: the order has an ICCID |
-| `failed(OrderDetail)` | The payment or order reached a terminal failure (see `isSettlementFailure`) |
-| `pending(OrderDetail?)` | Not settled before the deadline, with the last order fetched if any |
+| `failed(OrderDetail?)` | The payment or order reached a terminal failure (see `isSettlementFailure`); the order is `nil` when it cannot be read as a full `OrderDetail` |
+| `pending(OrderDetail?)` | Still unsettled when polling stopped; the SDK's repository returns `nil` here |
 
 ### `OrdersResponse`
 
