@@ -21,6 +21,7 @@ public struct OrderDetail: Codable {
     public let orderType: String
     public let orderDate: String
     public let orderStatus: String
+    public let paymentStatus: String?
     public let purchasePrice: String
     public let transactionId: String?
     public let purchaseCurrency: String
@@ -53,6 +54,7 @@ public struct OrderDetail: Codable {
         case orderType = "order_type"
         case orderDate = "order_date"
         case orderStatus = "order_status"
+        case paymentStatus = "payment_status"
         case purchasePrice = "purchase_price"
         case transactionId = "transaction_id"
         case purchaseCurrency = "purchase_currency"
@@ -85,6 +87,7 @@ public struct OrderDetail: Codable {
         orderType: String,
         orderDate: String,
         orderStatus: String,
+        paymentStatus: String? = nil,
         purchasePrice: String,
         transactionId: String? = nil,
         purchaseCurrency: String,
@@ -117,6 +120,7 @@ public struct OrderDetail: Codable {
         self.orderType = orderType
         self.orderDate = orderDate
         self.orderStatus = orderStatus
+        self.paymentStatus = paymentStatus
         self.purchasePrice = purchasePrice
         self.transactionId = transactionId
         self.purchaseCurrency = purchaseCurrency
@@ -152,6 +156,7 @@ public struct OrderDetail: Codable {
         orderType = try container.decode(String.self, forKey: .orderType)
         orderDate = try container.decode(String.self, forKey: .orderDate)
         orderStatus = try container.decode(String.self, forKey: .orderStatus)
+        paymentStatus = try container.decodeIfPresent(String.self, forKey: .paymentStatus)
         purchasePrice = try container.decode(String.self, forKey: .purchasePrice)
         transactionId = try container.decodeIfPresent(String.self, forKey: .transactionId)
         purchaseCurrency = try container.decode(String.self, forKey: .purchaseCurrency)
