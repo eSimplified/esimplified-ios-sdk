@@ -26,7 +26,7 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
         let promoCode = promoCode.flatMap { $0.isEmpty ? nil : $0 }
         var cacheKey = "packages_\(countryCode ?? "")_\(countryNameSlug)"
         if let promoCode {
-            cacheKey += "_promo_\(promoCode)"
+            cacheKey += "|promo=\(promoCode)"
         }
         if !forceRefresh, let cached: PackageResponse = await cache.get(cacheKey) {
             return RepositoryResult(value: cached)

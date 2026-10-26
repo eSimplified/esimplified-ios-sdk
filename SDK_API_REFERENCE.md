@@ -1225,7 +1225,7 @@ Enum.
 | `customerID` | `String?` | `customer_id` |
 | `publishableKey` | `String?` | `publishable_key` |
 
-`publishableKey` is nil until the backend starts sending it with the setup intent; until then, take Stripe's publishable key from `PaymentData`.
+Stripe cannot confirm a SetupIntent without a publishable key, and the SDK does not configure Stripe. The backend sends `publishable_key` with the setup intent; hand it to Stripe (`STPAPIClient.shared.publishableKey`) before presenting the sheet. It is decoded as optional so an older backend does not fail decoding, and in that case the app must already have configured Stripe with a key of its own, for example from an earlier `PaymentData`.
 
 ### `PaymentMethodVerificationRequest`
 
