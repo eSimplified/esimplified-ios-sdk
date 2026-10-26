@@ -118,7 +118,7 @@ _ = try await sdk.authRepository.login(email: email, password: password)
 // 4. Create a Stripe payment intent
 let payment = try await sdk.paymentsRepository.fetchPayment(
     transactionType: .buy,
-    packageTypeId: packages.first!.packageTypeId,
+    packageTypeId: packages.first!.packageTypeID,
     iccid: nil,
     autoTopUp: false,
     savePaymentDetail: true,
@@ -127,7 +127,7 @@ let payment = try await sdk.paymentsRepository.fetchPayment(
 // payment.uri → Stripe client secret. Confirm via Stripe SDK in your app.
 
 // 5. Once Stripe confirms, fetch the order to get the eSIM QR code
-let order = try await sdk.ordersRepository.fetchOrder(orderUUID: payment.orderId!)
+let order = try await sdk.ordersRepository.fetchOrder(orderUUID: payment.orderID!)
 // order.qrCode → string to render as QR
 // order.activationCode → manual activation code
 
@@ -137,19 +137,18 @@ await sdk.ordersRepository.trackedOrder(orderUUID: order.orderUUID)
 
 ### Pay with SmartPay (hosted checkout)
 
-Start the payment with a `redirectUrl` on the tenant website host, open the returned `uri` in a secure system browser (for example `ASWebAuthenticationSession`), keep `payment.orderId`, then wait for the order to settle.
+Start the payment with a `redirectUrl` (`https` on the tenant website host, 50 characters or fewer), open `payment.uri` in `ASWebAuthenticationSession` or another secure system browser, keep `payment.orderID`, then wait for the order to settle.
 
 ```swift
 let payment = try await sdk.paymentsRepository.startSmartPayPayment(
     transactionType: .buy,
-    packageTypeId: packages.first!.packageTypeId,
+    packageTypeId: packages.first!.packageTypeID,
     iccid: nil,
     loyaltyPointsAmount: nil,
     redirectUrl: "https://your-tenant-host.example/checkout/return"
 )
-let checkoutURL = URL(string: payment.uri!)!
 
-switch await sdk.ordersRepository.awaitSettlement(orderUUID: payment.orderId!) {
+switch await sdk.ordersRepository.awaitSettlement(orderUUID: payment.orderID!) {
 case .fulfilled(let order): print(order.qrCode)
 case .failed(let order): print(order.paymentStatus as Any)
 case .pending: break
