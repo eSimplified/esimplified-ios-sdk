@@ -326,8 +326,8 @@ eSIM data package browsing and stock checks.
 
 | Method | Signature | Description |
 |---|---|---|
-| `fetchPackagesForCountry` | `func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, promoCode: String?, forceRefresh: Bool = false) async -> PackageResponse?` | Fetch packages for a destination, priced with a promo code when `promoCode` is given (the overload without `promoCode` still exists) |
-| `fetchPackagesForCountryResult` | `func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, promoCode: String?, forceRefresh: Bool = false) async -> RepositoryResult<PackageResponse?>` | Same, with the failure reported |
+| `fetchPackagesForCountry` | `func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, promoCode: String? = nil, forceRefresh: Bool = false) async -> PackageResponse?` | Fetch packages for a destination, priced with a promo code when `promoCode` is given |
+| `fetchPackagesForCountryResult` | `func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, promoCode: String? = nil, forceRefresh: Bool = false) async -> RepositoryResult<PackageResponse?>` | Same, with the failure reported |
 | `fetchPackagesForTopUpEsim` | `func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool = false) async -> [Package]` | Fetch top-up packages for an existing eSIM |
 | `fetchPackagesForTopUpEsimResult` | `func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool = false) async -> RepositoryResult<[Package]>` | Same, with the failure reported |
 | `fetchCheckStockForPackage` | `func fetchCheckStockForPackage(packageTypeId: Int, forceRefresh: Bool = false) async -> CheckStockResponse?` | Check if a specific package is in stock |

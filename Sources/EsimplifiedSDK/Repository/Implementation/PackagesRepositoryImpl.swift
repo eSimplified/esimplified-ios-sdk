@@ -55,20 +55,6 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
         }
     }
 
-    func fetchPackagesForCountry(
-        countryCode: String?,
-        countryNameSlug: String,
-        forceRefresh: Bool = false,
-        cacheTTL: TimeInterval = 3600
-    ) async -> PackageResponse? {
-        await fetchPackagesForCountryResult(
-            countryCode: countryCode,
-            countryNameSlug: countryNameSlug,
-            forceRefresh: forceRefresh,
-            cacheTTL: cacheTTL
-        ).value
-    }
-
     func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 3600) async -> RepositoryResult<[Package]> {
         let cacheKey = "packages_topup_\(iccid)"
         if !forceRefresh, let cached: [Package] = await cache.get(cacheKey) {

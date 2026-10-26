@@ -374,13 +374,13 @@ Access: `sdk.packagesRepository`
 | Method | Signature |
 |---|---|
 | `fetchCheckStockForPackage` | `func fetchCheckStockForPackage(packageTypeId: Int, forceRefresh: Bool = false) async -> CheckStockResponse?` |
-| `fetchPackagesForCountry` | `func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, forceRefresh: Bool = false) async -> PackageResponse?` |
-| `fetchPackagesForCountryResult` | `func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, forceRefresh: Bool = false) async -> RepositoryResult<PackageResponse?>` |
+| `fetchPackagesForCountry` | `func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, promoCode: String? = nil, forceRefresh: Bool = false) async -> PackageResponse?` |
+| `fetchPackagesForCountryResult` | `func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, promoCode: String? = nil, forceRefresh: Bool = false) async -> RepositoryResult<PackageResponse?>` |
 | `fetchPackagesForTopUpEsim` | `func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool = false) async -> [Package]` |
 | `fetchPackagesForTopUpEsimResult` | `func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool = false) async -> RepositoryResult<[Package]>` |
 | `invalidateCache` | `func invalidateCache() async` |
 
-`fetchPackagesForCountry` and `fetchPackagesForCountryResult` also accept a `promoCode: String?` after `countryNameSlug`, which prices the packages with that promo code (`promo_code` is sent only when it is non-empty). Promo-coded lists are cached separately from the plain list for the same destination.
+`promoCode` prices the packages with that promo code (`promo_code` is sent only when it is non-empty). Promo-coded lists are cached separately from the plain list for the same destination.
 
 ### EsimsRepository
 
