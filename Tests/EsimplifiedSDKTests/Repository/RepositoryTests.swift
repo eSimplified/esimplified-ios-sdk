@@ -197,6 +197,36 @@ extension NetworkSuite {
         #expect(captured?.url?.path.contains("/payments") == true)
     }
 
+    @Test("Payments: startSmartPayPayment POSTs /payments with smartpay and redirect_url")
+    func paymentsSmartPay() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(statusCode: 201, json: #"{"detail":"ok","data":{"uri":"https://osim.stage.esimplified.io/api/v2/payments/smartpay/checkout/tok/","order_id":"o1","is_intent":false}}"#)
+        let (client, _, session, _) = makeRepoEnv()
+        let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
+        let data = try await repo.startSmartPayPayment(transactionType: .buy, packageTypeId: 46576, iccid: nil,
+                                                       loyaltyPointsAmount: nil, redirectUrl: "https://osim-preview.vercel.app/order")
+        #expect(data.orderID == "o1")
+        #expect(data.uri?.contains("/payments/smartpay/checkout/") == true)
+        let body = try #require(MockURLProtocol.capturedBodies.first ?? nil)
+        let json = try JSONSerialization.jsonObject(with: body) as? [String: Any]
+        #expect(json?["payment_method"] as? String == "smartpay")
+        #expect(json?["redirect_url"] as? String == "https://osim-preview.vercel.app/order")
+        #expect(json?["auto_top_up"] as? Bool == false)
+        #expect(json?["save_payment_method"] == nil)
+        #expect(json?["package_type_id"] as? String == "46576")
+    }
+
+    @Test("Payments: startSmartPayPayment default implementation throws 501")
+    func smartPayDefaultThrows() async {
+        struct Bare: PaymentsRepositoryType {
+            func fetchPayment(transactionType: TransactionType, packageTypeId: Int, iccid: String?, autoTopUp: Bool, savePaymentDetail: Bool, loyaltyPointsAmount: Double?) async throws -> PaymentData { PaymentData() }
+            func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse { fatalError() }
+        }
+        await #expect(throws: SdkError.self) {
+            _ = try await Bare().startSmartPayPayment(transactionType: .buy, packageTypeId: 1, iccid: nil, loyaltyPointsAmount: nil, redirectUrl: "https://x/order")
+        }
+    }
+
     @Test("Payments: sendKredsQuote hits /payments/quote")
     func paymentsKredsQuoteEndpoint() async throws {
         MockURLProtocol.reset()
