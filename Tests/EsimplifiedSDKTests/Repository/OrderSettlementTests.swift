@@ -22,6 +22,13 @@ private func order(_ orderStatus: String, _ paymentStatus: String?, iccid: Strin
     )
 }
 
+private final class SleepRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var recorded: [Duration] = []
+    var durations: [Duration] { lock.withLock { recorded } }
+    func record(_ duration: Duration) { lock.withLock { recorded.append(duration) } }
+}
+
 @Suite("OrderSettlement")
 struct OrderSettlementTests {
 
@@ -114,6 +121,50 @@ struct OrderSettlementTests {
         }
         #expect(last != nil)
         #expect(last?.orderStatus == "pending")
+        #expect(repo.calls == 1)
+    }
+
+    @Test("sleepsBetweenPolls")
+    func sleepsBetweenPolls() async {
+        let repo = ScriptedOrders([
+            .success(order("pending", "pending", iccid: nil)),
+            .success(order("pending", "pending", iccid: nil)),
+            .success(order("success", "success"))
+        ])
+        let recorder = SleepRecorder()
+        let result = await repo.awaitSettlement(
+            orderUUID: "order-1",
+            interval: .seconds(3),
+            timeout: .seconds(120),
+            sleep: { recorder.record($0) }
+        )
+        guard case .fulfilled = result else {
+            Issue.record("expected fulfilled, got \(result)")
+            return
+        }
+        #expect(repo.calls == 3)
+        #expect(recorder.durations.count == repo.calls - 1)
+        #expect(recorder.durations.allSatisfy { $0 == .seconds(3) })
+    }
+
+    @Test("cancelledSleepReturnsPending")
+    func cancelledSleepReturnsPending() async {
+        let repo = ScriptedOrders([
+            .success(order("pending", "pending", iccid: nil)),
+            .success(order("pending", "pending", iccid: nil)),
+            .success(order("success", "success"))
+        ])
+        let result = await repo.awaitSettlement(
+            orderUUID: "order-1",
+            interval: .seconds(3),
+            timeout: .seconds(120),
+            sleep: { _ in throw CancellationError() }
+        )
+        guard case .pending(let last) = result else {
+            Issue.record("expected pending, got \(result)")
+            return
+        }
+        #expect(last != nil)
         #expect(repo.calls == 1)
     }
 }

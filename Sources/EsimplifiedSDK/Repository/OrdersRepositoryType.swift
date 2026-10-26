@@ -54,7 +54,7 @@ public extension OrdersRepositoryType {
                 last = order
             }
             if Date() >= deadline { return .pending(last) }
-            try? await sleep(interval)
+            do { try await sleep(interval) } catch { return .pending(last) }
         }
     }
     func awaitSettlement(orderUUID: String) async -> OrderSettlement {
