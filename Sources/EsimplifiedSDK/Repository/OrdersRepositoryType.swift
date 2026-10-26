@@ -32,7 +32,8 @@ public extension OrdersRepositoryType {
         timeout: Duration,
         sleep: @Sendable (Duration) async throws -> Void
     ) async -> OrderSettlement {
-        let deadline = Date().addingTimeInterval(timeout.timeInterval)
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: timeout)
         var last: OrderDetail?
         while true {
             if let order = try? await fetchOrder(orderUUID: orderUUID, forceRefresh: true, cacheTTL: 0) {
@@ -40,7 +41,7 @@ public extension OrdersRepositoryType {
                 if order.isFulfilled { return .fulfilled(order) }
                 last = order
             }
-            if Date() >= deadline { return .pending(last) }
+            if clock.now >= deadline { return .pending(last) }
             do { try await sleep(interval) } catch { return .pending(last) }
         }
     }
@@ -51,12 +52,5 @@ public extension OrdersRepositoryType {
             timeout: .seconds(120),
             sleep: { try await Task.sleep(for: $0) }
         )
-    }
-}
-
-private extension Duration {
-    var timeInterval: TimeInterval {
-        let parts = components
-        return TimeInterval(parts.seconds) + TimeInterval(parts.attoseconds) / 1e18
     }
 }
