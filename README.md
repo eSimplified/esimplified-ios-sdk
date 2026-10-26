@@ -132,7 +132,7 @@ let order = try await sdk.ordersRepository.fetchOrder(orderUUID: payment.orderID
 // order.activationCode → manual activation code
 
 // 6. Confirm conversion tracking
-await sdk.ordersRepository.trackedOrder(orderUUID: order.orderUUID)
+await sdk.ordersRepository.trackedOrder(orderUUID: payment.orderID!)
 ```
 
 ### Pay with SmartPay (hosted checkout)
