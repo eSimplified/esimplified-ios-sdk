@@ -22,15 +22,54 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 3600
     ) async -> RepositoryResult<PackageResponse?> {
-        let cacheKey = "packages_\(countryCode ?? "")_\(countryNameSlug)"
+        await fetchCountryPackages(
+            countryCode: countryCode,
+            countryNameSlug: countryNameSlug,
+            promoCode: nil,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        )
+    }
+
+    func fetchPackagesForCountryResult(
+        countryCode: String?,
+        countryNameSlug: String,
+        promoCode: String?,
+        forceRefresh: Bool = false,
+        cacheTTL: TimeInterval = 3600
+    ) async -> RepositoryResult<PackageResponse?> {
+        await fetchCountryPackages(
+            countryCode: countryCode,
+            countryNameSlug: countryNameSlug,
+            promoCode: promoCode,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        )
+    }
+
+    private func fetchCountryPackages(
+        countryCode: String?,
+        countryNameSlug: String,
+        promoCode: String?,
+        forceRefresh: Bool,
+        cacheTTL: TimeInterval
+    ) async -> RepositoryResult<PackageResponse?> {
+        let promoCode = promoCode.flatMap { $0.isEmpty ? nil : $0 }
+        var cacheKey = "packages_\(countryCode ?? "")_\(countryNameSlug)"
+        if let promoCode {
+            cacheKey += "_promo_\(promoCode)"
+        }
         if !forceRefresh, let cached: PackageResponse = await cache.get(cacheKey) {
             return RepositoryResult(value: cached)
         }
-        let parameters = [
+        var parameters = [
             "country_code": countryCode ?? "",
             "country_name_slug": countryNameSlug,
             "reverse_order": "true"
         ]
+        if let promoCode {
+            parameters["promo_code"] = promoCode
+        }
         do {
             let response: PackageResponse = try await client.fetch(
                 endpoint: .packages,

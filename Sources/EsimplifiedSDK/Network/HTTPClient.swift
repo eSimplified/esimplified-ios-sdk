@@ -109,6 +109,9 @@ actor HTTPClient {
             }
 
             do {
+                if data.isEmpty, let empty = EmptyResponse() as? T {
+                    return empty
+                }
                 let decoder = JSONDecoder()
                 return try decoder.decode(T.self, from: data)
             } catch {
@@ -368,6 +371,15 @@ struct AnyEncodable: Encodable {
     func encode(to encoder: Encoder) throws {
         try encode(encoder)
     }
+}
+
+// MARK: - Empty Response
+
+struct EmptyResponse: Decodable {
+
+    init() {}
+
+    init(from decoder: Decoder) throws {}
 }
 
 // MARK: - Offline Detection

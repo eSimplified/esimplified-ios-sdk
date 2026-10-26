@@ -240,6 +240,8 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `PaymentData` | Payment intent result (URI, order ID, ephemeral key, publishable key) |
 | `PaymentResponse` | Payment response wrapper |
 | `PaymentRequest` | Payment intent creation payload |
+| `PaymentMethodSetupIntent` | Stripe setup intent for adding a card (client secret, customer ID, publishable key) |
+| `PaymentMethodVerificationRequest` | Card verification payload (payment method ID, discount code) |
 | `PaymentMethod` | Enum: stripeIntent, stripeCheckout, agentPayment, complimentary, voucher, splitPayment, paidWithPoints |
 | `TransactionType` | Enum: buy, topUp |
 | `CustomerEmail` | Email-only payload for payment requests |
@@ -324,7 +326,8 @@ eSIM data package browsing and stock checks.
 
 | Method | Signature | Description |
 |---|---|---|
-| `fetchPackagesForCountry` | `func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, forceRefresh: Bool = false) async -> PackageResponse?` | Fetch packages for a destination |
+| `fetchPackagesForCountry` | `func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, promoCode: String?, forceRefresh: Bool = false) async -> PackageResponse?` | Fetch packages for a destination, priced with a promo code when `promoCode` is given (the overload without `promoCode` still exists) |
+| `fetchPackagesForCountryResult` | `func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, promoCode: String?, forceRefresh: Bool = false) async -> RepositoryResult<PackageResponse?>` | Same, with the failure reported |
 | `fetchPackagesForTopUpEsim` | `func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool = false) async -> [Package]` | Fetch top-up packages for an existing eSIM |
 | `fetchPackagesForTopUpEsimResult` | `func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool = false) async -> RepositoryResult<[Package]>` | Same, with the failure reported |
 | `fetchCheckStockForPackage` | `func fetchCheckStockForPackage(packageTypeId: Int, forceRefresh: Bool = false) async -> CheckStockResponse?` | Check if a specific package is in stock |
@@ -362,12 +365,17 @@ Order history and tracking.
 
 ### PaymentsRepository
 
-Payment intent creation for Stripe checkout.
+Payment intent creation for Stripe checkout, saved cards, and adding, verifying and removing a card.
 
 | Method | Signature | Description |
 |---|---|---|
 | `fetchPayment` | `func fetchPayment(transactionType: TransactionType, packageTypeId: Int, iccid: String?, autoTopUp: Bool, savePaymentDetail: Bool, loyaltyPointsAmount: Double?) async throws -> PaymentData` | Create a payment intent for checkout |
 | `sendKredsQuote` | `func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse` | Get a discount quote for applying Kreds to a package |
+| `fetchPaymentMethods` | `func fetchPaymentMethods(eligibleFor discountCode: String) async throws -> [SavedPaymentMethod]` | List the customer's saved cards; with `eligibleFor`, only those eligible for a discount code (call it with no arguments for every card) |
+| `payWithStoredPaymentMethod` | `func payWithStoredPaymentMethod(_ paymentMethodID: String, transactionType: TransactionType, packageTypeId: Int, iccid: String?, discountCode: String?) async throws -> PaymentData` | Pay with a saved card, applying a discount code when one is given (`discountCode` may be omitted) |
+| `createPaymentMethodSetupIntent` | `func createPaymentMethodSetupIntent() async throws -> PaymentMethodSetupIntent` | Start adding a card: returns the Stripe setup-intent client secret for your app to confirm |
+| `verifyPaymentMethod` | `func verifyPaymentMethod(_ paymentMethodID: String, discountCode: String) async throws -> SavedPaymentMethod` | Check a newly added card against a discount code; throws `networkError` 400 when saved but not eligible, 404 when not the customer's |
+| `deletePaymentMethod` | `func deletePaymentMethod(_ paymentMethodID: String) async throws` | Remove a saved card |
 
 ### PromoCodeRepository
 

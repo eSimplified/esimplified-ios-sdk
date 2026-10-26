@@ -306,7 +306,7 @@ Reads are cached in memory with a default TTL of one hour. Pass `forceRefresh: t
 
 ## 9. Repository reference
 
-Every method below is reachable as `sdk.<repository>.<method>`. 73 methods across 15 repositories. Each row shows the form you call, with its default arguments. Cached reads also accept a `cacheTTL: TimeInterval` you can pass to override the lifetime shown in section 8.
+Every method below is reachable as `sdk.<repository>.<method>`. 85 methods across 17 repositories. Each row shows the form you call, with its default arguments. Cached reads also accept a `cacheTTL: TimeInterval` you can pass to override the lifetime shown in section 8.
 
 ### AuthRepository
 
@@ -380,6 +380,8 @@ Access: `sdk.packagesRepository`
 | `fetchPackagesForTopUpEsimResult` | `func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool = false) async -> RepositoryResult<[Package]>` |
 | `invalidateCache` | `func invalidateCache() async` |
 
+`fetchPackagesForCountry` and `fetchPackagesForCountryResult` also accept a `promoCode: String?` after `countryNameSlug`, which prices the packages with that promo code (`promo_code` is sent only when it is non-empty). Promo-coded lists are cached separately from the plain list for the same destination.
+
 ### EsimsRepository
 
 The customer's eSIMs and everything you can change about one.  
@@ -418,7 +420,7 @@ Access: `sdk.ordersRepository`
 
 ### PaymentsRepository
 
-Creating a payment, quoting a loyalty-point spend, listing saved cards and paying with one.  
+Creating a payment, quoting a loyalty-point spend, listing saved cards and paying with one, and adding, verifying and removing a card.  
 Access: `sdk.paymentsRepository`
 
 | Method | Signature |
@@ -427,6 +429,11 @@ Access: `sdk.paymentsRepository`
 | `sendKredsQuote` | `func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse` |
 | `fetchPaymentMethods` | `func fetchPaymentMethods() async throws -> [SavedPaymentMethod]` |
 | `payWithStoredPaymentMethod` | `func payWithStoredPaymentMethod(_ paymentMethodID: String, transactionType: TransactionType, packageTypeId: Int, iccid: String?) async throws -> PaymentData` |
+| `createPaymentMethodSetupIntent` | `func createPaymentMethodSetupIntent() async throws -> PaymentMethodSetupIntent` |
+| `verifyPaymentMethod` | `func verifyPaymentMethod(_ paymentMethodID: String, discountCode: String) async throws -> SavedPaymentMethod` |
+| `deletePaymentMethod` | `func deletePaymentMethod(_ paymentMethodID: String) async throws` |
+
+Partner-card offers add a discount code to three of these. `fetchPaymentMethods(eligibleFor: "NAB30")` lists only the saved cards eligible for that code, `payWithStoredPaymentMethod(_:transactionType:packageTypeId:iccid:discountCode:)` pays with a saved card and applies the code, and `verifyPaymentMethod` checks a card the customer has just added. Adding a card is a three-step handoff: `createPaymentMethodSetupIntent` returns the Stripe client secret, your app confirms the setup intent with Stripe's SDK, and `verifyPaymentMethod(_:discountCode:)` reports back the card's details once the backend has attached it. Verification throws `SdkError.networkError` with status 400 when the card is saved but not eligible for the code, and 404 when the payment method is not attached to this customer; the `message` carries the backend's `detail`, written for the customer. `deletePaymentMethod` succeeds on any 2xx and throws `networkError` with status 404 for a card that is not the customer's.
 
 ### PromoCodeRepository
 
@@ -1210,6 +1217,23 @@ Enum.
 | `paidWithPoints` | `pay_with_points` |
 | `unknown` | `unknown` |
 
+### `PaymentMethodSetupIntent`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `clientSecret` | `String` | `client_secret` |
+| `customerID` | `String?` | `customer_id` |
+| `publishableKey` | `String?` | `publishable_key` |
+
+`publishableKey` is nil until the backend starts sending it with the setup intent; until then, take Stripe's publishable key from `PaymentData`.
+
+### `PaymentMethodVerificationRequest`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `payment_method_id` | `String` | `payment_method_id` |
+| `discount_code` | `String` | `discount_code` |
+
 ### `PaymentRequest`
 
 | Property | Type | JSON key |
@@ -1224,6 +1248,7 @@ Enum.
 | `save_payment_method` | `Bool?` | `save_payment_method` |
 | `loyalty_points_amount` | `Double?` | `loyalty_points_amount` |
 | `stored_payment_method` | `String?` | `stored_payment_method` |
+| `discount_code` | `String?` | `discount_code` |
 
 ### `PaymentResponse`
 

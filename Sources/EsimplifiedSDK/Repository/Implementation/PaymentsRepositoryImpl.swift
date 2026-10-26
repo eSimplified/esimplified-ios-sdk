@@ -57,18 +57,52 @@ final class PaymentsRepositoryImpl: PaymentsRepositoryType {
         try await client.fetch(endpoint: .paymentMethods, method: .GET)
     }
 
+    func fetchPaymentMethods(eligibleFor discountCode: String) async throws -> [SavedPaymentMethod] {
+        try await client.fetch(
+            endpoint: .paymentMethods,
+            method: .GET,
+            parameters: ["discount_code": discountCode]
+        )
+    }
+
+    func deletePaymentMethod(_ paymentMethodID: String) async throws {
+        let _: EmptyResponse = try await client.fetch(
+            endpoint: .paymentMethod,
+            method: .DELETE,
+            id: paymentMethodID
+        )
+    }
+
+    func createPaymentMethodSetupIntent() async throws -> PaymentMethodSetupIntent {
+        try await client.fetch(endpoint: .paymentMethodSetupIntent, method: .POST)
+    }
+
+    func verifyPaymentMethod(_ paymentMethodID: String, discountCode: String) async throws -> SavedPaymentMethod {
+        let verificationBody = PaymentMethodVerificationRequest(
+            payment_method_id: paymentMethodID,
+            discount_code: discountCode
+        )
+        return try await client.fetch(
+            endpoint: .paymentMethodVerify,
+            method: .POST,
+            body: verificationBody
+        )
+    }
+
     func payWithStoredPaymentMethod(
         _ paymentMethodID: String,
         transactionType: TransactionType,
         packageTypeId: Int,
-        iccid: String?
+        iccid: String?,
+        discountCode: String?
     ) async throws -> PaymentData {
         let paymentBody = PaymentRequest(
             type: transactionType,
             package_type_id: String(packageTypeId),
             iccid: iccid,
             customer: CustomerEmail(email: sessionProvider.getUserEmail() ?? ""),
-            stored_payment_method: paymentMethodID
+            stored_payment_method: paymentMethodID,
+            discount_code: discountCode
         )
         let response: PaymentResponse = try await client.fetch(
             endpoint: .payments,

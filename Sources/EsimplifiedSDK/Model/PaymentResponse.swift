@@ -69,8 +69,9 @@ public struct PaymentRequest: Encodable {
     public var save_payment_method: Bool?
     public var loyalty_points_amount: Double?
     public var stored_payment_method: String?
+    public var discount_code: String?
 
-    public init(type: TransactionType, payment_method: PaymentMethod = .stripeIntent, package_type_id: String, iccid: String? = nil, coupon_id: String? = nil, customer: CustomerEmail, auto_top_up: Bool? = nil, save_payment_method: Bool? = nil, loyalty_points_amount: Double? = nil, stored_payment_method: String? = nil) {
+    public init(type: TransactionType, payment_method: PaymentMethod = .stripeIntent, package_type_id: String, iccid: String? = nil, coupon_id: String? = nil, customer: CustomerEmail, auto_top_up: Bool? = nil, save_payment_method: Bool? = nil, loyalty_points_amount: Double? = nil, stored_payment_method: String? = nil, discount_code: String? = nil) {
         self.type = type
         self.payment_method = payment_method
         self.package_type_id = package_type_id
@@ -81,6 +82,7 @@ public struct PaymentRequest: Encodable {
         self.save_payment_method = save_payment_method
         self.loyalty_points_amount = loyalty_points_amount
         self.stored_payment_method = stored_payment_method
+        self.discount_code = discount_code
     }
 }
 
@@ -107,6 +109,18 @@ public struct SavedPaymentMethod: Codable, Equatable {
         case cardLast4 = "card_last4"
         case cardExpMonth = "card_exp_month"
         case cardExpYear = "card_exp_year"
+    }
+}
+
+// MARK: Payment Method Verification Request
+
+public struct PaymentMethodVerificationRequest: Encodable {
+    public let payment_method_id: String
+    public let discount_code: String
+
+    public init(payment_method_id: String, discount_code: String) {
+        self.payment_method_id = payment_method_id
+        self.discount_code = discount_code
     }
 }
 

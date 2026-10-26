@@ -13,6 +13,7 @@ public protocol PackagesRepositoryType {
     func invalidateCache() async
 
     func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?>
+    func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, promoCode: String?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?>
     func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Package]>
 
 }
@@ -29,6 +30,20 @@ public extension PackagesRepositoryType {
             forceRefresh: forceRefresh,
             cacheTTL: 3600
         )
+    }
+    func fetchPackagesForCountry(
+        countryCode: String?,
+        countryNameSlug: String,
+        promoCode: String?,
+        forceRefresh: Bool = false
+    ) async -> PackageResponse? {
+        await fetchPackagesForCountryResult(
+            countryCode: countryCode,
+            countryNameSlug: countryNameSlug,
+            promoCode: promoCode,
+            forceRefresh: forceRefresh,
+            cacheTTL: 3600
+        ).value
     }
     func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool = false) async -> [Package] {
         await fetchPackagesForTopUpEsim(iccid: iccid, forceRefresh: forceRefresh, cacheTTL: 3600)
@@ -59,6 +74,21 @@ public extension PackagesRepositoryType {
         await fetchPackagesForCountryResult(
             countryCode: countryCode,
             countryNameSlug: countryNameSlug,
+            forceRefresh: forceRefresh,
+            cacheTTL: 3600
+        )
+    }
+
+    func fetchPackagesForCountryResult(
+        countryCode: String?,
+        countryNameSlug: String,
+        promoCode: String?,
+        forceRefresh: Bool = false
+    ) async -> RepositoryResult<PackageResponse?> {
+        await fetchPackagesForCountryResult(
+            countryCode: countryCode,
+            countryNameSlug: countryNameSlug,
+            promoCode: promoCode,
             forceRefresh: forceRefresh,
             cacheTTL: 3600
         )
