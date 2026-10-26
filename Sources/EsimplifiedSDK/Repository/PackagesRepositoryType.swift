@@ -12,7 +12,6 @@ public protocol PackagesRepositoryType {
     func fetchCheckStockForPackage(packageTypeId: Int, forceRefresh: Bool, cacheTTL: TimeInterval) async -> CheckStockResponse?
     func invalidateCache() async
 
-    func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?>
     func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, promoCode: String?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?>
     func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<[Package]>
 
@@ -58,12 +57,13 @@ public extension PackagesRepositoryType {
 public extension PackagesRepositoryType {
 
     func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?> {
-        RepositoryResult(value: await fetchPackagesForCountry(
+        await fetchPackagesForCountryResult(
             countryCode: countryCode,
             countryNameSlug: countryNameSlug,
+            promoCode: nil,
             forceRefresh: forceRefresh,
             cacheTTL: cacheTTL
-        ))
+        )
     }
 
     func fetchPackagesForCountryResult(

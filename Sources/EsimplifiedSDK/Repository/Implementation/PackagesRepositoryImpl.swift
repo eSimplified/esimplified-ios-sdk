@@ -19,40 +19,9 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
     func fetchPackagesForCountryResult(
         countryCode: String?,
         countryNameSlug: String,
-        forceRefresh: Bool = false,
-        cacheTTL: TimeInterval = 3600
-    ) async -> RepositoryResult<PackageResponse?> {
-        await fetchCountryPackages(
-            countryCode: countryCode,
-            countryNameSlug: countryNameSlug,
-            promoCode: nil,
-            forceRefresh: forceRefresh,
-            cacheTTL: cacheTTL
-        )
-    }
-
-    func fetchPackagesForCountryResult(
-        countryCode: String?,
-        countryNameSlug: String,
         promoCode: String?,
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 3600
-    ) async -> RepositoryResult<PackageResponse?> {
-        await fetchCountryPackages(
-            countryCode: countryCode,
-            countryNameSlug: countryNameSlug,
-            promoCode: promoCode,
-            forceRefresh: forceRefresh,
-            cacheTTL: cacheTTL
-        )
-    }
-
-    private func fetchCountryPackages(
-        countryCode: String?,
-        countryNameSlug: String,
-        promoCode: String?,
-        forceRefresh: Bool,
-        cacheTTL: TimeInterval
     ) async -> RepositoryResult<PackageResponse?> {
         let promoCode = promoCode.flatMap { $0.isEmpty ? nil : $0 }
         var cacheKey = "packages_\(countryCode ?? "")_\(countryNameSlug)"
