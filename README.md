@@ -169,7 +169,7 @@ let payment = try await sdk.paymentsRepository.startSmartPayPayment(
 )
 
 switch await sdk.ordersRepository.awaitSettlement(orderUUID: payment.orderID!) {
-case .fulfilled(let order): print(order.qrCode)
+case .fulfilled(let order): print(order.qrCode ?? "")
 case .failed(let order): print(order.paymentStatus as Any)
 case .pending: break
 }
@@ -264,6 +264,7 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `PaymentResponse` | Payment response wrapper |
 | `PaymentRequest` | Payment intent creation payload |
 | `PaymentMethod` | Enum: stripeIntent, stripeCheckout, smartpay, agentPayment, complimentary, voucher, splitPayment, paidWithPoints |
+| `SavedPaymentMethod` | A saved card (payment method ID, brand, last 4 digits, expiry) |
 | `TransactionType` | Enum: buy, topUp |
 | `CustomerEmail` | Email-only payload for payment requests |
 | `PromoCodeResponse` | Promo code result (valid, code, discount percentage, product type) |
@@ -382,15 +383,19 @@ Order history and tracking.
 | `trackedOrder` | `func trackedOrder(orderUUID: String) async` | Mark an order's conversion as tracked |
 | `fetchOrdersPageResult` | `func fetchOrdersPageResult(limit: Int, offset: Int, withLoyaltyPoints: Bool, forceRefresh: Bool = false) async -> RepositoryResult<OrdersPage>` | Fetch one page of orders |
 | `fetchInvoice` | `func fetchInvoice(orderUUID: String) async throws -> Data` | Download an order's invoice PDF |
+| `awaitSettlement` | `func awaitSettlement(orderUUID: String) async -> OrderSettlement` | Poll a hosted-checkout order every 3 s for up to 120 s until it is fulfilled or failed |
 
 ### PaymentsRepository
 
-Payment intent creation for Stripe checkout.
+Payment intent creation for Stripe checkout, saved cards, and SmartPay hosted checkout.
 
 | Method | Signature | Description |
 |---|---|---|
 | `fetchPayment` | `func fetchPayment(transactionType: TransactionType, packageTypeId: Int, iccid: String?, autoTopUp: Bool, savePaymentDetail: Bool, loyaltyPointsAmount: Double?) async throws -> PaymentData` | Create a payment intent for checkout |
 | `sendKredsQuote` | `func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse` | Get a discount quote for applying Kreds to a package |
+| `fetchPaymentMethods` | `func fetchPaymentMethods() async throws -> [SavedPaymentMethod]` | List the customer's saved cards |
+| `payWithStoredPaymentMethod` | `func payWithStoredPaymentMethod(_ paymentMethodID: String, transactionType: TransactionType, packageTypeId: Int, iccid: String?) async throws -> PaymentData` | Pay with a saved card |
+| `startSmartPayPayment` | `func startSmartPayPayment(transactionType: TransactionType, packageTypeId: Int, iccid: String?, loyaltyPointsAmount: Double?, redirectUrl: String) async throws -> PaymentData` | Start a SmartPay hosted checkout; open `uri` in a secure browser |
 
 ### PromoCodeRepository
 

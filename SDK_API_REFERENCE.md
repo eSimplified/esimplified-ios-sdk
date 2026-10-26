@@ -236,6 +236,28 @@ await sdk.ordersRepository.trackedOrder(orderUUID: payment.orderID!)
 
 Provisioning is asynchronous. Immediately after payment the order comes back with `orderStatus` `"pending"` and **no** `qrCode`, `smDpAddress`, `activationCode` or `profile` — every one of those is optional for exactly this reason. Poll `fetchOrder(orderUUID:forceRefresh: true)` until `smDpAddress` and `activationCode` are both present, and give the wait a deadline. If it expires, tell the customer the order has not completed rather than sending them into an install that cannot succeed. Their payment is safe and the order completes server-side.
 
+### Paying with SmartPay instead of Stripe
+
+SmartPay is a hosted checkout: the API returns a page for the customer to pay on, and your app never sees card details. Start the payment with a `redirectUrl` (`https` on the tenant website host, 50 characters or fewer), open `payment.uri` in `ASWebAuthenticationSession` or another secure system browser, keep `payment.orderID`, then wait for the order to settle.
+
+```swift
+let payment = try await sdk.paymentsRepository.startSmartPayPayment(
+    transactionType: .buy,
+    packageTypeId: packages[0].packageTypeID,
+    iccid: nil,
+    loyaltyPointsAmount: nil,
+    redirectUrl: "https://your-tenant-host.example/checkout/return"
+)
+
+switch await sdk.ordersRepository.awaitSettlement(orderUUID: payment.orderID!) {
+case .fulfilled(let order): print(order.activationCode ?? "")
+case .failed(let order): print(order.paymentStatus ?? order.orderStatus)
+case .pending: break
+}
+```
+
+`awaitSettlement` polls `fetchOrder` every 3 seconds for up to 120 seconds and returns an [`OrderSettlement`](#ordersettlement). `.pending` means the order had not settled yet, so check it again later. The `awaitSettlement(orderUUID:interval:timeout:sleep:)` overload takes your own interval, deadline and sleep function; if the sleep throws (for example because the task was cancelled) polling stops and it returns `.pending`.
+
 ## 6c. Installing the eSIM
 
 The SDK hands you the credentials; iOS does the install. You need three things.
@@ -403,11 +425,12 @@ Access: `sdk.esimsRepository`
 
 ### OrdersRepository
 
-Order history, a single order's full detail, and conversion tracking.  
+Order history, a single order's full detail, waiting for a hosted-checkout order to settle, and conversion tracking.  
 Access: `sdk.ordersRepository`
 
 | Method | Signature |
 |---|---|
+| `awaitSettlement` | `func awaitSettlement(orderUUID: String) async -> OrderSettlement` |
 | `fetchInvoice` | `func fetchInvoice(orderUUID: String) async throws -> Data` |
 | `fetchOrder` | `func fetchOrder(orderUUID: String, forceRefresh: Bool = false) async throws -> OrderDetail` |
 | `fetchOrders` | `func fetchOrders(forceRefresh: Bool = false, withLoyaltyPoints: Bool) async -> [Order]` |
@@ -418,7 +441,7 @@ Access: `sdk.ordersRepository`
 
 ### PaymentsRepository
 
-Creating a payment, quoting a loyalty-point spend, listing saved cards and paying with one.  
+Creating a payment, starting a SmartPay hosted checkout, quoting a loyalty-point spend, listing saved cards and paying with one.  
 Access: `sdk.paymentsRepository`
 
 | Method | Signature |
@@ -427,6 +450,7 @@ Access: `sdk.paymentsRepository`
 | `sendKredsQuote` | `func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse` |
 | `fetchPaymentMethods` | `func fetchPaymentMethods() async throws -> [SavedPaymentMethod]` |
 | `payWithStoredPaymentMethod` | `func payWithStoredPaymentMethod(_ paymentMethodID: String, transactionType: TransactionType, packageTypeId: Int, iccid: String?) async throws -> PaymentData` |
+| `startSmartPayPayment` | `func startSmartPayPayment(transactionType: TransactionType, packageTypeId: Int, iccid: String?, loyaltyPointsAmount: Double?, redirectUrl: String) async throws -> PaymentData` |
 
 ### PromoCodeRepository
 
@@ -1089,6 +1113,7 @@ Enum.
 | `orderType` | `String` | `order_type` |
 | `orderDate` | `String` | `order_date` |
 | `orderStatus` | `String` | `order_status` |
+| `paymentStatus` | `String?` | `payment_status` |
 | `purchasePrice` | `String` | `purchase_price` |
 | `transactionId` | `String?` | `transaction_id` |
 | `purchaseCurrency` | `String` | `purchase_currency` |
@@ -1109,6 +1134,18 @@ Enum.
 | `profile` | `EsimProfile?` | `profile` |
 | `loyaltyPointsEarned` | `LoyaltyPointsDetail?` | `points_earned` |
 | `loyaltyPointsSpent` | `LoyaltyPointsDetail?` | `points_spent` |
+
+`isSettlementFailure` is `true` when `paymentStatus` or `orderStatus` is `failed`, `cancelled`, `canceled`, `declined` or `expired`. `isFulfilled` is `true` when `iccid` is present and `paymentStatus` (or `orderStatus` when there is no `paymentStatus`) is `success`.
+
+### `OrderSettlement`
+
+Enum returned by `awaitSettlement`.
+
+| Case | Meaning |
+|---|---|
+| `fulfilled(OrderDetail)` | Paid and provisioned: the order has an ICCID |
+| `failed(OrderDetail)` | The payment or order reached a terminal failure (see `isSettlementFailure`) |
+| `pending(OrderDetail?)` | Not settled before the deadline, with the last order fetched if any |
 
 ### `OrdersResponse`
 
@@ -1208,6 +1245,7 @@ Enum.
 | `voucher` | `voucher` |
 | `splitPayment` | `split_payment` |
 | `paidWithPoints` | `pay_with_points` |
+| `smartpay` | `smartpay` |
 | `unknown` | `unknown` |
 
 ### `PaymentRequest`
@@ -1224,6 +1262,7 @@ Enum.
 | `save_payment_method` | `Bool?` | `save_payment_method` |
 | `loyalty_points_amount` | `Double?` | `loyalty_points_amount` |
 | `stored_payment_method` | `String?` | `stored_payment_method` |
+| `redirect_url` | `String?` | `redirect_url` |
 
 ### `PaymentResponse`
 
