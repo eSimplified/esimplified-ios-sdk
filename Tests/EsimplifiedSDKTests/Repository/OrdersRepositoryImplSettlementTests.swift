@@ -119,6 +119,24 @@ extension NetworkSuite {
             }
         }
 
+        @Test("pollRequestsAreBoundedByRemainingTime")
+        func pollRequestsAreBoundedByRemainingTime() async {
+            _ = await settle([
+                (200, PendingOrderJSON.make()),
+                (200, PendingOrderJSON.make(orderStatus: "cancelled"))
+            ], timeout: .seconds(30))
+            let request = MockURLProtocol.capturedRequests.first
+            #expect(request != nil)
+            #expect((request?.timeoutInterval ?? 0) > 0)
+            #expect((request?.timeoutInterval ?? 0) <= 30)
+        }
+
+        @Test("pollRequestKeepsAtLeastOneIntervalAfterDeadline")
+        func pollRequestKeepsAtLeastOneIntervalAfterDeadline() async {
+            _ = await settle([(200, PendingOrderJSON.make())], timeout: .zero)
+            #expect(MockURLProtocol.capturedRequests.first?.timeoutInterval == 3)
+        }
+
         @Test("timesOutPendingWithoutDetail")
         func timesOutPendingWithoutDetail() async {
             let result = await settle([(200, PendingOrderJSON.make())], timeout: .zero)

@@ -129,17 +129,22 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
     ) async -> OrderSettlement {
         let clock = ContinuousClock()
         let deadline = clock.now.advanced(by: timeout)
+        let floor = Self.seconds(interval)
         while true {
+            let budget = max(Self.seconds(deadline - clock.now), floor)
             if let probe: OrderStatusProbe = try? await client.fetch(
                 endpoint: .customerOrders,
                 method: .GET,
                 parameters: orderParameters,
-                id: orderUUID
+                id: orderUUID,
+                timeout: budget
             ) {
                 if probe.isSettlementFailure {
-                    return .failed(await fetchOrderOnce(orderUUID: orderUUID, cacheTTL: nil))
+                    return .failed(await fetchOrderOnce(orderUUID: orderUUID, cacheTTL: nil, timeout: budget))
                 }
-                if probe.isFulfilled, let order = await fetchOrderOnce(orderUUID: orderUUID, cacheTTL: 300), order.isFulfilled {
+                if probe.isFulfilled,
+                   let order = await fetchOrderOnce(orderUUID: orderUUID, cacheTTL: 300, timeout: budget),
+                   order.isFulfilled {
                     return .fulfilled(order)
                 }
             }
@@ -148,12 +153,18 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
         }
     }
 
-    private func fetchOrderOnce(orderUUID: String, cacheTTL: TimeInterval?) async -> OrderDetail? {
+    private static func seconds(_ duration: Duration) -> TimeInterval {
+        let parts = duration.components
+        return TimeInterval(parts.seconds) + TimeInterval(parts.attoseconds) / 1e18
+    }
+
+    private func fetchOrderOnce(orderUUID: String, cacheTTL: TimeInterval?, timeout: TimeInterval? = nil) async -> OrderDetail? {
         guard let order: OrderDetail = try? await client.fetch(
             endpoint: .customerOrders,
             method: .GET,
             parameters: orderParameters,
-            id: orderUUID
+            id: orderUUID,
+            timeout: timeout
         ) else { return nil }
         if let cacheTTL {
             await cache.set("order_\(orderUUID)", value: order, ttl: cacheTTL)

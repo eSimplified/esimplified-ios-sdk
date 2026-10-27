@@ -42,11 +42,15 @@ actor HTTPClient {
         body: Encodable? = nil,
         id: String? = nil,
         requiresAuth: Bool = true,
-        isRetry: Bool = false
+        isRetry: Bool = false,
+        timeout: TimeInterval? = nil
     ) async throws -> T {
         let url = try constructURL(endpoint: endpoint, id: id, parameters: parameters)
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
+        if let timeout {
+            request.timeoutInterval = max(timeout, 1)
+        }
 
         if let body {
             if endpoint == .auth {
@@ -88,7 +92,7 @@ actor HTTPClient {
                 return try await handleTokenRefreshAndRetry(
                     endpoint: endpoint, method: method, parameters: parameters,
                     body: body, id: id, requiresAuth: requiresAuth,
-                    staleAccessToken: bearerToken(of: request)
+                    staleAccessToken: bearerToken(of: request), timeout: timeout
                 )
             }
 
@@ -340,7 +344,8 @@ actor HTTPClient {
         body: Encodable?,
         id: String?,
         requiresAuth: Bool,
-        staleAccessToken: String?
+        staleAccessToken: String?,
+        timeout: TimeInterval? = nil
     ) async throws -> T {
         try await serializedRefresh(staleAccessToken: staleAccessToken)
 
@@ -351,7 +356,8 @@ actor HTTPClient {
             body: body,
             id: id,
             requiresAuth: requiresAuth,
-            isRetry: true
+            isRetry: true,
+            timeout: timeout
         )
     }
 }
