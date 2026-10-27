@@ -179,7 +179,7 @@ case .pending: break
 
 - `.fulfilled(order)`: `isFulfilled` is true, meaning the iccid is present and not empty and `payment_status` (or `order_status` when `payment_status` is missing or blank) is `success`.
 - `.failed(order)`: `payment_status` or `order_status` is `failed`, `cancelled`, `canceled`, `declined` or `expired`. `order` is optional: it is `nil` when the failed order cannot be read as a full `OrderDetail`.
-- `.pending`: still unsettled when polling stopped.
+- `.pending`: polling stopped without a settled answer. The order may still be pending, or every status check may have failed, or the task was cancelled, so treat it as unknown rather than as unpaid and check the order again later.
 
 ## SDK Structure
 

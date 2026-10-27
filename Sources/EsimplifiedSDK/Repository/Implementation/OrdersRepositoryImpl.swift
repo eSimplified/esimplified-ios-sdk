@@ -139,7 +139,7 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
                 if probe.isSettlementFailure {
                     return .failed(await fetchOrderOnce(orderUUID: orderUUID, cacheTTL: nil))
                 }
-                if probe.isFulfilled, let order = await fetchOrderOnce(orderUUID: orderUUID, cacheTTL: 300) {
+                if probe.isFulfilled, let order = await fetchOrderOnce(orderUUID: orderUUID, cacheTTL: 300), order.isFulfilled {
                     return .fulfilled(order)
                 }
             }

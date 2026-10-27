@@ -256,7 +256,7 @@ case .pending: break
 }
 ```
 
-`awaitSettlement` checks the order's status roughly every 3 seconds for about 2 minutes and returns an [`OrderSettlement`](#ordersettlement), or `.pending` if the order is still unsettled, so check it again later. Each check reads only the order's status; the full `OrderDetail` is fetched once the order has settled. The `awaitSettlement(orderUUID:interval:timeout:sleep:)` overload takes your own interval, deadline and sleep function; if the sleep throws (for example because the task was cancelled) polling stops and it returns `.pending`.
+`awaitSettlement` checks the order's status roughly every 3 seconds for about 2 minutes and returns an [`OrderSettlement`](#ordersettlement), or `.pending` when polling stopped without a settled answer: the order may still be pending, every status check may have failed, or the task was cancelled. Treat `.pending` as unknown, not as unpaid, and check the order again later. Each check reads only the order's status; the full `OrderDetail` is fetched once the order has settled. The `awaitSettlement(orderUUID:interval:timeout:sleep:)` overload takes your own interval, deadline and sleep function; if the sleep throws (for example because the task was cancelled) polling stops and it returns `.pending`.
 
 ## 6c. Installing the eSIM
 

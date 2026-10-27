@@ -94,6 +94,31 @@ extension NetworkSuite {
             #expect(MockURLProtocol.capturedRequests.count == 4)
         }
 
+        @Test("fulfilledProbeWithUnprovisionedDetailKeepsPolling")
+        func fulfilledProbeWithUnprovisionedDetailKeepsPolling() async {
+            let result = await settle([
+                (200, OrderDetailJSON.make()),
+                (200, OrderDetailJSON.make(orderStatus: "pending", paymentStatus: nil, iccid: nil)),
+                (200, OrderDetailJSON.make()),
+                (200, OrderDetailJSON.make())
+            ])
+            guard case .fulfilled(let order) = result else {
+                Issue.record("expected fulfilled, got \(result)")
+                return
+            }
+            #expect(order.isFulfilled)
+            #expect(MockURLProtocol.capturedRequests.count == 4)
+        }
+
+        @Test("paddedCancelledStatusIsFailed")
+        func paddedCancelledStatusIsFailed() async {
+            let result = await settle([(200, PendingOrderJSON.make(orderStatus: " cancelled "))])
+            guard case .failed = result else {
+                Issue.record("expected failed, got \(result)")
+                return
+            }
+        }
+
         @Test("timesOutPendingWithoutDetail")
         func timesOutPendingWithoutDetail() async {
             let result = await settle([(200, PendingOrderJSON.make())], timeout: .zero)

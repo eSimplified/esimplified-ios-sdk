@@ -274,7 +274,8 @@ extension NetworkSuite {
                                                        loyaltyPointsAmount: nil, redirectUrl: "https://osim-preview.vercel.app/order")
         #expect(data.orderID == "o1")
         #expect(data.uri?.contains("/payments/smartpay/checkout/") == true)
-        let body = try #require(MockURLProtocol.capturedBodies.first ?? nil)
+        let firstBody: Data? = MockURLProtocol.capturedBodies.first ?? nil
+        let body = try #require(firstBody)
         let json = try JSONSerialization.jsonObject(with: body) as? [String: Any]
         #expect(json?["payment_method"] as? String == "smartpay")
         #expect(json?["redirect_url"] as? String == "https://osim-preview.vercel.app/order")

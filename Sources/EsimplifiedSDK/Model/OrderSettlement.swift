@@ -46,13 +46,13 @@ enum SettlementRules {
 
     static func isFailure(orderStatus: String, paymentStatus: String?) -> Bool {
         if let payment = normalized(paymentStatus), terminal.contains(payment) { return true }
-        return terminal.contains(orderStatus.lowercased())
+        return terminal.contains(normalized(orderStatus) ?? "")
     }
 
     static func isFulfilled(orderStatus: String, paymentStatus: String?, iccid: String?) -> Bool {
         guard let iccid, !iccid.isEmpty else { return false }
         if let payment = normalized(paymentStatus) { return payment == "success" }
-        return orderStatus.lowercased() == "success"
+        return normalized(orderStatus) == "success"
     }
 
     private static func normalized(_ status: String?) -> String? {
