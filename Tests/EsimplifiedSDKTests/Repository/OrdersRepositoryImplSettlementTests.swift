@@ -7,7 +7,7 @@ extension NetworkSuite {
     @Suite("OrdersRepositoryImpl settlement")
     struct OrdersRepositoryImplSettlementTests {
 
-        private func makeRepo() -> OrdersRepositoryImpl {
+        private func makeRepo(cache: SdkCache = SdkCache()) -> OrdersRepositoryImpl {
             let config = SdkConfig(
                 environment: .staging,
                 clientName: "acme",
@@ -18,7 +18,7 @@ extension NetworkSuite {
                 initial: .authenticated(accessToken: "a", refreshToken: "r", expiresAt: Date().addingTimeInterval(3600))
             )
             let client = HTTPClient(config: config, sessionProvider: session, session: MockSession.make())
-            return OrdersRepositoryImpl(client: client, cache: SdkCache())
+            return OrdersRepositoryImpl(client: client, cache: cache)
         }
 
         private func settle(_ steps: [(statusCode: Int, json: String?)], timeout: Duration = .seconds(120)) async -> OrderSettlement {
@@ -108,6 +108,22 @@ extension NetworkSuite {
             }
             #expect(order.isFulfilled)
             #expect(MockURLProtocol.capturedRequests.count == 4)
+        }
+
+        @Test("unprovisionedDetailIsNotCached")
+        func unprovisionedDetailIsNotCached() async {
+            let cache = SdkCache()
+            MockURLProtocol.reset()
+            MockURLProtocol.handler = MockSession.sequence([
+                (200, OrderDetailJSON.make()),
+                (200, OrderDetailJSON.make(orderStatus: "pending", paymentStatus: nil, iccid: nil)),
+                (200, OrderDetailJSON.make()),
+                (200, OrderDetailJSON.make())
+            ])
+            let repo = makeRepo(cache: cache)
+            _ = await repo.awaitSettlement(orderUUID: "order-1", interval: .seconds(3), timeout: .seconds(120), sleep: { _ in })
+            let cached: OrderDetail? = await cache.get("order_order-1")
+            #expect(cached?.isFulfilled == true)
         }
 
         @Test("paddedCancelledStatusIsFailed")

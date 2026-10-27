@@ -140,11 +140,12 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
                 timeout: budget
             ) {
                 if probe.isSettlementFailure {
-                    return .failed(await fetchOrderOnce(orderUUID: orderUUID, cacheTTL: nil, timeout: budget))
+                    return .failed(await fetchOrderOnce(orderUUID: orderUUID, timeout: budget))
                 }
                 if probe.isFulfilled,
-                   let order = await fetchOrderOnce(orderUUID: orderUUID, cacheTTL: 300, timeout: budget),
+                   let order = await fetchOrderOnce(orderUUID: orderUUID, timeout: budget),
                    order.isFulfilled {
+                    await cache.set("order_\(orderUUID)", value: order, ttl: 300)
                     return .fulfilled(order)
                 }
             }
@@ -158,18 +159,14 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
         return TimeInterval(parts.seconds) + TimeInterval(parts.attoseconds) / 1e18
     }
 
-    private func fetchOrderOnce(orderUUID: String, cacheTTL: TimeInterval?, timeout: TimeInterval? = nil) async -> OrderDetail? {
-        guard let order: OrderDetail = try? await client.fetch(
+    private func fetchOrderOnce(orderUUID: String, timeout: TimeInterval? = nil) async -> OrderDetail? {
+        try? await client.fetch(
             endpoint: .customerOrders,
             method: .GET,
             parameters: orderParameters,
             id: orderUUID,
             timeout: timeout
-        ) else { return nil }
-        if let cacheTTL {
-            await cache.set("order_\(orderUUID)", value: order, ttl: cacheTTL)
-        }
-        return order
+        )
     }
 
     func trackedOrder(orderUUID: String) async {
