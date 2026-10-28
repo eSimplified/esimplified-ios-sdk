@@ -69,8 +69,9 @@ public struct PaymentRequest: Encodable {
     public var save_payment_method: Bool?
     public var loyalty_points_amount: Double?
     public var stored_payment_method: String?
+    public var redirect_url: String?
 
-    public init(type: TransactionType, payment_method: PaymentMethod = .stripeIntent, package_type_id: String, iccid: String? = nil, coupon_id: String? = nil, customer: CustomerEmail, auto_top_up: Bool? = nil, save_payment_method: Bool? = nil, loyalty_points_amount: Double? = nil, stored_payment_method: String? = nil) {
+    public init(type: TransactionType, payment_method: PaymentMethod = .stripeIntent, package_type_id: String, iccid: String? = nil, coupon_id: String? = nil, customer: CustomerEmail, auto_top_up: Bool? = nil, save_payment_method: Bool? = nil, loyalty_points_amount: Double? = nil, stored_payment_method: String? = nil, redirect_url: String? = nil) {
         self.type = type
         self.payment_method = payment_method
         self.package_type_id = package_type_id
@@ -81,6 +82,7 @@ public struct PaymentRequest: Encodable {
         self.save_payment_method = save_payment_method
         self.loyalty_points_amount = loyalty_points_amount
         self.stored_payment_method = stored_payment_method
+        self.redirect_url = redirect_url
     }
 }
 

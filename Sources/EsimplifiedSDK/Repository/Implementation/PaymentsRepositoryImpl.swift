@@ -41,6 +41,31 @@ final class PaymentsRepositoryImpl: PaymentsRepositoryType {
         return response.paymentData
     }
 
+    func startSmartPayPayment(
+        transactionType: TransactionType,
+        packageTypeId: Int,
+        iccid: String?,
+        loyaltyPointsAmount: Double?,
+        redirectUrl: String
+    ) async throws -> PaymentData {
+        let paymentBody = PaymentRequest(
+            type: transactionType,
+            payment_method: .smartpay,
+            package_type_id: String(packageTypeId),
+            iccid: iccid,
+            customer: CustomerEmail(email: sessionProvider.getUserEmail() ?? ""),
+            auto_top_up: false,
+            loyalty_points_amount: loyaltyPointsAmount,
+            redirect_url: redirectUrl
+        )
+        let response: PaymentResponse = try await client.fetch(
+            endpoint: .payments,
+            method: .POST,
+            body: paymentBody
+        )
+        return response.paymentData
+    }
+
     func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse {
         let quoteRequest = KredsQuoteRequest(
             package_type_id: packageTypeId,

@@ -137,7 +137,7 @@ _ = try await sdk.authRepository.login(email: email, password: password)
 // 4. Create a Stripe payment intent
 let payment = try await sdk.paymentsRepository.fetchPayment(
     transactionType: .buy,
-    packageTypeId: packages.first!.packageTypeId,
+    packageTypeId: packages.first!.packageTypeID,
     iccid: nil,
     autoTopUp: false,
     savePaymentDetail: true,
@@ -154,6 +154,32 @@ let order = try await sdk.ordersRepository.fetchOrder(orderUUID: payment.orderID
 // 6. Confirm conversion tracking
 await sdk.ordersRepository.trackedOrder(orderUUID: payment.orderID!)
 ```
+
+### Pay with SmartPay (hosted checkout)
+
+Start the payment with a `redirectUrl` (`https` on the tenant website host, 50 characters or fewer), open `payment.uri` in `ASWebAuthenticationSession` or another secure system browser, keep `payment.orderID`, then wait for the order to settle.
+
+```swift
+let payment = try await sdk.paymentsRepository.startSmartPayPayment(
+    transactionType: .buy,
+    packageTypeId: packages.first!.packageTypeID,
+    iccid: nil,
+    loyaltyPointsAmount: nil,
+    redirectUrl: "https://your-tenant-host.example/checkout/return"
+)
+
+switch await sdk.ordersRepository.awaitSettlement(orderUUID: payment.orderID!) {
+case .fulfilled(let order): print(order.qrCode ?? "")
+case .failed(let order): print(order?.paymentStatus as Any)
+case .pending: break
+}
+```
+
+`awaitSettlement` checks the order's status roughly every 3 seconds for about 2 minutes and returns `.pending` if it is still unsettled, so check it again later.
+
+- `.fulfilled(order)`: `isFulfilled` is true, meaning the iccid is present and not empty and `payment_status` (or `order_status` when `payment_status` is missing or blank) is `success`.
+- `.failed(order)`: `payment_status` or `order_status` is `failed`, `cancelled`, `canceled`, `declined` or `expired`. `order` is optional: it is `nil` when the failed order cannot be read as a full `OrderDetail`.
+- `.pending`: polling stopped without a settled answer. The order may still be pending, or every status check may have failed, or the task was cancelled, so treat it as unknown rather than as unpaid and check the order again later.
 
 ## SDK Structure
 
@@ -234,13 +260,15 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `PackageDetail` | Detailed package info with activation status and expiry |
 | `Order` | Order summary (number, UUID, pricing, eSIM, payment method, loyalty) |
 | `OrderDetail` | Full order with QR code, activation code, SM-DP+ address, package |
+| `OrderSettlement` | Enum returned by `awaitSettlement`: fulfilled(OrderDetail), failed(OrderDetail?), pending(OrderDetail?) |
 | `OrdersResponse` | Paginated order list response |
 | `EsimInfo` | Basic eSIM metadata (ICCID, matching ID, SM-DP+ address) |
 | `PurchaseCountry` | Country info on an order (ISO, name, flag, region) |
 | `PaymentData` | Payment intent result (URI, order ID, ephemeral key, publishable key) |
 | `PaymentResponse` | Payment response wrapper |
 | `PaymentRequest` | Payment intent creation payload |
-| `PaymentMethod` | Enum: stripeIntent, stripeCheckout, agentPayment, complimentary, voucher, splitPayment, paidWithPoints |
+| `PaymentMethod` | Enum: stripeIntent, stripeCheckout, smartpay, agentPayment, complimentary, voucher, splitPayment, paidWithPoints |
+| `SavedPaymentMethod` | A saved card (payment method ID, brand, last 4 digits, expiry) |
 | `TransactionType` | Enum: buy, topUp |
 | `CustomerEmail` | Email-only payload for payment requests |
 | `PromoCodeResponse` | Promo code result (valid, code, discount percentage, product type) |
@@ -359,15 +387,19 @@ Order history and tracking.
 | `trackedOrder` | `func trackedOrder(orderUUID: String) async` | Mark an order's conversion as tracked |
 | `fetchOrdersPageResult` | `func fetchOrdersPageResult(limit: Int, offset: Int, withLoyaltyPoints: Bool, forceRefresh: Bool = false) async -> RepositoryResult<OrdersPage>` | Fetch one page of orders |
 | `fetchInvoice` | `func fetchInvoice(orderUUID: String) async throws -> Data` | Download an order's invoice PDF |
+| `awaitSettlement` | `func awaitSettlement(orderUUID: String) async -> OrderSettlement` | Check a hosted-checkout order's status roughly every 3 s for about 2 minutes until it is fulfilled or failed, else return `pending` |
 
 ### PaymentsRepository
 
-Payment intent creation for Stripe checkout.
+Payment intent creation for Stripe checkout, saved cards, and SmartPay hosted checkout.
 
 | Method | Signature | Description |
 |---|---|---|
 | `fetchPayment` | `func fetchPayment(transactionType: TransactionType, packageTypeId: Int, iccid: String?, autoTopUp: Bool, savePaymentDetail: Bool, loyaltyPointsAmount: Double?) async throws -> PaymentData` | Create a payment intent for checkout |
 | `sendKredsQuote` | `func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse` | Get a discount quote for applying Kreds to a package |
+| `fetchPaymentMethods` | `func fetchPaymentMethods() async throws -> [SavedPaymentMethod]` | List the customer's saved cards |
+| `payWithStoredPaymentMethod` | `func payWithStoredPaymentMethod(_ paymentMethodID: String, transactionType: TransactionType, packageTypeId: Int, iccid: String?) async throws -> PaymentData` | Pay with a saved card |
+| `startSmartPayPayment` | `func startSmartPayPayment(transactionType: TransactionType, packageTypeId: Int, iccid: String?, loyaltyPointsAmount: Double?, redirectUrl: String) async throws -> PaymentData` | Start a SmartPay hosted checkout; open `uri` in a secure browser |
 
 ### PromoCodeRepository
 

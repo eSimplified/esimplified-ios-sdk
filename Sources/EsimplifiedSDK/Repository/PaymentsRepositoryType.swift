@@ -11,4 +11,23 @@ public protocol PaymentsRepositoryType {
     func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse
     func fetchPaymentMethods() async throws -> [SavedPaymentMethod]
     func payWithStoredPaymentMethod(_ paymentMethodID: String, transactionType: TransactionType, packageTypeId: Int, iccid: String?) async throws -> PaymentData
+    func startSmartPayPayment(
+        transactionType: TransactionType,
+        packageTypeId: Int,
+        iccid: String?,
+        loyaltyPointsAmount: Double?,
+        redirectUrl: String
+    ) async throws -> PaymentData
+}
+
+public extension PaymentsRepositoryType {
+    func startSmartPayPayment(
+        transactionType: TransactionType,
+        packageTypeId: Int,
+        iccid: String?,
+        loyaltyPointsAmount: Double?,
+        redirectUrl: String
+    ) async throws -> PaymentData {
+        throw SdkError.networkError(statusCode: 501, message: "SmartPay is not implemented by this repository")
+    }
 }

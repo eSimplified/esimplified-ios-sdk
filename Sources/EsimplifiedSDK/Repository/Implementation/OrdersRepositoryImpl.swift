@@ -10,6 +10,10 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
 
     private let client: HTTPClient
     private let cache: SdkCache
+    private let orderParameters = [
+        "include_base64_qr_code": "true",
+        "show_esim_details": "true"
+    ]
 
     init(client: HTTPClient, cache: SdkCache) {
         self.client = client
@@ -89,10 +93,7 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
         if !forceRefresh, let cached: OrderDetail = await cache.get(cacheKey) {
             return cached
         }
-        let parameters = [
-            "include_base64_qr_code": "true",
-            "show_esim_details": "true"
-        ]
+        let parameters = orderParameters
         let maxRetries = 5
         var lastError: Error?
         for attempt in 1...maxRetries {
@@ -118,6 +119,49 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
         }
         if let lastError { throw lastError }
         throw SdkError.unknown(NSError(domain: "OrdersRepository", code: -1))
+    }
+
+    func awaitSettlement(
+        orderUUID: String,
+        interval: Duration,
+        timeout: Duration,
+        sleep: @Sendable (Duration) async throws -> Void
+    ) async -> OrderSettlement {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: timeout)
+        let floor = interval / .seconds(1)
+        while true {
+            let budget = max((deadline - clock.now) / .seconds(1), floor)
+            if let probe: OrderStatusProbe = try? await client.fetch(
+                endpoint: .customerOrders,
+                method: .GET,
+                parameters: orderParameters,
+                id: orderUUID,
+                timeout: budget
+            ) {
+                if probe.isSettlementFailure {
+                    return .failed(await fetchOrderOnce(orderUUID: orderUUID, timeout: budget))
+                }
+                if probe.isFulfilled,
+                   let order = await fetchOrderOnce(orderUUID: orderUUID, timeout: budget),
+                   order.isFulfilled {
+                    await cache.set("order_\(orderUUID)", value: order, ttl: 300)
+                    return .fulfilled(order)
+                }
+            }
+            if clock.now >= deadline { return .pending(nil) }
+            do { try await sleep(interval) } catch { return .pending(nil) }
+        }
+    }
+
+    private func fetchOrderOnce(orderUUID: String, timeout: TimeInterval? = nil) async -> OrderDetail? {
+        try? await client.fetch(
+            endpoint: .customerOrders,
+            method: .GET,
+            parameters: orderParameters,
+            id: orderUUID,
+            timeout: timeout
+        )
     }
 
     func trackedOrder(orderUUID: String) async {
