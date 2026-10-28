@@ -129,9 +129,9 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
     ) async -> OrderSettlement {
         let clock = ContinuousClock()
         let deadline = clock.now.advanced(by: timeout)
-        let floor = Self.seconds(interval)
+        let floor = interval / .seconds(1)
         while true {
-            let budget = max(Self.seconds(deadline - clock.now), floor)
+            let budget = max((deadline - clock.now) / .seconds(1), floor)
             if let probe: OrderStatusProbe = try? await client.fetch(
                 endpoint: .customerOrders,
                 method: .GET,
@@ -152,11 +152,6 @@ final class OrdersRepositoryImpl: OrdersRepositoryType {
             if clock.now >= deadline { return .pending(nil) }
             do { try await sleep(interval) } catch { return .pending(nil) }
         }
-    }
-
-    private static func seconds(_ duration: Duration) -> TimeInterval {
-        let parts = duration.components
-        return TimeInterval(parts.seconds) + TimeInterval(parts.attoseconds) / 1e18
     }
 
     private func fetchOrderOnce(orderUUID: String, timeout: TimeInterval? = nil) async -> OrderDetail? {
