@@ -15,6 +15,13 @@ public protocol PaymentsRepositoryType {
     func createPaymentMethodSetupIntent() async throws -> PaymentMethodSetupIntent
     func verifyPaymentMethod(_ paymentMethodID: String, discountCode: String) async throws -> SavedPaymentMethod
     func payWithStoredPaymentMethod(_ paymentMethodID: String, transactionType: TransactionType, packageTypeId: Int, iccid: String?, discountCode: String?) async throws -> PaymentData
+    func startSmartPayPayment(
+        transactionType: TransactionType,
+        packageTypeId: Int,
+        iccid: String?,
+        loyaltyPointsAmount: Double?,
+        redirectUrl: String
+    ) async throws -> PaymentData
 }
 
 public extension PaymentsRepositoryType {
@@ -26,5 +33,15 @@ public extension PaymentsRepositoryType {
             iccid: iccid,
             discountCode: nil
         )
+    }
+
+    func startSmartPayPayment(
+        transactionType: TransactionType,
+        packageTypeId: Int,
+        iccid: String?,
+        loyaltyPointsAmount: Double?,
+        redirectUrl: String
+    ) async throws -> PaymentData {
+        throw SdkError.networkError(statusCode: 501, message: "SmartPay is not implemented by this repository")
     }
 }

@@ -236,6 +236,7 @@ public enum PaymentMethod: String, Codable {
     case voucher = "voucher"
     case splitPayment = "split_payment"
     case paidWithPoints = "pay_with_points"
+    case smartpay = "smartpay"
     case unknown
 
     public init(from decoder: Decoder) throws {
@@ -260,6 +261,8 @@ public enum PaymentMethod: String, Codable {
             return "Split Payment"
         case .paidWithPoints:
             return "Pay with Points"
+        case .smartpay:
+            return "SmartPay"
         case .unknown:
             return "Payment"
         }
@@ -267,7 +270,7 @@ public enum PaymentMethod: String, Codable {
 
     public var shouldShowAmount: Bool {
         switch self {
-        case .stripeIntent, .stripeCheckout, .agentPayment, .splitPayment, .paidWithPoints:
+        case .stripeIntent, .stripeCheckout, .agentPayment, .splitPayment, .paidWithPoints, .smartpay:
             return true
         case .complimentary, .voucher, .unknown:
             return false

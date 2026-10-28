@@ -24,6 +24,12 @@ public protocol OrdersRepositoryType {
 
     func fetchInvoice(orderUUID: String) async throws -> Data
 
+    func awaitSettlement(
+        orderUUID: String,
+        interval: Duration,
+        timeout: Duration,
+        sleep: @Sendable (Duration) async throws -> Void
+    ) async -> OrderSettlement
 }
 
 public extension OrdersRepositoryType {
@@ -32,6 +38,33 @@ public extension OrdersRepositoryType {
     }
     func fetchOrders(forceRefresh: Bool = false, withLoyaltyPoints: Bool) async -> [Order] {
         await fetchOrders(forceRefresh: forceRefresh, withLoyaltyPoints: withLoyaltyPoints, cacheTTL: 600)
+    }
+    func awaitSettlement(
+        orderUUID: String,
+        interval: Duration,
+        timeout: Duration,
+        sleep: @Sendable (Duration) async throws -> Void
+    ) async -> OrderSettlement {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: timeout)
+        var last: OrderDetail?
+        while true {
+            if let order = try? await fetchOrder(orderUUID: orderUUID, forceRefresh: true, cacheTTL: 0) {
+                if order.isSettlementFailure { return .failed(order) }
+                if order.isFulfilled { return .fulfilled(order) }
+                last = order
+            }
+            if clock.now >= deadline { return .pending(last) }
+            do { try await sleep(interval) } catch { return .pending(last) }
+        }
+    }
+    func awaitSettlement(orderUUID: String) async -> OrderSettlement {
+        await awaitSettlement(
+            orderUUID: orderUUID,
+            interval: .seconds(3),
+            timeout: .seconds(120),
+            sleep: { try await Task.sleep(for: $0) }
+        )
     }
 }
 
