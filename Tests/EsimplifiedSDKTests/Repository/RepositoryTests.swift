@@ -128,6 +128,64 @@ extension NetworkSuite {
         #expect(url?.path.contains("/packages") == true)
     }
 
+    @Test("Packages: fetchPackagesForCountry with a promo code sends promo_code alongside country_name_slug")
+    func packagesForCountryWithPromoCode() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"count":0,"results":[]}"#)
+
+        let (client, cache, _, _) = makeRepoEnv()
+        let repo = PackagesRepositoryImpl(client: client, cache: cache)
+        let response = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia", promoCode: "NAB30")
+        #expect(response != nil)
+
+        let url = MockURLProtocol.capturedRequests.first?.url
+        #expect(url?.absoluteString.contains("/api/v2/packages/?") == true)
+        let query = url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false)?.queryItems } ?? []
+        #expect(query.contains(where: { $0.name == "country_name_slug" && $0.value == "australia" }))
+        #expect(query.contains(where: { $0.name == "promo_code" && $0.value == "NAB30" }))
+    }
+
+    @Test("Packages: fetchPackagesForCountry without a promo code sends no promo_code")
+    func packagesForCountryWithoutPromoCode() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"count":0,"results":[]}"#)
+
+        let (client, cache, _, _) = makeRepoEnv()
+        let repo = PackagesRepositoryImpl(client: client, cache: cache)
+        _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia")
+        _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia", promoCode: nil, forceRefresh: true)
+        _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia", promoCode: "", forceRefresh: true)
+
+        #expect(MockURLProtocol.capturedRequests.count == 3)
+        for request in MockURLProtocol.capturedRequests {
+            let query = request.url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false)?.queryItems } ?? []
+            #expect(query.contains(where: { $0.name == "country_name_slug" && $0.value == "australia" }))
+            #expect(!query.contains(where: { $0.name == "promo_code" }))
+        }
+    }
+
+    @Test("Packages: a promo-coded list and a plain list are cached under different keys")
+    func packagesForCountryPromoCodeCacheKey() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"count":0,"results":[]}"#)
+
+        let (client, cache, _, _) = makeRepoEnv()
+        let repo = PackagesRepositoryImpl(client: client, cache: cache)
+
+        _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia", promoCode: "NAB30")
+        #expect(MockURLProtocol.capturedRequests.count == 1)
+
+        _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia", promoCode: "NAB30")
+        #expect(MockURLProtocol.capturedRequests.count == 1, "a warm promo cache must not hit the network")
+
+        _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia")
+        #expect(MockURLProtocol.capturedRequests.count == 2, "a plain list must never be served from the promo cache")
+
+        _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia", promoCode: "NAB30")
+        _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia")
+        #expect(MockURLProtocol.capturedRequests.count == 2, "both lists are now warm")
+    }
+
     @Test("Packages: fetchPackagesForTopUpEsim returns empty on error")
     func packagesTopUpErrorEmpty() async throws {
         MockURLProtocol.reset()
@@ -291,7 +349,11 @@ extension NetworkSuite {
             func fetchPayment(transactionType: TransactionType, packageTypeId: Int, iccid: String?, autoTopUp: Bool, savePaymentDetail: Bool, loyaltyPointsAmount: Double?) async throws -> PaymentData { PaymentData() }
             func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse { fatalError() }
             func fetchPaymentMethods() async throws -> [SavedPaymentMethod] { [] }
-            func payWithStoredPaymentMethod(_ paymentMethodID: String, transactionType: TransactionType, packageTypeId: Int, iccid: String?) async throws -> PaymentData { PaymentData() }
+            func fetchPaymentMethods(eligibleFor discountCode: String) async throws -> [SavedPaymentMethod] { [] }
+            func deletePaymentMethod(_ paymentMethodID: String) async throws -> DeletePaymentMethodResponse { DeletePaymentMethodResponse() }
+            func createPaymentMethodSetupIntent() async throws -> PaymentMethodSetupIntent { fatalError() }
+            func verifyPaymentMethod(_ paymentMethodID: String, discountCode: String) async throws -> SavedPaymentMethod { fatalError() }
+            func payWithStoredPaymentMethod(_ paymentMethodID: String, transactionType: TransactionType, packageTypeId: Int, iccid: String?, discountCode: String?) async throws -> PaymentData { PaymentData() }
         }
         await #expect(throws: SdkError.self) {
             _ = try await Bare().startSmartPayPayment(transactionType: .buy, packageTypeId: 1, iccid: nil, loyaltyPointsAmount: nil, redirectUrl: "https://x/order")
@@ -357,6 +419,171 @@ extension NetworkSuite {
         #expect(json["iccid"] as? String == "8901")
         #expect(json["auto_top_up"] == nil)
         #expect(json["save_payment_method"] == nil)
+    }
+
+    @Test("Payments: fetchPaymentMethods(eligibleFor:) GETs /customer/payment-methods/ filtered by discount_code")
+    func paymentsSavedMethodsEligibleForDiscount() async throws {
+        MockURLProtocol.reset()
+        let json = #"[{"payment_method_id":"pm_1","card_brand":"visa","card_last4":"4242","card_exp_month":2,"card_exp_year":2044}]"#
+        MockURLProtocol.handler = MockSession.jsonResponse(json: json)
+
+        let (client, _, session, _) = makeRepoEnv()
+        let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
+        let methods = try await repo.fetchPaymentMethods(eligibleFor: "NAB30")
+
+        #expect(methods == [SavedPaymentMethod(paymentMethodID: "pm_1", cardBrand: "visa", cardLast4: "4242", cardExpMonth: 2, cardExpYear: 2044)])
+        let captured = MockURLProtocol.capturedRequests.first
+        #expect(captured?.httpMethod == "GET")
+        #expect(captured?.url?.absoluteString.hasSuffix("/api/v2/customer/payment-methods/?discount_code=NAB30") == true)
+        #expect(captured?.value(forHTTPHeaderField: "Authorization") == "Bearer a")
+    }
+
+    @Test("Payments: deletePaymentMethod DELETEs /customer/payment-methods/{id}/ and returns the confirmation")
+    func paymentsDeleteMethodConfirmation() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"detail":"Payment method removed."}"#)
+
+        let (client, _, session, _) = makeRepoEnv()
+        let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
+        let response = try await repo.deletePaymentMethod("pm_1")
+        #expect(response.detail == "Payment method removed.")
+
+        let captured = MockURLProtocol.capturedRequests.first
+        #expect(captured?.httpMethod == "DELETE")
+        #expect(captured?.url?.absoluteString.hasSuffix("/api/v2/customer/payment-methods/pm_1/") == true)
+        #expect(captured?.value(forHTTPHeaderField: "Authorization") == "Bearer a")
+        let firstBody: Data? = MockURLProtocol.capturedBodies.first ?? nil
+        #expect(firstBody == nil)
+    }
+
+    @Test("Payments: deletePaymentMethod accepts a 200 with an empty JSON object")
+    func paymentsDeleteMethodJsonBody() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: "{}")
+
+        let (client, _, session, _) = makeRepoEnv()
+        let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
+        let response = try await repo.deletePaymentMethod("pm_1")
+
+        #expect(response.detail == nil)
+        #expect(MockURLProtocol.capturedRequests.count == 1)
+    }
+
+    @Test("Payments: deletePaymentMethod surfaces a 404 as networkError")
+    func paymentsDeleteMethodNotFound() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(statusCode: 404, json: #"{"error":"not_found","detail":"Payment method not found."}"#)
+
+        let (client, _, session, _) = makeRepoEnv()
+        let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
+
+        do {
+            _ = try await repo.deletePaymentMethod("pm_missing")
+            Issue.record("Expected throw")
+        } catch let SdkError.networkError(statusCode, message, _) {
+            #expect(statusCode == 404)
+            #expect(message == "Payment method not found.")
+        }
+    }
+
+    @Test("Payments: createPaymentMethodSetupIntent POSTs /customer/payment-methods/setup-intent/ with no body")
+    func paymentsCreateSetupIntent() async throws {
+        MockURLProtocol.reset()
+        let json = #"{"client_secret":"seti_1_secret_2","customer_id":"cus_9"}"#
+        MockURLProtocol.handler = MockSession.jsonResponse(statusCode: 201, json: json)
+
+        let (client, _, session, _) = makeRepoEnv()
+        let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
+        let intent = try await repo.createPaymentMethodSetupIntent()
+
+        #expect(intent == PaymentMethodSetupIntent(clientSecret: "seti_1_secret_2", customerID: "cus_9"))
+        let captured = MockURLProtocol.capturedRequests.first
+        #expect(captured?.httpMethod == "POST")
+        #expect(captured?.url?.absoluteString.hasSuffix("/api/v2/customer/payment-methods/setup-intent/") == true)
+        #expect(captured?.value(forHTTPHeaderField: "Authorization") == "Bearer a")
+        let firstBody: Data? = MockURLProtocol.capturedBodies.first ?? nil
+        #expect(firstBody == nil)
+    }
+
+    @Test("Payments: verifyPaymentMethod POSTs /customer/payment-methods/verify/ with the card and discount code")
+    func paymentsVerifyMethod() async throws {
+        MockURLProtocol.reset()
+        let json = #"{"payment_method_id":"pm_1","card_brand":"visa","card_last4":"4242","card_exp_month":2,"card_exp_year":2044}"#
+        MockURLProtocol.handler = MockSession.jsonResponse(json: json)
+
+        let (client, _, session, _) = makeRepoEnv()
+        let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
+        let method = try await repo.verifyPaymentMethod("pm_1", discountCode: "NAB30")
+
+        #expect(method == SavedPaymentMethod(paymentMethodID: "pm_1", cardBrand: "visa", cardLast4: "4242", cardExpMonth: 2, cardExpYear: 2044))
+        let captured = MockURLProtocol.capturedRequests.first
+        #expect(captured?.httpMethod == "POST")
+        #expect(captured?.url?.absoluteString.hasSuffix("/api/v2/customer/payment-methods/verify/") == true)
+        #expect(captured?.value(forHTTPHeaderField: "Authorization") == "Bearer a")
+        let firstBody: Data? = MockURLProtocol.capturedBodies.first ?? nil
+        let body = try #require(firstBody)
+        let sent = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(sent["payment_method_id"] as? String == "pm_1")
+        #expect(sent["discount_code"] as? String == "NAB30")
+        #expect(sent.count == 2)
+    }
+
+    @Test("Payments: verifyPaymentMethod surfaces an ineligible card as a 400 with the backend detail")
+    func paymentsVerifyMethodIneligible() async throws {
+        MockURLProtocol.reset()
+        let detail = "This offer is only available with eligible partner bank cards. Please pay with an eligible card to claim the offer."
+        MockURLProtocol.handler = MockSession.jsonResponse(statusCode: 400, json: #"{"error":"x","detail":"\#(detail)"}"#)
+
+        let (client, _, session, _) = makeRepoEnv()
+        let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
+
+        do {
+            _ = try await repo.verifyPaymentMethod("pm_1", discountCode: "NAB30")
+            Issue.record("Expected throw")
+        } catch let SdkError.networkError(statusCode, message, _) {
+            #expect(statusCode == 400)
+            #expect(message == detail)
+        }
+    }
+
+    @Test("Payments: payWithStoredPaymentMethod with a discount code sends discount_code and no save or auto top-up flags")
+    func paymentsStoredMethodWithDiscountCode() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"detail":"ok","data":{"order_id":"o9"}}"#)
+
+        let (client, _, session, _) = makeRepoEnv()
+        let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
+        let data = try await repo.payWithStoredPaymentMethod("pm_1", transactionType: .buy, packageTypeId: 42, iccid: nil, discountCode: "NAB30")
+
+        #expect(data.orderID == "o9")
+        let captured = MockURLProtocol.capturedRequests.first
+        #expect(captured?.httpMethod == "POST")
+        #expect(captured?.url?.absoluteString.hasSuffix("/api/v2/payments/") == true)
+        let firstBody: Data? = MockURLProtocol.capturedBodies.first ?? nil
+        let body = try #require(firstBody)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["stored_payment_method"] as? String == "pm_1")
+        #expect(json["discount_code"] as? String == "NAB30")
+        #expect(json["payment_method"] as? String == "stripe_intent")
+        #expect(json["package_type_id"] as? String == "42")
+        #expect(json["auto_top_up"] == nil)
+        #expect(json["save_payment_method"] == nil)
+    }
+
+    @Test("Payments: payWithStoredPaymentMethod without a discount code sends no discount_code")
+    func paymentsStoredMethodWithoutDiscountCode() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"detail":"ok","data":{"order_id":"o9"}}"#)
+
+        let (client, _, session, _) = makeRepoEnv()
+        let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
+        _ = try await repo.payWithStoredPaymentMethod("pm_1", transactionType: .buy, packageTypeId: 42, iccid: nil)
+
+        let firstBody: Data? = MockURLProtocol.capturedBodies.first ?? nil
+        let body = try #require(firstBody)
+        let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(json["stored_payment_method"] as? String == "pm_1")
+        #expect(json["discount_code"] == nil)
     }
 
     // MARK: - PromoCode

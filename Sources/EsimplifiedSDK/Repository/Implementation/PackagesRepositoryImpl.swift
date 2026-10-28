@@ -19,18 +19,26 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
     func fetchPackagesForCountryResult(
         countryCode: String?,
         countryNameSlug: String,
+        promoCode: String?,
         forceRefresh: Bool = false,
         cacheTTL: TimeInterval = 3600
     ) async -> RepositoryResult<PackageResponse?> {
-        let cacheKey = "packages_\(countryCode ?? "")_\(countryNameSlug)"
+        let promoCode = promoCode.flatMap { $0.isEmpty ? nil : $0 }
+        var cacheKey = "packages_\(countryCode ?? "")_\(countryNameSlug)"
+        if let promoCode {
+            cacheKey += "|promo=\(promoCode)"
+        }
         if !forceRefresh, let cached: PackageResponse = await cache.get(cacheKey) {
             return RepositoryResult(value: cached)
         }
-        let parameters = [
+        var parameters = [
             "country_code": countryCode ?? "",
             "country_name_slug": countryNameSlug,
             "reverse_order": "true"
         ]
+        if let promoCode {
+            parameters["promo_code"] = promoCode
+        }
         do {
             let response: PackageResponse = try await client.fetch(
                 endpoint: .packages,
@@ -45,20 +53,6 @@ final class PackagesRepositoryImpl: PackagesRepositoryType {
             let expired: PackageResponse? = await cache.getExpired(cacheKey)
             return RepositoryResult(value: expired, isStale: expired != nil, failure: failure)
         }
-    }
-
-    func fetchPackagesForCountry(
-        countryCode: String?,
-        countryNameSlug: String,
-        forceRefresh: Bool = false,
-        cacheTTL: TimeInterval = 3600
-    ) async -> PackageResponse? {
-        await fetchPackagesForCountryResult(
-            countryCode: countryCode,
-            countryNameSlug: countryNameSlug,
-            forceRefresh: forceRefresh,
-            cacheTTL: cacheTTL
-        ).value
     }
 
     func fetchPackagesForTopUpEsimResult(iccid: String, forceRefresh: Bool = false, cacheTTL: TimeInterval = 3600) async -> RepositoryResult<[Package]> {
