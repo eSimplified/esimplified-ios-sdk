@@ -135,14 +135,14 @@ extension NetworkSuite {
 
         let (client, cache, _, _) = makeRepoEnv()
         let repo = PackagesRepositoryImpl(client: client, cache: cache)
-        let response = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia", promoCode: "NAB30")
+        let response = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia", promoCode: "EXAMPLE10")
         #expect(response != nil)
 
         let url = MockURLProtocol.capturedRequests.first?.url
         #expect(url?.absoluteString.contains("/api/v2/packages/?") == true)
         let query = url.flatMap { URLComponents(url: $0, resolvingAgainstBaseURL: false)?.queryItems } ?? []
         #expect(query.contains(where: { $0.name == "country_name_slug" && $0.value == "australia" }))
-        #expect(query.contains(where: { $0.name == "promo_code" && $0.value == "NAB30" }))
+        #expect(query.contains(where: { $0.name == "promo_code" && $0.value == "EXAMPLE10" }))
     }
 
     @Test("Packages: fetchPackagesForCountry without a promo code sends no promo_code")
@@ -172,16 +172,16 @@ extension NetworkSuite {
         let (client, cache, _, _) = makeRepoEnv()
         let repo = PackagesRepositoryImpl(client: client, cache: cache)
 
-        _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia", promoCode: "NAB30")
+        _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia", promoCode: "EXAMPLE10")
         #expect(MockURLProtocol.capturedRequests.count == 1)
 
-        _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia", promoCode: "NAB30")
+        _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia", promoCode: "EXAMPLE10")
         #expect(MockURLProtocol.capturedRequests.count == 1, "a warm promo cache must not hit the network")
 
         _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia")
         #expect(MockURLProtocol.capturedRequests.count == 2, "a plain list must never be served from the promo cache")
 
-        _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia", promoCode: "NAB30")
+        _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia", promoCode: "EXAMPLE10")
         _ = await repo.fetchPackagesForCountry(countryCode: "AU", countryNameSlug: "australia")
         #expect(MockURLProtocol.capturedRequests.count == 2, "both lists are now warm")
     }
@@ -429,12 +429,12 @@ extension NetworkSuite {
 
         let (client, _, session, _) = makeRepoEnv()
         let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
-        let methods = try await repo.fetchPaymentMethods(eligibleFor: "NAB30")
+        let methods = try await repo.fetchPaymentMethods(eligibleFor: "EXAMPLE10")
 
         #expect(methods == [SavedPaymentMethod(paymentMethodID: "pm_1", cardBrand: "visa", cardLast4: "4242", cardExpMonth: 2, cardExpYear: 2044)])
         let captured = MockURLProtocol.capturedRequests.first
         #expect(captured?.httpMethod == "GET")
-        #expect(captured?.url?.absoluteString.hasSuffix("/api/v2/customer/payment-methods/?discount_code=NAB30") == true)
+        #expect(captured?.url?.absoluteString.hasSuffix("/api/v2/customer/payment-methods/?discount_code=EXAMPLE10") == true)
         #expect(captured?.value(forHTTPHeaderField: "Authorization") == "Bearer a")
     }
 
@@ -513,7 +513,7 @@ extension NetworkSuite {
 
         let (client, _, session, _) = makeRepoEnv()
         let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
-        let method = try await repo.verifyPaymentMethod("pm_1", discountCode: "NAB30")
+        let method = try await repo.verifyPaymentMethod("pm_1", discountCode: "EXAMPLE10")
 
         #expect(method == SavedPaymentMethod(paymentMethodID: "pm_1", cardBrand: "visa", cardLast4: "4242", cardExpMonth: 2, cardExpYear: 2044))
         let captured = MockURLProtocol.capturedRequests.first
@@ -524,7 +524,7 @@ extension NetworkSuite {
         let body = try #require(firstBody)
         let sent = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
         #expect(sent["payment_method_id"] as? String == "pm_1")
-        #expect(sent["discount_code"] as? String == "NAB30")
+        #expect(sent["discount_code"] as? String == "EXAMPLE10")
         #expect(sent.count == 2)
     }
 
@@ -538,7 +538,7 @@ extension NetworkSuite {
         let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
 
         do {
-            _ = try await repo.verifyPaymentMethod("pm_1", discountCode: "NAB30")
+            _ = try await repo.verifyPaymentMethod("pm_1", discountCode: "EXAMPLE10")
             Issue.record("Expected throw")
         } catch let SdkError.networkError(statusCode, message, _) {
             #expect(statusCode == 400)
@@ -553,7 +553,7 @@ extension NetworkSuite {
 
         let (client, _, session, _) = makeRepoEnv()
         let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
-        let data = try await repo.payWithStoredPaymentMethod("pm_1", transactionType: .buy, packageTypeId: 42, iccid: nil, discountCode: "NAB30")
+        let data = try await repo.payWithStoredPaymentMethod("pm_1", transactionType: .buy, packageTypeId: 42, iccid: nil, discountCode: "EXAMPLE10")
 
         #expect(data.orderID == "o9")
         let captured = MockURLProtocol.capturedRequests.first
@@ -563,7 +563,7 @@ extension NetworkSuite {
         let body = try #require(firstBody)
         let json = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
         #expect(json["stored_payment_method"] as? String == "pm_1")
-        #expect(json["discount_code"] as? String == "NAB30")
+        #expect(json["discount_code"] as? String == "EXAMPLE10")
         #expect(json["payment_method"] as? String == "stripe_intent")
         #expect(json["package_type_id"] as? String == "42")
         #expect(json["auto_top_up"] == nil)
