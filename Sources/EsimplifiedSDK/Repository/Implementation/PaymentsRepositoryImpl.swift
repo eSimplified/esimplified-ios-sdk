@@ -90,12 +90,8 @@ final class PaymentsRepositoryImpl: PaymentsRepositoryType {
         )
     }
 
-    func deletePaymentMethod(_ paymentMethodID: String) async throws {
-        let _: EmptyResponse = try await client.fetch(
-            endpoint: .paymentMethod,
-            method: .DELETE,
-            id: paymentMethodID
-        )
+    func deletePaymentMethod(_ paymentMethodID: String) async throws -> DeletePaymentMethodResponse {
+        try await client.fetch(endpoint: .paymentMethod, method: .DELETE, id: paymentMethodID)
     }
 
     func createPaymentMethodSetupIntent() async throws -> PaymentMethodSetupIntent {

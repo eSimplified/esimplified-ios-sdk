@@ -454,10 +454,10 @@ Access: `sdk.paymentsRepository`
 | `payWithStoredPaymentMethod` | `func payWithStoredPaymentMethod(_ paymentMethodID: String, transactionType: TransactionType, packageTypeId: Int, iccid: String?) async throws -> PaymentData` |
 | `createPaymentMethodSetupIntent` | `func createPaymentMethodSetupIntent() async throws -> PaymentMethodSetupIntent` |
 | `verifyPaymentMethod` | `func verifyPaymentMethod(_ paymentMethodID: String, discountCode: String) async throws -> SavedPaymentMethod` |
-| `deletePaymentMethod` | `func deletePaymentMethod(_ paymentMethodID: String) async throws` |
+| `deletePaymentMethod` | `func deletePaymentMethod(_ paymentMethodID: String) async throws -> DeletePaymentMethodResponse` |
 | `startSmartPayPayment` | `func startSmartPayPayment(transactionType: TransactionType, packageTypeId: Int, iccid: String?, loyaltyPointsAmount: Double?, redirectUrl: String) async throws -> PaymentData` |
 
-Partner-card offers add a discount code to three of these. `fetchPaymentMethods(eligibleFor: "NAB30")` lists only the saved cards eligible for that code, `payWithStoredPaymentMethod(_:transactionType:packageTypeId:iccid:discountCode:)` pays with a saved card and applies the code, and `verifyPaymentMethod` checks a card the customer has just added. Adding a card is a three-step handoff: `createPaymentMethodSetupIntent` returns the Stripe client secret, your app confirms the setup intent with Stripe's SDK, and `verifyPaymentMethod(_:discountCode:)` reports back the card's details once the backend has attached it. Verification throws `SdkError.networkError` with status 400 when the card is saved but not eligible for the code, and 404 when the payment method is not attached to this customer; the `message` carries the backend's `detail`, written for the customer. `deletePaymentMethod` succeeds on any 2xx and throws `networkError` with status 404 for a card that is not the customer's.
+Partner-card offers add a discount code to three of these. `fetchPaymentMethods(eligibleFor: "NAB30")` lists only the saved cards eligible for that code, `payWithStoredPaymentMethod(_:transactionType:packageTypeId:iccid:discountCode:)` pays with a saved card and applies the code, and `verifyPaymentMethod` checks a card the customer has just added. Adding a card is a three-step handoff: `createPaymentMethodSetupIntent` returns the Stripe client secret, your app confirms the setup intent with Stripe's SDK, and `verifyPaymentMethod(_:discountCode:)` reports back the card's details once the backend has attached it. Verification throws `SdkError.networkError` with status 400 when the card is saved but not eligible for the code, and 404 when the payment method is not attached to this customer; the `message` carries the backend's `detail`, written for the customer. `deletePaymentMethod` returns the backend's confirmation, `DeletePaymentMethodResponse(detail: "Payment method removed.")`, and throws `networkError` with status 404 for a card that is not the customer's.
 
 ### PromoCodeRepository
 
@@ -756,6 +756,12 @@ Enum.
 | Property | Type | JSON key |
 |---|---|---|
 | `deleted` | `Bool` | `deleted` |
+
+### `DeletePaymentMethodResponse`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `detail` | `String?` | `detail` |
 
 ### `DestinationFaqResponse`
 

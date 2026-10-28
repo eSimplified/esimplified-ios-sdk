@@ -269,6 +269,7 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `PaymentRequest` | Payment intent creation payload |
 | `PaymentMethodSetupIntent` | Stripe setup intent for adding a card (client secret, customer ID, publishable key) |
 | `PaymentMethodVerificationRequest` | Card verification payload (payment method ID, discount code) |
+| `DeletePaymentMethodResponse` | Confirmation that a saved card was removed (detail message) |
 | `PaymentMethod` | Enum: stripeIntent, stripeCheckout, smartpay, agentPayment, complimentary, voucher, splitPayment, paidWithPoints |
 | `SavedPaymentMethod` | A saved card (payment method ID, brand, last 4 digits, expiry) |
 | `TransactionType` | Enum: buy, topUp |
@@ -404,7 +405,7 @@ Payment intent creation for Stripe checkout, saved cards, adding, verifying and 
 | `payWithStoredPaymentMethod` | `func payWithStoredPaymentMethod(_ paymentMethodID: String, transactionType: TransactionType, packageTypeId: Int, iccid: String?, discountCode: String?) async throws -> PaymentData` | Pay with a saved card, applying a discount code when one is given (`discountCode` may be omitted) |
 | `createPaymentMethodSetupIntent` | `func createPaymentMethodSetupIntent() async throws -> PaymentMethodSetupIntent` | Start adding a card: returns the Stripe setup-intent client secret for your app to confirm |
 | `verifyPaymentMethod` | `func verifyPaymentMethod(_ paymentMethodID: String, discountCode: String) async throws -> SavedPaymentMethod` | Check a newly added card against a discount code; throws `networkError` 400 when saved but not eligible, 404 when not the customer's |
-| `deletePaymentMethod` | `func deletePaymentMethod(_ paymentMethodID: String) async throws` | Remove a saved card |
+| `deletePaymentMethod` | `func deletePaymentMethod(_ paymentMethodID: String) async throws -> DeletePaymentMethodResponse` | Remove a saved card; returns the backend's confirmation message |
 | `startSmartPayPayment` | `func startSmartPayPayment(transactionType: TransactionType, packageTypeId: Int, iccid: String?, loyaltyPointsAmount: Double?, redirectUrl: String) async throws -> PaymentData` | Start a SmartPay hosted checkout; open `uri` in a secure browser |
 
 ### PromoCodeRepository

@@ -350,7 +350,7 @@ extension NetworkSuite {
             func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse { fatalError() }
             func fetchPaymentMethods() async throws -> [SavedPaymentMethod] { [] }
             func fetchPaymentMethods(eligibleFor discountCode: String) async throws -> [SavedPaymentMethod] { [] }
-            func deletePaymentMethod(_ paymentMethodID: String) async throws {}
+            func deletePaymentMethod(_ paymentMethodID: String) async throws -> DeletePaymentMethodResponse { DeletePaymentMethodResponse() }
             func createPaymentMethodSetupIntent() async throws -> PaymentMethodSetupIntent { fatalError() }
             func verifyPaymentMethod(_ paymentMethodID: String, discountCode: String) async throws -> SavedPaymentMethod { fatalError() }
             func payWithStoredPaymentMethod(_ paymentMethodID: String, transactionType: TransactionType, packageTypeId: Int, iccid: String?, discountCode: String?) async throws -> PaymentData { PaymentData() }
@@ -438,14 +438,15 @@ extension NetworkSuite {
         #expect(captured?.value(forHTTPHeaderField: "Authorization") == "Bearer a")
     }
 
-    @Test("Payments: deletePaymentMethod DELETEs /customer/payment-methods/{id}/ and accepts an empty 204")
-    func paymentsDeleteMethodEmptyBody() async throws {
+    @Test("Payments: deletePaymentMethod DELETEs /customer/payment-methods/{id}/ and returns the confirmation")
+    func paymentsDeleteMethodConfirmation() async throws {
         MockURLProtocol.reset()
-        MockURLProtocol.handler = MockSession.emptyResponse(statusCode: 204)
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"detail":"Payment method removed."}"#)
 
         let (client, _, session, _) = makeRepoEnv()
         let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
-        try await repo.deletePaymentMethod("pm_1")
+        let response = try await repo.deletePaymentMethod("pm_1")
+        #expect(response.detail == "Payment method removed.")
 
         let captured = MockURLProtocol.capturedRequests.first
         #expect(captured?.httpMethod == "DELETE")
@@ -462,8 +463,9 @@ extension NetworkSuite {
 
         let (client, _, session, _) = makeRepoEnv()
         let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
-        try await repo.deletePaymentMethod("pm_1")
+        let response = try await repo.deletePaymentMethod("pm_1")
 
+        #expect(response.detail == nil)
         #expect(MockURLProtocol.capturedRequests.count == 1)
     }
 
