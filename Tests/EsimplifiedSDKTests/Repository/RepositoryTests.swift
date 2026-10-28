@@ -478,7 +478,7 @@ extension NetworkSuite {
         let repo = PaymentsRepositoryImpl(client: client, sessionProvider: session)
 
         do {
-            try await repo.deletePaymentMethod("pm_missing")
+            _ = try await repo.deletePaymentMethod("pm_missing")
             Issue.record("Expected throw")
         } catch let SdkError.networkError(statusCode, message, _) {
             #expect(statusCode == 404)

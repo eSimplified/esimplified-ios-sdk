@@ -11,7 +11,6 @@ public protocol PaymentsRepositoryType {
     func sendKredsQuote(packageTypeId: Int, loyaltyPointsAmount: Double) async throws -> KredsQuoteResponse
     func fetchPaymentMethods() async throws -> [SavedPaymentMethod]
     func fetchPaymentMethods(eligibleFor discountCode: String) async throws -> [SavedPaymentMethod]
-    @discardableResult
     func deletePaymentMethod(_ paymentMethodID: String) async throws -> DeletePaymentMethodResponse
     func createPaymentMethodSetupIntent() async throws -> PaymentMethodSetupIntent
     func verifyPaymentMethod(_ paymentMethodID: String, discountCode: String) async throws -> SavedPaymentMethod

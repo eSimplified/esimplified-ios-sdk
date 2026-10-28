@@ -30,6 +30,15 @@ public extension PackagesRepositoryType {
             cacheTTL: 3600
         ).value
     }
+    func fetchPackagesForCountry(countryCode: String?, countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> PackageResponse? {
+        await fetchPackagesForCountryResult(
+            countryCode: countryCode,
+            countryNameSlug: countryNameSlug,
+            promoCode: nil,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        ).value
+    }
     func fetchPackagesForTopUpEsim(iccid: String, forceRefresh: Bool = false) async -> [Package] {
         await fetchPackagesForTopUpEsim(iccid: iccid, forceRefresh: forceRefresh, cacheTTL: 3600)
     }
@@ -41,6 +50,16 @@ public extension PackagesRepositoryType {
 // MARK: - Result Defaults
 
 public extension PackagesRepositoryType {
+
+    func fetchPackagesForCountryResult(countryCode: String?, countryNameSlug: String, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<PackageResponse?> {
+        await fetchPackagesForCountryResult(
+            countryCode: countryCode,
+            countryNameSlug: countryNameSlug,
+            promoCode: nil,
+            forceRefresh: forceRefresh,
+            cacheTTL: cacheTTL
+        )
+    }
 
     func fetchPackagesForCountryResult(
         countryCode: String?,
