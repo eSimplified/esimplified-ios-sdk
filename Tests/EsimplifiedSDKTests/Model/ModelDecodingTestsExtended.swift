@@ -134,6 +134,35 @@ struct ModelDecodingTestsExtended {
         #expect(r.redirectUrl == "https://example.com/o/123")
     }
 
+    @Test("GiftCardPreviewResponse decodes the unlocked package")
+    func giftCardPreviewResponse() throws {
+        let json = #"{"package":{"package_type_id":990282,"name":"France 3 GB 30 Days","country":"FR","data":"3 GB","validity_days":30}}"#
+        let r: GiftCardPreviewResponse = try decode(json)
+        #expect(r.package.packageTypeId == 990282)
+        #expect(r.package.country == "FR")
+        #expect(r.package.validityDays == 30)
+    }
+
+    @Test("GiftCardRedeemResponse 200 is redeemed with an order")
+    func giftCardRedeemResponseRedeemed() throws {
+        let json = #"{"redeemed":true,"order_uuid":"abc","package":{"package_type_id":1,"name":"X"},"redirect_url":"order/7?id=abc"}"#
+        let r: GiftCardRedeemResponse = try decode(json)
+        #expect(r.isRedeemed)
+        #expect(!r.awaitsEmailVerification)
+        #expect(r.orderUUID == "abc")
+        #expect(r.redirectUrl == "order/7?id=abc")
+    }
+
+    @Test("GiftCardRedeemResponse 201 awaits email verification")
+    func giftCardRedeemResponsePending() throws {
+        let json = #"{"success":true,"message":"m","customer_id":5,"email":"e@x.io","order_uuid":"abc"}"#
+        let r: GiftCardRedeemResponse = try decode(json)
+        #expect(!r.isRedeemed)
+        #expect(r.awaitsEmailVerification)
+        #expect(r.email == "e@x.io")
+        #expect(r.package == nil)
+    }
+
     // MARK: - Visa rewards
 
     @Test("VisaRewardResponse decodes with iframe_url")
