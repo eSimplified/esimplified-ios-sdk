@@ -27,7 +27,8 @@ final class VouchersRepositoryImpl: VouchersRepositoryType {
         try await client.fetch(
             endpoint: .giftCardPreview,
             method: .POST,
-            body: GiftCardPreviewRequest(pin: pin)
+            body: GiftCardPreviewRequest(pin: pin),
+            requiresAuth: false
         )
     }
 
@@ -35,7 +36,8 @@ final class VouchersRepositoryImpl: VouchersRepositoryType {
         try await client.fetch(
             endpoint: .giftCardRedeem,
             method: .POST,
-            body: request
+            body: request,
+            requiresAuth: false
         )
     }
 }
