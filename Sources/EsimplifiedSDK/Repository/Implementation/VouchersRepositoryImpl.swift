@@ -22,4 +22,22 @@ final class VouchersRepositoryImpl: VouchersRepositoryType {
             body: request
         )
     }
+
+    func previewGiftCard(pin: String) async throws -> GiftCardPreviewResponse {
+        try await client.fetch(
+            endpoint: .giftCardPreview,
+            method: .POST,
+            body: GiftCardPreviewRequest(pin: pin),
+            requiresAuth: false
+        )
+    }
+
+    func redeemGiftCard(request: GiftCardRedeemRequest) async throws -> GiftCardRedeemResponse {
+        try await client.fetch(
+            endpoint: .giftCardRedeem,
+            method: .POST,
+            body: request,
+            requiresAuth: false
+        )
+    }
 }

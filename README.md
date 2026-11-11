@@ -291,6 +291,8 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `RedeemVisaResponse` | Visa reward redemption result (redeemed, redirect URL) |
 | `VoucherRedeemRequest` | Voucher code redemption request |
 | `VoucherRedeemResponse` | Voucher redemption result (redeemed, redirect URL) |
+| `GiftCardPreviewRequest` / `GiftCardPreviewResponse` / `GiftCardPackage` | Gift-card PIN preview: the request and the package the PIN unlocks |
+| `GiftCardRedeemRequest` / `GiftCardRedeemResponse` | Gift-card redemption: the claim body and its 200 (redeemed, order) or 201 (awaiting email verification) result |
 | `StoreReviewResponse` | App store rating data (reviews, stats, average rating) |
 | `UserLocationResponse` | User's detected location (country, city, coordinates) |
 | `LocationDetails` | Location detail (country, country code, city, lat, lon, timezone) |
@@ -478,11 +480,13 @@ App store review data.
 
 ### VouchersRepository
 
-Voucher code redemption.
+Voucher code and InComm gift-card redemption.
 
 | Method | Signature | Description |
 |---|---|---|
 | `redeemVoucher` | `func redeemVoucher(code: String) async throws -> VoucherRedeemResponse` | Redeem a voucher code |
+| `previewGiftCard` | `func previewGiftCard(pin: String) async throws -> GiftCardPreviewResponse` | Show the package a gift-card PIN unlocks, without spending the card |
+| `redeemGiftCard` | `func redeemGiftCard(request: GiftCardRedeemRequest) async throws -> GiftCardRedeemResponse` | Redeem a gift-card PIN; 200 for a verified customer, 201 when the email still needs verifying |
 
 ### FaqAndSupportRepository
 

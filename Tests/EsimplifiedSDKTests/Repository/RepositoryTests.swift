@@ -829,6 +829,140 @@ extension NetworkSuite {
         #expect(url?.path.contains("/customer/promotions/voucher") == true)
     }
 
+    @Test("Vouchers: previewGiftCard posts the PIN to the preview endpoint and decodes the package")
+    func giftCardPreview() async throws {
+        MockURLProtocol.reset()
+        let json = #"{"package":{"package_type_id":990268,"name":"Australia 3 GB 10 Days","country":"AU","data":"3 GB","validity_days":10}}"#
+        MockURLProtocol.handler = MockSession.jsonResponse(json: json)
+
+        let (client, _, _, _) = makeRepoEnv()
+        let repo = VouchersRepositoryImpl(client: client)
+        let response = try await repo.previewGiftCard(pin: "99954819342337407")
+        #expect(response.package.packageTypeId == 990268)
+        #expect(response.package.name == "Australia 3 GB 10 Days")
+        #expect(response.package.country == "AU")
+        #expect(response.package.data == "3 GB")
+        #expect(response.package.validityDays == 10)
+
+        let request = try #require(MockURLProtocol.capturedRequests.first)
+        #expect(request.httpMethod == "POST")
+        #expect(request.url?.path.contains("/customer/promotions/gift-card/preview") == true)
+        let firstBody: Data? = MockURLProtocol.capturedBodies.first ?? nil
+        let body = try #require(firstBody)
+        let sent = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(sent["pin"] as? String == "99954819342337407")
+    }
+
+    @Test("Vouchers: redeemGiftCard sends only the PIN and source for a signed-in customer and decodes the 200")
+    func giftCardRedeemVerifiedCustomer() async throws {
+        MockURLProtocol.reset()
+        let json = #"{"redeemed":true,"order_uuid":"7d1e","package":{"package_type_id":990268,"name":"Australia 3 GB 10 Days"},"redirect_url":"order/1001?id=7d1e"}"#
+        MockURLProtocol.handler = MockSession.jsonResponse(json: json)
+
+        let (client, _, _, _) = makeRepoEnv()
+        let repo = VouchersRepositoryImpl(client: client)
+        let response = try await repo.redeemGiftCard(request: GiftCardRedeemRequest(pin: "99954819342337407"))
+        #expect(response.isRedeemed)
+        #expect(!response.awaitsEmailVerification)
+        #expect(response.orderUUID == "7d1e")
+        #expect(response.package?.packageTypeId == 990268)
+
+        let request = try #require(MockURLProtocol.capturedRequests.first)
+        #expect(request.url?.path.contains("/customer/promotions/gift-card/redeem") == true)
+        let firstBody: Data? = MockURLProtocol.capturedBodies.first ?? nil
+        let body = try #require(firstBody)
+        let sent = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(sent["pin"] as? String == "99954819342337407")
+        #expect(sent["acquisition_source"] as? String == "gift-card")
+        #expect(sent["email"] == nil)
+        #expect(sent["first_name"] == nil)
+    }
+
+    @Test("Vouchers: redeemGiftCard decodes the 201 for a new customer as awaiting email verification")
+    func giftCardRedeemNewCustomer() async throws {
+        MockURLProtocol.reset()
+        let json = #"{"success":true,"message":"Check your email","customer_id":42,"email":"new@example.com","order_uuid":"9a2c"}"#
+        MockURLProtocol.handler = MockSession.jsonResponse(statusCode: 201, json: json)
+
+        let (client, _, _, _) = makeRepoEnv()
+        let repo = VouchersRepositoryImpl(client: client)
+        let request = GiftCardRedeemRequest(pin: "91782013336802787", firstName: "Ada", lastName: "Lovelace", email: "new@example.com", marketingOptIn: true)
+        let response = try await repo.redeemGiftCard(request: request)
+        #expect(!response.isRedeemed)
+        #expect(response.awaitsEmailVerification)
+        #expect(response.email == "new@example.com")
+        #expect(response.orderUUID == "9a2c")
+
+        let firstBody: Data? = MockURLProtocol.capturedBodies.first ?? nil
+        let body = try #require(firstBody)
+        let sent = try #require(try JSONSerialization.jsonObject(with: body) as? [String: Any])
+        #expect(sent["first_name"] as? String == "Ada")
+        #expect(sent["marketing_opt_in"] as? Bool == true)
+    }
+
+    @Test("Vouchers: a signed-in customer redeems a gift card with the Bearer token")
+    func giftCardRedeemSendsBearerWhenSignedIn() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"redeemed":true,"order_uuid":"7d1e"}"#)
+
+        let (client, _, _, _) = makeRepoEnv()
+        let repo = VouchersRepositoryImpl(client: client)
+        _ = try await repo.redeemGiftCard(request: GiftCardRedeemRequest(pin: "99954819342337407"))
+
+        let request = try #require(MockURLProtocol.capturedRequests.first)
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer a")
+    }
+
+    @Test("Vouchers: a guest redeems a gift card with the client's Basic credentials and gets the 201")
+    func giftCardRedeemGuestUsesBasic() async throws {
+        MockURLProtocol.reset()
+        let json = #"{"success":true,"message":"Check your email","customer_id":42,"email":"new@example.com","order_uuid":"9a2c"}"#
+        MockURLProtocol.handler = MockSession.jsonResponse(statusCode: 201, json: json)
+
+        let (client, _, session, config) = makeRepoEnv(initial: .unauthenticated)
+        let repo = VouchersRepositoryImpl(client: client)
+        let request = GiftCardRedeemRequest(pin: "91782013336802787", firstName: "Ada", lastName: "Lovelace", email: "new@example.com", marketingOptIn: false)
+        let response = try await repo.redeemGiftCard(request: request)
+        #expect(response.awaitsEmailVerification)
+        #expect(response.orderUUID == "9a2c")
+
+        let captured = try #require(MockURLProtocol.capturedRequests.first)
+        let expected = Data("\(config.clientId):\(config.clientSecret)".utf8).base64EncodedString()
+        #expect(captured.value(forHTTPHeaderField: "Authorization") == "Basic \(expected)")
+        #expect(session.authenticationFailedCalls == 0)
+    }
+
+    @Test("Vouchers: a guest preview also sends Basic credentials")
+    func giftCardPreviewGuestUsesBasic() async throws {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: #"{"package":{"package_type_id":990268,"name":"Australia 3 GB 10 Days"}}"#)
+
+        let (client, _, _, _) = makeRepoEnv(initial: .unauthenticated)
+        let repo = VouchersRepositoryImpl(client: client)
+        _ = try await repo.previewGiftCard(pin: "99954819342337407")
+
+        let captured = try #require(MockURLProtocol.capturedRequests.first)
+        #expect(captured.value(forHTTPHeaderField: "Authorization")?.hasPrefix("Basic ") == true)
+    }
+
+    @Test("Vouchers: a 400 verdict on the gift card surfaces its code")
+    func giftCardRedeemVerdict() async throws {
+        MockURLProtocol.reset()
+        let json = #"{"detail":"This gift card has already been redeemed.","code":"gift_card_already_redeemed"}"#
+        MockURLProtocol.handler = MockSession.jsonResponse(statusCode: 400, json: json)
+
+        let (client, _, _, _) = makeRepoEnv()
+        let repo = VouchersRepositoryImpl(client: client)
+        do {
+            _ = try await repo.redeemGiftCard(request: GiftCardRedeemRequest(pin: "99954819342337407"))
+            Issue.record("expected a thrown error")
+        } catch let error as SdkError {
+            #expect(error.statusCode == 400)
+            #expect(error.hasApiCode(.giftCardAlreadyRedeemed))
+            #expect(error.errorDescription == "This gift card has already been redeemed.")
+        }
+    }
+
     // MARK: - StoreReview
 
     @Test("StoreReview: fetchStoreReview hits /reviews and decodes")

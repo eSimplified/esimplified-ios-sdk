@@ -314,7 +314,7 @@ Most read methods swallow failures and return an empty or `nil` value, so a list
 
 `SdkError` cases: `networkError(statusCode:message:code:)`, `decodingError`, `authenticationRequired`, `noInternetConnection`, `serverError`, `missingCredentials`, `invalidURL`, `unknown`.
 
-When the API names the reason for a failure it sends a machine-readable `code` in the error body, for example `invalid_code`, `phone_verification_required` or, from the token endpoint, `email_not_verified`. It rides along on `networkError` and is exposed through `error.apiCode` (the raw string) and `error.hasApiCode(.invalidCode)` (the `ApiErrorCode` enum, which lists the codes the SDK knows). Branch on the code, show `errorDescription` to the customer — the API translates it.
+When the API names the reason for a failure it sends a machine-readable `code` in the error body, for example `invalid_code`, `phone_verification_required`, the `gift_card_*` verdicts or, from the token endpoint, `email_not_verified`. It rides along on `networkError` and is exposed through `error.apiCode` (the raw string) and `error.hasApiCode(.invalidCode)` (the `ApiErrorCode` enum, which lists the codes the SDK knows). Branch on the code, show `errorDescription` to the customer — the API translates it.
 
 The token endpoint reports an unverified email as `invalid_grant` with the description "Email not verified, new verification email sent."; `error.isEmailNotVerified` recognises that (and a future `email_not_verified` code) so you can show the code entry instead of a login error.
 
@@ -472,12 +472,16 @@ Access: `sdk.promoCodeRepository`
 
 ### VouchersRepository
 
-Redeeming a voucher code.  
+Redeeming a voucher code or an InComm gift-card PIN.  
 Access: `sdk.vouchersRepository`
 
 | Method | Signature |
 |---|---|
+| `previewGiftCard` | `func previewGiftCard(pin: String) async throws -> GiftCardPreviewResponse` |
+| `redeemGiftCard` | `func redeemGiftCard(request: GiftCardRedeemRequest) async throws -> GiftCardRedeemResponse` |
 | `redeemVoucher` | `func redeemVoucher(code: String) async throws -> VoucherRedeemResponse` |
+
+`previewGiftCard` is read-only and repeatable: it returns the package the PIN unlocks. `redeemGiftCard` spends the card. A signed-in customer sends only the `pin`; a guest also sends `firstName`, `lastName`, `email` and `marketingOptIn`. The response is either a 200 (`isRedeemed`, with `orderUUID` and `package`) or a 201 for a new or unverified customer (`awaitsEmailVerification`): the card is redeemed and the order exists, but the eSIM is delivered after the emailed code is verified through `AuthRepository.verifyEmail`. Send `Accept-Language` and `Accept-Currency` through `customHeadersProvider`; the first drives the confirmation email, the second sets a new customer's currency. A 400 is InComm's verdict on the card and carries one of the `gift_card_*` codes in `ApiErrorCode`, so show its `errorDescription` on the PIN field; 404 `gift_card_not_available` means the tenant has no gift cards, and 409 or 503 mean try again shortly.
 
 ### LoyaltyRepository
 
@@ -1678,6 +1682,53 @@ Enum.
 |---|---|---|
 | `redeemed` | `Bool` | `redeemed` |
 | `redirectUrl` | `String?` | `redirect_url` |
+
+### `GiftCardPreviewRequest`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `pin` | `String` | `pin` |
+
+### `GiftCardPackage`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `packageTypeId` | `Int` | `package_type_id` |
+| `name` | `String` | `name` |
+| `country` | `String?` | `country` |
+| `data` | `String?` | `data` |
+| `validityDays` | `Int?` | `validity_days` |
+
+### `GiftCardPreviewResponse`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `package` | `GiftCardPackage` | `package` |
+
+### `GiftCardRedeemRequest`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `pin` | `String` | `pin` |
+| `firstName` | `String?` | `first_name` |
+| `lastName` | `String?` | `last_name` |
+| `email` | `String?` | `email` |
+| `marketingOptIn` | `Bool?` | `marketing_opt_in` |
+| `acquisitionSource` | `String?` | `acquisition_source`, defaults to `gift-card` |
+
+### `GiftCardRedeemResponse`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `redeemed` | `Bool?` | `redeemed` (200) |
+| `success` | `Bool?` | `success` (201) |
+| `message` | `String?` | `message` (201) |
+| `email` | `String?` | `email` (201) |
+| `orderUUID` | `String?` | `order_uuid` |
+| `package` | `GiftCardPackage?` | `package` (200) |
+| `redirectUrl` | `String?` | `redirect_url` (200), a storefront path; navigate by `orderUUID` |
+| `isRedeemed` | `Bool` | computed: `redeemed == true` |
+| `awaitsEmailVerification` | `Bool` | computed: not redeemed and `success == true` |
 
 ---
 

@@ -95,4 +95,13 @@ public enum ApiErrorCode: String {
     case providerError = "provider_error"
     case phoneVerificationRequired = "phone_verification_required"
     case emailNotVerified = "email_not_verified"
+    case giftCardPinRequired = "gift_card_pin_required"
+    case giftCardInvalid = "gift_card_invalid"
+    case giftCardAlreadyRedeemed = "gift_card_already_redeemed"
+    case giftCardNotActive = "gift_card_not_active"
+    case giftCardUnusable = "gift_card_unusable"
+    case giftCardProductNotFound = "gift_card_product_not_found"
+    case giftCardNotAvailable = "gift_card_not_available"
+    case giftCardInProgress = "gift_card_in_progress"
+    case giftCardUnavailable = "gift_card_unavailable"
 }

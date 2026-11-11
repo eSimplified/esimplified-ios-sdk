@@ -42,6 +42,8 @@ enum Endpoints: String {
     case phoneOtpVerify = "customer/phone/otp/verify"
     case notificationSettings = "customer/notifications"
     case redeemVoucher = "customer/promotions/voucher"
+    case giftCardPreview = "customer/promotions/gift-card/preview"
+    case giftCardRedeem = "customer/promotions/gift-card/redeem"
     case loyaltyPoints = "customer/loyalty"
     case initiateMokafaaOtp = "loyalty/mokafaa/otp/initiate"
     case validateMokafaaOtp = "loyalty/mokafaa/otp/validate"
