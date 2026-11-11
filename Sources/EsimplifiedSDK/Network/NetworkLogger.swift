@@ -34,9 +34,7 @@ struct NetworkLogger {
         print("\(emoji) RESPONSE: \(url) - Status: \(statusCode) (\(milliseconds)ms)")
         Self.signpost.info("RESPONSE \(url, privacy: .public) status=\(statusCode, privacy: .public) duration=\(milliseconds, privacy: .public)ms")
         if let body, let bodyString = String(data: body, encoding: .utf8) {
-            let redacted = Self.redactBody(raw: bodyString, contentType: "application/json")
-            let truncated = redacted.count > 1024 ? String(redacted.prefix(1024)) + "... (truncated)" : redacted
-            print("Response data: \(truncated)")
+            print("Response data: \(Self.redactBody(raw: bodyString, contentType: "application/json"))")
         }
     }
 
