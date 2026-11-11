@@ -69,6 +69,13 @@ struct NetworkLogger {
         "qr_code",
         "sm_dp_address",
         "customer_ref",
+        "pin",
+        "email",
+        "first_name",
+        "last_name",
+        "mobile_number",
+        "phone_number",
+        "phone",
     ]
 
     private static let redactedPlaceholder = "***REDACTED***"
