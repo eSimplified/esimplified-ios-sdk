@@ -328,7 +328,7 @@ Reads are cached in memory with a default TTL of one hour. Pass `forceRefresh: t
 
 ## 9. Repository reference
 
-Every method below is reachable as `sdk.<repository>.<method>`. 85 methods across 17 repositories. Each row shows the form you call, with its default arguments. Cached reads also accept a `cacheTTL: TimeInterval` you can pass to override the lifetime shown in section 8.
+Every method below is reachable as `sdk.<repository>.<method>`. 92 methods across 18 repositories. Each row shows the form you call, with its default arguments. Cached reads also accept a `cacheTTL: TimeInterval` you can pass to override the lifetime shown in section 8.
 
 ### AuthRepository
 
@@ -543,6 +543,19 @@ Access: `sdk.marketingRepository`
 | `fetchPromos` | `func fetchPromos(language: String, forceRefresh: Bool = false) async -> [Promo]` |
 | `fetchPromosResult` | `func fetchPromosResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<[Promo]>` |
 | `invalidateCache` | `func invalidateCache() async` |
+
+### LocalizationRepository
+
+The currencies and languages this brand supports, so an app can add one without a release.  
+Access: `sdk.localizationRepository`
+
+| Method | Signature |
+|---|---|
+| `fetchLocalization` | `func fetchLocalization(include: LocalizationInclude? = nil, forceRefresh: Bool = false) async -> Localization` |
+| `fetchLocalizationResult` | `func fetchLocalizationResult(include: LocalizationInclude? = nil, forceRefresh: Bool = false) async -> RepositoryResult<Localization>` |
+| `invalidateCache` | `func invalidateCache() async` |
+
+Pass `include: .currencies` or `include: .languages` to fetch one list; the other comes back empty. With no `include` you get both. The call needs no sign-in, and sends the customer's token when there is one. A failure with nothing cached returns an empty `Localization`, so keep your own last good list if the app must work offline.
 
 ### VisaRewardsRepository
 
@@ -967,6 +980,24 @@ Enum.
 |---|---|---|
 | `amount` | `String` | `amount` |
 | `currency` | `Currency` | `currency` |
+
+### `Localization`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `defaultCurrency` | `String?` | `default_currency` |
+| `currencies` | `[SupportedCurrency]` | `currencies` |
+| `defaultLanguage` | `String?` | `default_language` |
+| `languages` | `[SupportedLanguage]` | `languages` |
+
+### `LocalizationInclude`
+
+Enum.
+
+| Case | Query value |
+|---|---|
+| `currencies` | `currencies` |
+| `languages` | `languages` |
 
 ### `LocationDetails`
 
@@ -1521,6 +1552,21 @@ Enum. Matched ignoring case, so `global_esim` and `GLOBAL_ESIM` are both `global
 |---|---|---|
 | `countryName` | `String` | `country_name` |
 | `countryCode` | `String` | `country_code` |
+
+### `SupportedCurrency`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `code` | `String` | `code` |
+| `name` | `String?` | `name` |
+| `symbol` | `String?` | `symbol` |
+
+### `SupportedLanguage`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `code` | `String` | `code` |
+| `name` | `String?` | `name` |
 
 ### `ThemeDestination`
 

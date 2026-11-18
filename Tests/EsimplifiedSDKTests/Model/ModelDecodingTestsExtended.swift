@@ -389,4 +389,30 @@ struct ModelDecodingTestsExtended {
         #expect(r.reviewCount == 1234)
         #expect(r.verdict == "GREAT")
     }
+
+    // MARK: - Localization
+
+    @Test("Localization decodes both lists and the defaults")
+    func localizationFull() throws {
+        let json = #"""
+        {"default_currency":"USD","currencies":[{"code":"AUD","name":"Australian Dollar","symbol":"AU $"}],
+         "default_language":"en","languages":[{"code":"ar","name":"Arabic"}]}
+        """#
+        let r: Localization = try decode(json)
+        #expect(r.defaultCurrency == "USD")
+        #expect(r.currencies == [SupportedCurrency(code: "AUD", name: "Australian Dollar", symbol: "AU $")])
+        #expect(r.defaultLanguage == "en")
+        #expect(r.languages == [SupportedLanguage(code: "ar", name: "Arabic")])
+    }
+
+    @Test("Localization decodes a currency that carries only its code, and an empty body")
+    func localizationSparse() throws {
+        let codeOnly: Localization = try decode(#"{"currencies":[{"code":"XYZ"}]}"#)
+        #expect(codeOnly.currencies == [SupportedCurrency(code: "XYZ")])
+
+        let empty: Localization = try decode("{}")
+        #expect(empty.currencies.isEmpty)
+        #expect(empty.languages.isEmpty)
+        #expect(empty.defaultCurrency == nil)
+    }
 }

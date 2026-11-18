@@ -52,4 +52,5 @@ enum Endpoints: String {
     case generalFaqs = "faqs"
     case privacy = "privacy"
     case marketing = "marketing"
+    case localization = "localization"
 }
