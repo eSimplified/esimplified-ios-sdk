@@ -555,7 +555,7 @@ Access: `sdk.localizationRepository`
 | `fetchLocalizationResult` | `func fetchLocalizationResult(include: LocalizationInclude? = nil, forceRefresh: Bool = false) async -> RepositoryResult<Localization>` |
 | `invalidateCache` | `func invalidateCache() async` |
 
-Pass `include: .currencies` or `include: .languages` to fetch one list; the other comes back empty. With no `include` you get both. The call needs no sign-in, and sends the customer's token when there is one. It gives up after 10 seconds instead of the usual 60, so it is safe to await while the app starts. A failure with nothing cached returns an empty `Localization`, so keep your own last good list if the app must work offline.
+Pass `include: .currencies` or `include: .languages` to fetch one list; the other comes back empty. With no `include` you get both. The call needs no sign-in, and sends the customer's token when there is one. The request times out after 10 seconds instead of the usual 60; that limit covers the request itself, not a token refresh or your `customHeadersProvider` running before it. When a refresh fails, `fetchLocalization` returns the last cached value if there is one and an empty `Localization` if there is none; use `fetchLocalizationResult` to tell a failure from a fresh answer. The cache is in memory only, so keep your own last good list if the app must work offline.
 
 ### VisaRewardsRepository
 

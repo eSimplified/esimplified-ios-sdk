@@ -528,7 +528,7 @@ The currencies and languages a brand supports, from `GET /localization/`.
 
 | Method | Signature | Description |
 |---|---|---|
-| `fetchLocalization` | `func fetchLocalization(include: LocalizationInclude? = nil, forceRefresh: Bool = false) async -> Localization` | Both lists, or one with `include: .currencies` / `.languages` (empty on failure) |
+| `fetchLocalization` | `func fetchLocalization(include: LocalizationInclude? = nil, forceRefresh: Bool = false) async -> Localization` | Both lists, or one with `include: .currencies` / `.languages`. On failure: the last cached value, or empty when nothing is cached |
 | `fetchLocalizationResult` | `func fetchLocalizationResult(include: LocalizationInclude? = nil, forceRefresh: Bool = false) async -> RepositoryResult<Localization>` | Same, with the failure reported |
 
 ### Result variants
