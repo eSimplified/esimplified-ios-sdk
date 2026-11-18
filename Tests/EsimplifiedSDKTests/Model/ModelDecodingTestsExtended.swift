@@ -39,6 +39,15 @@ struct ModelDecodingTestsExtended {
         #expect(r.refreshToken == nil)
     }
 
+    @Test("SignInCustomerResponse reads new_user when a provider sign-in created the account")
+    func signInResponseNewUser() throws {
+        let created = #"{"access_token":"at","expires_in":3600,"token_type":"Bearer","scope":"all","refresh_token":"rt","new_user":true,"user":null}"#
+        let returning = #"{"access_token":"at","expires_in":3600,"token_type":"Bearer","scope":"all","refresh_token":"rt","user":null}"#
+
+        #expect(try (decode(created) as SignInCustomerResponse).newUser == true)
+        #expect(try (decode(returning) as SignInCustomerResponse).newUser == nil)
+    }
+
     @Test("SignInCustomerResponse decodes loyalty fields on user")
     func signInResponseLoyaltyFields() throws {
         let json = #"""

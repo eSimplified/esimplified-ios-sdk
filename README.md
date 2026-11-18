@@ -237,7 +237,7 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 |---|---|
 | `User` | Customer profile (email, name, phone and whether it is verified, referral code, language/currency, the eight `receive_*` notification flags, loyalty provider). Decodes `unique_referral_code` as an alias for `referral_code` |
 | `LoyaltyProvider` | Enum: kreds, mokafaa |
-| `SignInCustomerResponse` | Login response (access token, refresh token, expiry, user) |
+| `SignInCustomerResponse` | Login response (access token, refresh token, expiry, user, and `newUser` when a provider sign-in created the account) |
 | `RegisterCustomerRequest` | Registration request (name, email, phone, password, marketing opt-in) |
 | `RegisterCustomerResponse` | Registration result (success, email, referral code) |
 | `UpdateCustomerRequest` | Profile update request (name, email, phone, password) |

@@ -1526,6 +1526,9 @@ Enum. Matched ignoring case, so `global_esim` and `GLOBAL_ESIM` are both `global
 | `scope` | `String` | `scope` |
 | `refreshToken` | `String?` | `refresh_token` |
 | `user` | `User?` | `user` |
+| `newUser` | `Bool?` | `new_user` |
+
+`newUser` is `true` when `loginWithProvider` created the account on this call. The API leaves the key out for a returning customer and on every other grant, so it decodes to `nil` there.
 
 ### `Stats`
 

@@ -16,14 +16,16 @@ public struct SignInCustomerResponse: Codable {
     public var scope: String = ""
     public var refreshToken: String? = ""
     public var user: User? = User()
+    public var newUser: Bool?
 
-    public init(accessToken: String = "", tokenExpiresIn: Int = 0, tokenType: String = "", scope: String = "", refreshToken: String? = "", user: User? = User()) {
+    public init(accessToken: String = "", tokenExpiresIn: Int = 0, tokenType: String = "", scope: String = "", refreshToken: String? = "", user: User? = User(), newUser: Bool? = nil) {
         self.accessToken = accessToken
         self.tokenExpiresIn = tokenExpiresIn
         self.tokenType = tokenType
         self.scope = scope
         self.refreshToken = refreshToken
         self.user = user
+        self.newUser = newUser
     }
 
     enum CodingKeys: String, CodingKey {
@@ -32,5 +34,6 @@ public struct SignInCustomerResponse: Codable {
         case tokenExpiresIn = "expires_in"
         case tokenType = "token_type"
         case refreshToken = "refresh_token"
+        case newUser = "new_user"
     }
 }
