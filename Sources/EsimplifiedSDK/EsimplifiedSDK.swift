@@ -63,7 +63,7 @@ public final class EsimplifiedSdk {
         self.config = config
         self.sessionProvider = sessionProvider
 
-        let cache = config.enableCaching ? SdkCache(defaultTTL: config.defaultCacheTTL) : SdkCache(defaultTTL: 0)
+        let cache = SdkCache(defaultTTL: config.defaultCacheTTL, isEnabled: config.enableCaching)
 
         self.authRepository = AuthRepositoryImpl(client: client, sessionProvider: sessionProvider, config: config)
         self.countriesRepository = CountriesRepositoryImpl(client: client, cache: cache)

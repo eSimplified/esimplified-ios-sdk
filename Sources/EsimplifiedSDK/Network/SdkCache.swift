@@ -9,6 +9,7 @@ import Foundation
 actor SdkCache {
     private var store: [String: CacheEntry] = [:]
     private let defaultTTL: TimeInterval
+    private let isEnabled: Bool
 
     struct CacheEntry {
         let data: Any
@@ -16,8 +17,9 @@ actor SdkCache {
         var isExpired: Bool { Date() >= expiresAt }
     }
 
-    init(defaultTTL: TimeInterval = 3600) {
+    init(defaultTTL: TimeInterval = 3600, isEnabled: Bool = true) {
         self.defaultTTL = defaultTTL
+        self.isEnabled = isEnabled
     }
 
     func get<T>(_ key: String) -> T? {
@@ -33,6 +35,7 @@ actor SdkCache {
     }
 
     func set(_ key: String, value: Any, ttl: TimeInterval? = nil) {
+        guard isEnabled else { return }
         let expiry = Date().addingTimeInterval(ttl ?? defaultTTL)
         store[key] = CacheEntry(data: value, expiresAt: expiry)
     }

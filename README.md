@@ -655,7 +655,7 @@ await sdk.esimsRepository.invalidateCache()
 await sdk.clearAllCaches()
 ```
 
-Disable caching globally via `SdkConfig(enableCaching: false)`.
+Disable caching globally via `SdkConfig(enableCaching: false)`. Nothing is stored, so every read goes to the network and a failed read has no cached value to fall back on.
 
 ## Error Handling
 

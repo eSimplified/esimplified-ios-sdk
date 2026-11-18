@@ -11,9 +11,7 @@ public protocol LocalizationRepositoryType {
     // MARK: Localization
 
     func fetchLocalization(include: LocalizationInclude?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> Localization
-
     func fetchLocalizationResult(include: LocalizationInclude?, forceRefresh: Bool, cacheTTL: TimeInterval) async -> RepositoryResult<Localization>
-
     func invalidateCache() async
 }
 

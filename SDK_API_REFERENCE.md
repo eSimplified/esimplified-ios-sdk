@@ -555,7 +555,7 @@ Access: `sdk.localizationRepository`
 | `fetchLocalizationResult` | `func fetchLocalizationResult(include: LocalizationInclude? = nil, forceRefresh: Bool = false) async -> RepositoryResult<Localization>` |
 | `invalidateCache` | `func invalidateCache() async` |
 
-Pass `include: .currencies` or `include: .languages` to fetch one list; the other comes back empty. With no `include` you get both. The call needs no sign-in, and sends the customer's token when there is one. The request times out after 10 seconds instead of the usual 60; that limit covers the request itself, not a token refresh or your `customHeadersProvider` running before it. When a refresh fails, `fetchLocalization` returns the last cached value if there is one and an empty `Localization` if there is none; use `fetchLocalizationResult` to tell a failure from a fresh answer. The cache is in memory only, so keep your own last good list if the app must work offline.
+Pass `include: .currencies` or `include: .languages` to fetch one list; the other comes back empty. With no `include` you get both. The call needs no sign-in, and sends the customer's token when there is one. When a refresh fails, `fetchLocalization` returns the last cached value if there is one and an empty `Localization` if there is none; use `fetchLocalizationResult` to tell a failure from a fresh answer. The cache is in memory only, so keep your own last good list if the app must work offline.
 
 ### VisaRewardsRepository
 
@@ -589,7 +589,7 @@ What every `…Result` method returns.
 | Property | Type | Meaning |
 |---|---|---|
 | `value` | `Value` | The data. Present even when the call failed, if a stale cache could serve it |
-| `isStale` | `Bool` | `true` when `value` came from an expired cache rather than the network |
+| `isStale` | `Bool` | `true` when `value` came from the cache because the refresh failed, rather than from the network |
 | `failure` | `SdkError?` | Why the network call failed, or `nil` if it did not |
 
 ### `SdkEnvironment`

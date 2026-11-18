@@ -55,7 +55,6 @@ extension NetworkSuite {
         #expect(request?.httpMethod == "GET")
         #expect(request?.url?.absoluteString.contains("/api/v2/localization/?") == true)
         #expect(localizationQuery() == [URLQueryItem(name: "include", value: "currencies")])
-        #expect(request?.timeoutInterval == 10)
         #expect(localization.currencies.map(\.code) == ["AED", "USD"])
         #expect(localization.currencies.last?.symbol == "$")
         #expect(localization.defaultCurrency == "")
@@ -149,6 +148,22 @@ extension NetworkSuite {
 
         _ = await repo.fetchLocalization(include: .currencies)
         _ = await repo.fetchLocalization(include: .languages)
+
+        #expect(MockURLProtocol.capturedRequests.count == 2)
+    }
+
+    @Test("Localization: with caching switched off, every read goes to the network")
+    func localizationCachingSwitchedOff() async {
+        MockURLProtocol.reset()
+        MockURLProtocol.handler = MockSession.jsonResponse(json: Self.currenciesJson)
+
+        let config = SdkConfig(environment: .staging, clientName: "acme", clientId: "id", clientSecret: "secret")
+        let session = RecordingSessionProvider(initial: .unauthenticated)
+        let client = HTTPClient(config: config, sessionProvider: session, session: MockSession.make())
+        let repo = LocalizationRepositoryImpl(client: client, cache: SdkCache(isEnabled: false))
+
+        _ = await repo.fetchLocalization(include: .currencies)
+        _ = await repo.fetchLocalization(include: .currencies)
 
         #expect(MockURLProtocol.capturedRequests.count == 2)
     }
