@@ -555,7 +555,7 @@ Access: `sdk.localizationRepository`
 | `fetchLocalizationResult` | `func fetchLocalizationResult(include: LocalizationInclude? = nil, forceRefresh: Bool = false) async -> RepositoryResult<Localization>` |
 | `invalidateCache` | `func invalidateCache() async` |
 
-Pass `include: .currencies` or `include: .languages` to fetch one list; the other comes back empty. With no `include` you get both. The call needs no sign-in, and sends the customer's token when there is one. A failure with nothing cached returns an empty `Localization`, so keep your own last good list if the app must work offline.
+Pass `include: .currencies` or `include: .languages` to fetch one list; the other comes back empty. With no `include` you get both. The call needs no sign-in, and sends the customer's token when there is one. It gives up after 10 seconds instead of the usual 60, so it is safe to await while the app starts. A failure with nothing cached returns an empty `Localization`, so keep your own last good list if the app must work offline.
 
 ### VisaRewardsRepository
 

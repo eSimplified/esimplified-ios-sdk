@@ -55,6 +55,7 @@ extension NetworkSuite {
         #expect(request?.httpMethod == "GET")
         #expect(request?.url?.absoluteString.contains("/api/v2/localization/?") == true)
         #expect(localizationQuery() == [URLQueryItem(name: "include", value: "currencies")])
+        #expect(request?.timeoutInterval == 10)
         #expect(localization.currencies.map(\.code) == ["AED", "USD"])
         #expect(localization.currencies.last?.symbol == "$")
         #expect(localization.defaultCurrency == "")

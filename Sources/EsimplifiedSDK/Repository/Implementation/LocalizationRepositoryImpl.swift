@@ -12,6 +12,7 @@ final class LocalizationRepositoryImpl: LocalizationRepositoryType {
     private let cache: SdkCache
 
     private static let cachePrefix = "localization_"
+    private static let requestTimeout: TimeInterval = 10
 
     init(client: HTTPClient, cache: SdkCache) {
         self.client = client
@@ -34,7 +35,8 @@ final class LocalizationRepositoryImpl: LocalizationRepositoryType {
                 endpoint: .localization,
                 method: .GET,
                 parameters: include.map { ["include": $0.rawValue] },
-                requiresAuth: false
+                requiresAuth: false,
+                timeout: Self.requestTimeout
             )
             await cache.set(cacheKey, value: response, ttl: cacheTTL)
             return RepositoryResult(value: response)
