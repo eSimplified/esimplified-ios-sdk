@@ -135,6 +135,17 @@ struct SdkCacheTests {
         let value: String? = await cache.get("key")
         #expect(value == "new")
     }
+
+    @Test("A disabled cache stores nothing, even when a TTL is passed")
+    func disabledCacheStoresNothing() async {
+        let cache = SdkCache(isEnabled: false)
+        await cache.set("key", value: "value", ttl: 3600)
+
+        let fresh: String? = await cache.get("key")
+        let expired: String? = await cache.getExpired("key")
+        #expect(fresh == nil)
+        #expect(expired == nil)
+    }
 }
 
 @Suite("EsimplifiedSdk clearAllCaches")

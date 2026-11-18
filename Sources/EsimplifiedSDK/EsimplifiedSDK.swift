@@ -5,7 +5,7 @@
 //
 
 public enum EsimplifiedSDKVersion {
-    public static let version = "2.4.0"
+    public static let version = "2.5.0"
 }
 
 public final class EsimplifiedSdk {
@@ -27,6 +27,7 @@ public final class EsimplifiedSdk {
     public let faqAndSupportRepository: FaqAndSupportRepositoryType
     public let themeRepository: ThemeRepositoryType
     public let marketingRepository: MarketingRepositoryType
+    public let localizationRepository: LocalizationRepositoryType
 
     public let sessionProvider: SessionProvider
     public let config: SdkConfig
@@ -62,7 +63,7 @@ public final class EsimplifiedSdk {
         self.config = config
         self.sessionProvider = sessionProvider
 
-        let cache = config.enableCaching ? SdkCache(defaultTTL: config.defaultCacheTTL) : SdkCache(defaultTTL: 0)
+        let cache = SdkCache(defaultTTL: config.defaultCacheTTL, isEnabled: config.enableCaching)
 
         self.authRepository = AuthRepositoryImpl(client: client, sessionProvider: sessionProvider, config: config)
         self.countriesRepository = CountriesRepositoryImpl(client: client, cache: cache)
@@ -81,6 +82,7 @@ public final class EsimplifiedSdk {
         self.faqAndSupportRepository = FaqAndSupportRepositoryImpl(client: client, cache: cache)
         self.themeRepository = ThemeRepositoryImpl(client: client, cache: cache)
         self.marketingRepository = MarketingRepositoryImpl(client: client, cache: cache)
+        self.localizationRepository = LocalizationRepositoryImpl(client: client, cache: cache)
     }
 
     public func clearAllCaches() async {
@@ -92,5 +94,6 @@ public final class EsimplifiedSdk {
         await storeReviewRepository.invalidateCache()
         await faqAndSupportRepository.invalidateCache()
         await themeRepository.invalidateCache()
+        await localizationRepository.invalidateCache()
     }
 }

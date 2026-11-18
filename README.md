@@ -237,7 +237,7 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 |---|---|
 | `User` | Customer profile (email, name, phone and whether it is verified, referral code, language/currency, the eight `receive_*` notification flags, loyalty provider). Decodes `unique_referral_code` as an alias for `referral_code` |
 | `LoyaltyProvider` | Enum: kreds, mokafaa |
-| `SignInCustomerResponse` | Login response (access token, refresh token, expiry, user) |
+| `SignInCustomerResponse` | Login response (access token, refresh token, expiry, user, and `newUser` when a provider sign-in created the account) |
 | `RegisterCustomerRequest` | Registration request (name, email, phone, password, marketing opt-in) |
 | `RegisterCustomerResponse` | Registration result (success, email, referral code) |
 | `UpdateCustomerRequest` | Profile update request (name, email, phone, password) |
@@ -308,6 +308,10 @@ Every model is a `Codable` struct in `EsimplifiedSDK`.
 | `ThemePage` | Page theme from `/theme/?page=` (url path, featured image, colour) |
 | `ThemeDestination` | Destination theme from `/theme/?url=` (image, gallery, country code) |
 | `ThemeImage` | Themed image (url, accent colour) |
+| `Localization` | Supported currencies and languages from `/localization/` (default currency, currencies, default language, languages) |
+| `SupportedCurrency` | A currency the brand supports (code, name, symbol) |
+| `SupportedLanguage` | A language the brand supports (code, name) |
+| `LocalizationInclude` | Enum: currencies, languages |
 | `ContentDocument` | Ready-to-render document from `/terms/`, `/privacy/` or `/faqs/` (language, id, title, description, updatedAt, blocks, children) |
 | `ContentNode` | Section, category or article within a document (id, title, description, updatedAt, blocks, children) |
 | `ContentBlock` | Enum: heading(String), paragraph(String), list(ContentList), unknown |
@@ -518,6 +522,15 @@ Brand theme assets (images and colours) served by the platform.
 | `fetchPageTheme` | `func fetchPageTheme(page: String, forceRefresh: Bool = false) async throws -> ThemePage?` | Theme for a page key, e.g. `homepage` |
 | `fetchDestinationTheme` | `func fetchDestinationTheme(countryCode: String, forceRefresh: Bool = false) async throws -> ThemeDestination?` | Theme for a destination by ISO country code |
 
+### LocalizationRepository
+
+The currencies and languages a brand supports, from `GET /localization/`.
+
+| Method | Signature | Description |
+|---|---|---|
+| `fetchLocalization` | `func fetchLocalization(include: LocalizationInclude? = nil, forceRefresh: Bool = false) async -> Localization` | Both lists, or one with `include: .currencies` / `.languages`. On failure: the last cached value, or empty when nothing is cached |
+| `fetchLocalizationResult` | `func fetchLocalizationResult(include: LocalizationInclude? = nil, forceRefresh: Bool = false) async -> RepositoryResult<Localization>` | Same, with the failure reported |
+
 ### Result variants
 
 Every cached fetch also has a `…Result` variant (for example `fetchEsimsResult`, `fetchPackagesForCountryResult`) returning `RepositoryResult<T>`, which carries the value together with whether it came from a stale cache and the failure that caused that, so the app can show data and an error at the same time.
@@ -628,7 +641,7 @@ let sdk = EsimplifiedSdk.initialize(
 
 ## Caching
 
-The SDK caches GET responses in-memory by default to reduce network traffic. Cacheable repositories (`countriesRepository`, `packagesRepository`, `esimsRepository`, `ordersRepository`, `loyaltyRepository`, `storeReviewRepository`, `faqAndSupportRepository`, `themeRepository`) accept `forceRefresh: Bool` and `cacheTTL: TimeInterval` parameters on their fetch methods.
+The SDK caches GET responses in-memory by default to reduce network traffic. Cacheable repositories (`countriesRepository`, `packagesRepository`, `esimsRepository`, `ordersRepository`, `loyaltyRepository`, `storeReviewRepository`, `faqAndSupportRepository`, `themeRepository`, `localizationRepository`) accept `forceRefresh: Bool` and `cacheTTL: TimeInterval` parameters on their fetch methods.
 
 **Per-repository invalidation:**
 
@@ -642,7 +655,7 @@ await sdk.esimsRepository.invalidateCache()
 await sdk.clearAllCaches()
 ```
 
-Disable caching globally via `SdkConfig(enableCaching: false)`.
+Disable caching globally via `SdkConfig(enableCaching: false)`. Nothing is stored, so every read goes to the network and a failed read has no cached value to fall back on.
 
 ## Error Handling
 

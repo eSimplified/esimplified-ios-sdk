@@ -39,6 +39,15 @@ struct ModelDecodingTestsExtended {
         #expect(r.refreshToken == nil)
     }
 
+    @Test("SignInCustomerResponse reads new_user when a provider sign-in created the account")
+    func signInResponseNewUser() throws {
+        let created = #"{"access_token":"at","expires_in":3600,"token_type":"Bearer","scope":"all","refresh_token":"rt","new_user":true,"user":null}"#
+        let returning = #"{"access_token":"at","expires_in":3600,"token_type":"Bearer","scope":"all","refresh_token":"rt","user":null}"#
+
+        #expect(try (decode(created) as SignInCustomerResponse).newUser == true)
+        #expect(try (decode(returning) as SignInCustomerResponse).newUser == nil)
+    }
+
     @Test("SignInCustomerResponse decodes loyalty fields on user")
     func signInResponseLoyaltyFields() throws {
         let json = #"""
@@ -388,5 +397,31 @@ struct ModelDecodingTestsExtended {
         #expect(r.averageRating == "4.5")
         #expect(r.reviewCount == 1234)
         #expect(r.verdict == "GREAT")
+    }
+
+    // MARK: - Localization
+
+    @Test("Localization decodes both lists and the defaults")
+    func localizationFull() throws {
+        let json = #"""
+        {"default_currency":"USD","currencies":[{"code":"AUD","name":"Australian Dollar","symbol":"AU $"}],
+         "default_language":"en","languages":[{"code":"ar","name":"Arabic"}]}
+        """#
+        let r: Localization = try decode(json)
+        #expect(r.defaultCurrency == "USD")
+        #expect(r.currencies == [SupportedCurrency(code: "AUD", name: "Australian Dollar", symbol: "AU $")])
+        #expect(r.defaultLanguage == "en")
+        #expect(r.languages == [SupportedLanguage(code: "ar", name: "Arabic")])
+    }
+
+    @Test("Localization decodes a currency that carries only its code, and an empty body")
+    func localizationSparse() throws {
+        let codeOnly: Localization = try decode(#"{"currencies":[{"code":"XYZ"}]}"#)
+        #expect(codeOnly.currencies == [SupportedCurrency(code: "XYZ")])
+
+        let empty: Localization = try decode("{}")
+        #expect(empty.currencies.isEmpty)
+        #expect(empty.languages.isEmpty)
+        #expect(empty.defaultCurrency == nil)
     }
 }

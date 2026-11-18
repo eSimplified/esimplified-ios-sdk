@@ -328,7 +328,7 @@ Reads are cached in memory with a default TTL of one hour. Pass `forceRefresh: t
 
 ## 9. Repository reference
 
-Every method below is reachable as `sdk.<repository>.<method>`. 85 methods across 17 repositories. Each row shows the form you call, with its default arguments. Cached reads also accept a `cacheTTL: TimeInterval` you can pass to override the lifetime shown in section 8.
+Every method below is reachable as `sdk.<repository>.<method>`. 92 methods across 18 repositories. Each row shows the form you call, with its default arguments. Cached reads also accept a `cacheTTL: TimeInterval` you can pass to override the lifetime shown in section 8.
 
 ### AuthRepository
 
@@ -544,6 +544,19 @@ Access: `sdk.marketingRepository`
 | `fetchPromosResult` | `func fetchPromosResult(language: String, forceRefresh: Bool = false) async -> RepositoryResult<[Promo]>` |
 | `invalidateCache` | `func invalidateCache() async` |
 
+### LocalizationRepository
+
+The currencies and languages this brand supports, so an app can add one without a release.  
+Access: `sdk.localizationRepository`
+
+| Method | Signature |
+|---|---|
+| `fetchLocalization` | `func fetchLocalization(include: LocalizationInclude? = nil, forceRefresh: Bool = false) async -> Localization` |
+| `fetchLocalizationResult` | `func fetchLocalizationResult(include: LocalizationInclude? = nil, forceRefresh: Bool = false) async -> RepositoryResult<Localization>` |
+| `invalidateCache` | `func invalidateCache() async` |
+
+Pass `include: .currencies` or `include: .languages` to fetch one list; the other comes back empty. With no `include` you get both. The call needs no sign-in, and sends the customer's token when there is one. When a refresh fails, `fetchLocalization` returns the last cached value if there is one and an empty `Localization` if there is none; use `fetchLocalizationResult` to tell a failure from a fresh answer. The cache is in memory only, so keep your own last good list if the app must work offline.
+
 ### VisaRewardsRepository
 
 Visa cardholder reward validation and redemption.  
@@ -576,7 +589,7 @@ What every `…Result` method returns.
 | Property | Type | Meaning |
 |---|---|---|
 | `value` | `Value` | The data. Present even when the call failed, if a stale cache could serve it |
-| `isStale` | `Bool` | `true` when `value` came from an expired cache rather than the network |
+| `isStale` | `Bool` | `true` when `value` came from the cache because the refresh failed, rather than from the network |
 | `failure` | `SdkError?` | Why the network call failed, or `nil` if it did not |
 
 ### `SdkEnvironment`
@@ -967,6 +980,24 @@ Enum.
 |---|---|---|
 | `amount` | `String` | `amount` |
 | `currency` | `Currency` | `currency` |
+
+### `Localization`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `defaultCurrency` | `String?` | `default_currency` |
+| `currencies` | `[SupportedCurrency]` | `currencies` |
+| `defaultLanguage` | `String?` | `default_language` |
+| `languages` | `[SupportedLanguage]` | `languages` |
+
+### `LocalizationInclude`
+
+Enum.
+
+| Case | Query value |
+|---|---|
+| `currencies` | `currencies` |
+| `languages` | `languages` |
 
 ### `LocationDetails`
 
@@ -1495,6 +1526,9 @@ Enum. Matched ignoring case, so `global_esim` and `GLOBAL_ESIM` are both `global
 | `scope` | `String` | `scope` |
 | `refreshToken` | `String?` | `refresh_token` |
 | `user` | `User?` | `user` |
+| `newUser` | `Bool?` | `new_user` |
+
+`newUser` is `true` when `loginWithProvider` created the account on this call. The API leaves the key out for a returning customer and on every other grant, so it decodes to `nil` there.
 
 ### `Stats`
 
@@ -1521,6 +1555,21 @@ Enum. Matched ignoring case, so `global_esim` and `GLOBAL_ESIM` are both `global
 |---|---|---|
 | `countryName` | `String` | `country_name` |
 | `countryCode` | `String` | `country_code` |
+
+### `SupportedCurrency`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `code` | `String` | `code` |
+| `name` | `String?` | `name` |
+| `symbol` | `String?` | `symbol` |
+
+### `SupportedLanguage`
+
+| Property | Type | JSON key |
+|---|---|---|
+| `code` | `String` | `code` |
+| `name` | `String?` | `name` |
 
 ### `ThemeDestination`
 
