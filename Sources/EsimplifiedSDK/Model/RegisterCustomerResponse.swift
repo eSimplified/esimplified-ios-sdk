@@ -14,19 +14,22 @@ public struct RegisterCustomerResponse: Codable {
     public var success: Bool = false
     public var email: String = ""
     public var referralCode: String?
+    public var customerId: String?
     public var mokafaa: MokafaaElection?
 
-    public init(message: String? = nil, success: Bool = false, email: String = "", referralCode: String? = nil, mokafaa: MokafaaElection? = nil) {
+    public init(message: String? = nil, success: Bool = false, email: String = "", referralCode: String? = nil, customerId: String? = nil, mokafaa: MokafaaElection? = nil) {
         self.message = message
         self.success = success
         self.email = email
         self.referralCode = referralCode
+        self.customerId = customerId
         self.mokafaa = mokafaa
     }
 
     enum CodingKeys: String, CodingKey {
         case message, success, email, mokafaa
         case referralCode = "referral_code"
+        case customerId = "customer_id"
     }
 }
 

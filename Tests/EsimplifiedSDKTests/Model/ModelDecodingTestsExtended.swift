@@ -97,6 +97,20 @@ struct ModelDecodingTestsExtended {
         #expect(r.referralCode == "ABC123")
     }
 
+    @Test("RegisterCustomerResponse decodes customer_id")
+    func registerCustomerResponseCustomerId() throws {
+        let json = #"{"message":"ok","success":true,"email":"a@b.com","referral_code":"ABC123","customer_id":"919ea41d-a058-4154-86a6-b73d0a8aa4b5"}"#
+        let r: RegisterCustomerResponse = try decode(json)
+        #expect(r.customerId == "919ea41d-a058-4154-86a6-b73d0a8aa4b5")
+    }
+
+    @Test("RegisterCustomerResponse decodes without customer_id")
+    func registerCustomerResponseWithoutCustomerId() throws {
+        let json = #"{"message":"ok","success":true,"email":"a@b.com"}"#
+        let r: RegisterCustomerResponse = try decode(json)
+        #expect(r.customerId == nil)
+    }
+
     // MARK: - User
 
     @Test("User decodes all snake_case fields")

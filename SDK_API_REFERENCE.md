@@ -1449,6 +1449,7 @@ Stripe cannot confirm a SetupIntent without a publishable key, and the SDK does 
 | `success` | `Bool` | `success` |
 | `email` | `String` | `email` |
 | `referralCode` | `String?` | `referral_code` |
+| `customerId` | `String?` | `customer_id` |
 | `mokafaa` | `MokafaaElection?` | `mokafaa` |
 
 ### `RestrictedCountry`
