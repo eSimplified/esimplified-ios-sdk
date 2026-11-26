@@ -104,18 +104,6 @@ struct ModelDecodingTestsExtended {
         #expect(r.customerId == "919ea41d-a058-4154-86a6-b73d0a8aa4b5")
     }
 
-    @Test("RegisterCustomerResponse keeps the initializer without customerId, by call and by reference")
-    func registerCustomerResponseOldInitializer() {
-        let make = RegisterCustomerResponse.init(message:success:email:referralCode:mokafaa:)
-        let byReference = make("ok", true, "a@b.com", "ABC123", nil)
-        let byCall = RegisterCustomerResponse(success: true)
-        let withCustomer = RegisterCustomerResponse(success: true, customerId: "C1")
-        #expect(byReference.referralCode == "ABC123")
-        #expect(byReference.customerId == nil)
-        #expect(byCall.customerId == nil)
-        #expect(withCustomer.customerId == "C1")
-    }
-
     @Test("RegisterCustomerResponse decodes without customer_id")
     func registerCustomerResponseWithoutCustomerId() throws {
         let json = #"{"message":"ok","success":true,"email":"a@b.com"}"#

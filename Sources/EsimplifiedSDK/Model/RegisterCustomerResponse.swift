@@ -17,11 +17,7 @@ public struct RegisterCustomerResponse: Codable {
     public var customerId: String?
     public var mokafaa: MokafaaElection?
 
-    public init(message: String? = nil, success: Bool = false, email: String = "", referralCode: String? = nil, mokafaa: MokafaaElection? = nil) {
-        self.init(message: message, success: success, email: email, referralCode: referralCode, customerId: nil, mokafaa: mokafaa)
-    }
-
-    public init(message: String? = nil, success: Bool = false, email: String = "", referralCode: String? = nil, customerId: String?, mokafaa: MokafaaElection? = nil) {
+    public init(message: String? = nil, success: Bool = false, email: String = "", referralCode: String? = nil, customerId: String? = nil, mokafaa: MokafaaElection? = nil) {
         self.message = message
         self.success = success
         self.email = email
